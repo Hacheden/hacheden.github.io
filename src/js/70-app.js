@@ -237,7 +237,7 @@ function bakeEnvironment() {
 }
 
 /* ---------- главный цикл ---------- */
-let last = performance.now(), frames = 0, slowAcc = 0, slowN = 0, neonT = 6 + Math.random() * 6, flashT = 6 + Math.random() * 8;
+let last = performance.now(), frames = 0, slowAcc = 0, slowN = 0, slowHits = 0, startedAt = 0, neonT = 6 + Math.random() * 6, flashT = 6 + Math.random() * 8;
 const _p = V3(), _t = V3(), _d = V3();
 function tick(now) {
   requestAnimationFrame(tick);
@@ -378,8 +378,9 @@ function tick(now) {
     slowAcc += dt; slowN++;
     if (slowN >= 90) {
       const fps = slowN / slowAcc;
-      // сначала упрощаем эффекты, потом уменьшаем разрешение
-      if (fps < 40 && !POST.degrade() && DPR > .85) { DPR = Math.max(.85, DPR - .25); renderer.setPixelRatio(DPR); POST.setSize(); }
+      // сначала упрощаем эффекты, потом уменьшаем разрешение; первые секунды после входа и разовые подвисания не считаем
+      slowHits = fps < 40 && NOW - startedAt > 5000 ? slowHits + 1 : 0;
+      if (slowHits >= 2) { slowHits = 0; if (!POST.degrade() && DPR > .85) { DPR = Math.max(.85, DPR - .25); renderer.setPixelRatio(DPR); POST.setSize(); } }
       slowAcc = 0; slowN = 0;
     }
   }
@@ -403,7 +404,7 @@ progress(.7);
 bakeEnvironment();
 renderer.compile(scene, camera);
 POST.render();
-progress(1);
+progress(.86);
 H3D.ready = true;
 H3D.bt = bt; H3D.figs = FIGS; H3D.BT = BT;
 H3D.cam = (p, t, fov = 40) => { flight = null; setCam({ px: p[0], py: p[1], pz: p[2], tx: t[0], ty: t[1], tz: t[2], fov }); };
@@ -467,7 +468,7 @@ function showOpen() {
   ownerOut.hidden = !OWNER;
   statusEl.hidden = false;
   enter.hidden = false;
-  enter.disabled = false;
+  enter.disabled = !WARM_DONE;
 }
 let closedNow = !isOpen();
 if (closedNow) showClosed(false); else showOpen();
@@ -506,6 +507,7 @@ function closeBar() {
 enter.addEventListener("click", async () => {
   if (started || !isOpen()) return;
   started = true;
+  startedAt = performance.now();
   intro.classList.add("gone");
   let pref = null;
   try { pref = localStorage.getItem("hacheden-music"); } catch (e) {}

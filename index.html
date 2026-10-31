@@ -4244,6 +4244,8 @@ const D2R = Math.PI / 180;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, k) => a + (b - a) * k;
 const STILL = reduceMotion.matches;
+/* шейдеры прогреваются заранее (99-warm.js): пока не готово, кнопка «Войти» ждёт */
+let WARM_DONE = false;
 const COARSE = matchMedia("(pointer: coarse)").matches;
 const SMALL = Math.min(innerWidth, innerHeight) < 620;
 /* 1 — телефон, 2 — компьютер; гость может выбрать сам в настройках */
@@ -10867,7 +10869,7 @@ function bakeEnvironment() {
 }
 
 /* ---------- главный цикл ---------- */
-let last = performance.now(), frames = 0, slowAcc = 0, slowN = 0, neonT = 6 + Math.random() * 6, flashT = 6 + Math.random() * 8;
+let last = performance.now(), frames = 0, slowAcc = 0, slowN = 0, slowHits = 0, startedAt = 0, neonT = 6 + Math.random() * 6, flashT = 6 + Math.random() * 8;
 const _p = V3(), _t = V3(), _d = V3();
 function tick(now) {
   requestAnimationFrame(tick);
@@ -11008,8 +11010,9 @@ function tick(now) {
     slowAcc += dt; slowN++;
     if (slowN >= 90) {
       const fps = slowN / slowAcc;
-      // сначала упрощаем эффекты, потом уменьшаем разрешение
-      if (fps < 40 && !POST.degrade() && DPR > .85) { DPR = Math.max(.85, DPR - .25); renderer.setPixelRatio(DPR); POST.setSize(); }
+      // сначала упрощаем эффекты, потом уменьшаем разрешение; первые секунды после входа и разовые подвисания не считаем
+      slowHits = fps < 40 && NOW - startedAt > 5000 ? slowHits + 1 : 0;
+      if (slowHits >= 2) { slowHits = 0; if (!POST.degrade() && DPR > .85) { DPR = Math.max(.85, DPR - .25); renderer.setPixelRatio(DPR); POST.setSize(); } }
       slowAcc = 0; slowN = 0;
     }
   }
@@ -11033,7 +11036,7 @@ progress(.7);
 bakeEnvironment();
 renderer.compile(scene, camera);
 POST.render();
-progress(1);
+progress(.86);
 H3D.ready = true;
 H3D.bt = bt; H3D.figs = FIGS; H3D.BT = BT;
 H3D.cam = (p, t, fov = 40) => { flight = null; setCam({ px: p[0], py: p[1], pz: p[2], tx: t[0], ty: t[1], tz: t[2], fov }); };
@@ -11097,7 +11100,7 @@ function showOpen() {
   ownerOut.hidden = !OWNER;
   statusEl.hidden = false;
   enter.hidden = false;
-  enter.disabled = false;
+  enter.disabled = !WARM_DONE;
 }
 let closedNow = !isOpen();
 if (closedNow) showClosed(false); else showOpen();
@@ -11136,6 +11139,7 @@ function closeBar() {
 enter.addEventListener("click", async () => {
   if (started || !isOpen()) return;
   started = true;
+  startedAt = performance.now();
   intro.classList.add("gone");
   let pref = null;
   try { pref = localStorage.getItem("hacheden-music"); } catch (e) {}
@@ -12779,6 +12783,33 @@ Music.mix({ crowd: [0, .45, .7, 1][crowd] ?? .7 });
   playRaid = async (...a) => { Music.mix({ crowd: .15 }); const r = await pr(...a); Music.mix({ crowd: [0, .45, .7, 1][crowd] ?? .7 }); return r; };
 }
 Object.assign(H3D, { closing: (...a) => playClosing(...a), raid: (...a) => playRaid(...a) });
+
+/* ================= прогрев: все шейдеры собираются до входа, а не во время прогулки =================
+   Видеокарта компилирует программу для каждого материала при первой встрече с ним — это и были
+   подвисания в начале. Теперь всё, включая скрытые залы, реквизит шоу, тени и постобработку,
+   собирается здесь, пока гость смотрит на заставку. */
+(async () => {
+  const hidden = [];
+  scene.traverse(o => { if (!o.visible) { hidden.push(o); o.visible = true; } });
+  try {
+    if (renderer.compileAsync && renderer.extensions.has("KHR_parallel_shader_compile")) await renderer.compileAsync(scene, camera);
+    else renderer.compile(scene, camera);
+  } catch (e) { console.warn("прогрев:", e && e.message); }
+  hidden.forEach(o => { o.visible = false; });
+  progress(.95);
+  // проходы постобработки и карта теней: один кадр со всеми эффектами под заставкой
+  try {
+    const wasAp = POST.ap, wasTarget = POST.target;
+    if (POST.tier === 2) { POST.target = V3(0, 1.3, -2.4); POST.ap = POST.apWant = .001; }
+    if (renderer.shadowMap.enabled) renderer.shadowMap.needsUpdate = true;
+    POST.render(0);
+    POST.ap = wasAp; POST.apWant = 0; POST.target = wasTarget;
+    POST.render(0);
+  } catch (e) { console.warn("прогрев эффектов:", e && e.message); }
+  WARM_DONE = true;
+  progress(1);
+  if (!closedNow && !started) { enter.disabled = false; if (document.activeElement === document.body) enter.focus({ preventScroll: true }); }
+})();
 
 </script>
 </body>

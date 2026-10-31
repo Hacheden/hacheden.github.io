@@ -13,6 +13,8 @@ const D2R = Math.PI / 180;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, k) => a + (b - a) * k;
 const STILL = reduceMotion.matches;
+/* шейдеры прогреваются заранее (99-warm.js): пока не готово, кнопка «Войти» ждёт */
+let WARM_DONE = false;
 const COARSE = matchMedia("(pointer: coarse)").matches;
 const SMALL = Math.min(innerWidth, innerHeight) < 620;
 /* 1 — телефон, 2 — компьютер; гость может выбрать сам в настройках */
