@@ -47,6 +47,7 @@ function talkMenu(first = false) {
     ["Есть что-то не из меню?", offMenu]];
   if (late) list.push(["Расскажите что-нибудь не для всех", midnightTale]);
   list.push(["Посоветуйте коктейль", () => { answers([]); btSay("С удовольствием. Какое настроение?").then(askMood); }]);
+  if (servedGlass && SIP.frac > .02 && !SHOW.on) list.push(["Вернуться к бокалу", () => seatAnswers()]);
   list.push(standBtn);
   if (first) answers(list); else answers(list);
 }
@@ -102,7 +103,7 @@ hot(bt.root, 1, "Бармен", () => {
     const c = LAST_DRINK;
     await btSay(c && c.custom ? `Ваш «${c.name}». Смелый рецепт — я бы и сам такой заказал.` : c && c.secret ? `«${c.name}» — не из карты. Приятно встретить знающего человека.` : "Приятного вечера. Если что — я рядом.");
     if (g !== SEAT.gen) return;
-    answers([["Сделать глоток", () => takeSip()], ["Ещё по одной", oneMore], ["Поговорить", () => talkMenu()], standBtn]);
+    seatAnswers();
   };
   void base;
 }

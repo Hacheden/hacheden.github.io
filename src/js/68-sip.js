@@ -115,14 +115,14 @@ function sipReset() {
 }
 function abortSip() { if (SIP.on) { SIP.gen++; sipReset(); } }
 
-async function takeSip() {
+async function takeSip(T = null) {
   const G0 = servedGlass;
-  if (SIP.on || !SEAT.on || !G0 || SHOW.on || SIP.frac <= .02) return;
+  if ((SIP.on && !T) || !SEAT.on || !G0 || SHOW.on || SIP.frac <= .02) return;
   if (SIP.glass !== G0) prepSip();
   const c = pendingCocktail || SHOW.c;
   const G = gripFor(c ? c.cup : "rocks");
   SIP.on = true;
-  const g = ++SIP.gen, sg = SEAT.gen;
+  const g = T ? SIP.gen : ++SIP.gen, sg = SEAT.gen;
   const alive = () => g === SIP.gen && sg === SEAT.gen;
   answers([]);
   quietBubble();
@@ -153,6 +153,27 @@ async function takeSip() {
   const P1 = mouthP.clone().sub(V3(0, G.rimY, 0).applyQuaternion(tilt));
   const lift = SIP.P0.clone().lerp(look, .5); lift.y += .05;
   const _a = V3(), _b = V3();
+  let qs = q0;
+  if (T) {
+    // тост: бокал навстречу бокалу бармена, чуть наклонён к нему
+    const lean = new THREE.Quaternion().setFromAxisAngle(f, -.06);
+    await sipPlay(1.05, k => {
+      rig.position.lerpVectors(SIP.P0, T.pre, k); rig.position.y += Math.sin(k * Math.PI) * .03;
+      rig.quaternion.slerpQuaternions(q0, lean, k);
+      SIP.pitch = -.02 * k;
+    });
+    if (!alive()) return;
+    await T.ready;
+    if (!alive()) return;
+    await Promise.all([sipPlay(.5, k => rig.position.lerpVectors(T.pre, T.hit, k), ease.out), T.meet()]);
+    if (!alive()) return;
+    T.clink();
+    await sipPlay(.4, k => rig.position.lerpVectors(T.hit, T.back, k), ease.out);
+    if (!alive()) return;
+    await sipPlay(.35, () => {});
+    if (!alive()) return;
+    look.copy(rig.position); qs = rig.quaternion.clone();
+  } else {
   await sipPlay(1.1, k => {
     _a.lerpVectors(SIP.P0, lift, k); _b.lerpVectors(lift, look, k);
     rig.position.lerpVectors(_a, _b, k);
@@ -161,10 +182,11 @@ async function takeSip() {
   if (!alive()) return;
   await sipPlay(.55, k => { rig.position.y = look.y + Math.sin(k * Math.PI) * .006; });
   if (!alive()) return;
+  }
   await sipPlay(.8, k => {
     rig.position.lerpVectors(look, P1, k);
-    rig.quaternion.slerpQuaternions(q0, tilt, k);
-    SIP.pitch = lerp(-.03, .045, ease.io(k));
+    rig.quaternion.slerpQuaternions(qs, tilt, k);
+    SIP.pitch = lerp(T ? -.02 : -.03, .045, ease.io(k));
   });
   if (!alive()) return;
   // глоток: уровень опускается
@@ -197,6 +219,7 @@ async function takeSip() {
   if (!alive()) return;
   sipReset();
   SIP.n++;
+  if (T) { await T.done; if (sg !== SEAT.gen) return; }
   // бармен отвечает взглядом и словом
   if (SIP.frac <= .02) {
     await btSay(choose(["Бокал пуст — значит, получилось. Повторим?", "До дна — лучший комплимент бармену. Ещё по одной?"]));
@@ -204,7 +227,7 @@ async function takeSip() {
     answers([["Ещё по одной", oneMore], standBtn]);
     return;
   }
-  if (SIP.n === 1) {
+  if (SIP.n === 1 && !T) {
     bt.nod = .08; setTimeout(() => { bt.nod = 0; }, 450);
     await btSay(choose(["Ну как? По-моему, баланс что надо.", "Вижу, пришёлся по вкусу.", "Не спешите: такой напиток раскрывается постепенно."]));
     if (sg !== SEAT.gen) return;
@@ -212,5 +235,10 @@ async function takeSip() {
   seatAnswers();
 }
 function oneMore() { flyTo(seatShot(), 1, 0); btSay("С удовольствием. Какое теперь настроение?").then(askMood); answers([]); }
-function seatAnswers() { answers([["Сделать глоток", () => takeSip()], ["Ещё по одной", oneMore], standBtn]); }
+function seatAnswers() {
+  const list = [["Сделать глоток", () => takeSip()]];
+  if (SIP.frac > .02 && TOAST.glass !== servedGlass) list.push(["Чокнуться с барменом", () => toastBartender()]);
+  list.push(["Ещё по одной", oneMore], ["Поговорить", () => talkMenu()], standBtn);
+  answers(list);
+}
 Object.assign(H3D, { takeSip: () => takeSip(), SIP });
