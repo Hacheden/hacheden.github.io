@@ -39,7 +39,8 @@ const ADVICE = {
   fresh: {
     strong: [
       ["c-daiquiri", "«Дайкири»: ром, лайм и сахар, встряхнуть со льдом. Три ингредиента — и чистая свежесть."],
-      ["c-margarita", "«Маргарита»: текила, апельсиновый ликёр и лайм. Свежо и с характером."]
+      ["c-margarita", "«Маргарита»: текила, апельсиновый ликёр и лайм. Свежо и с характером."],
+      ["c-junglebird", "«Джангл бёрд»: тёмный ром, кампари, ананас и лайм. Куала-Лумпур, 1978 год — тропики с горчинкой, а сверху пенка от ананаса."]
     ],
     light: [
       ["c-mojito", "«Мохито»: мята, лайм, ром и колотый лёд доверху. Освежает лучше всего."],
@@ -118,8 +119,8 @@ async function askStrength(mood) {
 async function suggest(strength, next = false) {
   const g = SEAT.gen;
   SEAT.strength = strength;
-  if (next) SEAT.pickI++; else SEAT.pickI = Math.floor(rng() * 2);
   const list = strength === "none" ? ADVICE.none : ADVICE[SEAT.mood][strength];
+  if (next) SEAT.pickI++; else SEAT.pickI = Math.floor(rng() * list.length);
   const [id, line] = list[SEAT.pickI % list.length];
   answers([]);
   // задумался на секунду: взгляд на полку с бутылками

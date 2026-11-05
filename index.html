@@ -2579,6 +2579,7 @@
       "c-daiquiri": [["ice", "tin"], ["jig", "rum", 60], ["jig", "lime", 20], ["jig", "syrup", 15], ["shake"], ["strain"], ["garnish"]],
       "c-cubalibre": [["ice", "glass"], ["squeeze"], ["jig", "rum", 50], ["top", "cola"], ["stirIn"], ["garnish"]],
       "c-pinacolada": [["ice", "tin"], ["jig", "rum", 50], ["jig", "coconut", 30], ["jig", "pineapple", 50], ["shake"], ["ice", "glass"], ["strain"], ["garnish"]],
+      "c-junglebird": [["ice", "tin"], ["jig", "rum", 45], ["jig", "campari", 15], ["jig", "pineapple", 45], ["jig", "lime", 15], ["jig", "syrup", 15], ["shake"], ["ice", "glass"], ["strain"], ["garnish"]],
       "c-margarita": [["rim"], ["ice", "tin"], ["jig", "tequila", 50], ["jig", "triple", 20], ["jig", "lime", 15], ["shake"], ["strain"], ["garnish"]],
       "c-sunrise": [["ice", "glass"], ["jig", "tequila", 45], ["pour", "oj", 90], ["float"], ["garnish"]],
       "c-gintonic": [["ice", "glass"], ["jig", "gin", 50], ["top", "tonic"], ["squeeze"], ["stirIn"], ["garnish"]],
@@ -2850,6 +2851,12 @@
       history: "С 1978 года — официальный напиток Пуэрто-Рико. Сразу несколько баров Сан-Хуана называют себя его родиной, а самая известная версия относит рецепт к 1954 году. Название по-испански значит «процеженный ананас».",
       recipe: [["50 мл", "белого рома"], ["30 мл", "кокосовых сливок"], ["50 мл", "ананасового сока"]],
       steps: "Хорошо встряхни всё в шейкере со льдом или взбей в блендере с колотым льдом. Перелей в высокий стакан и укрась долькой ананаса." },
+    { id: "c-junglebird", name: "Джангл бёрд", base: "rum", origin: "Малайзия", method: "shake", need: ["rum", "campari", "pineapple", "lime", "syrup"],
+      cup: "rocks", ice: true, pour: "#d24a2e", pourOp: .9, pourLevel: 62, garnish: "pineapple",
+      tagline: "Тёмный ром, кампари и ананас: тропики с горчинкой",
+      history: "Придумали в 1978 году в баре «Эвиари» отеля «Хилтон» в Куала-Лумпуре: там его подавали гостям как приветственный напиток. Автором называют бармена Джеффри Онга. Рецепт напечатали в 1989 году в книге Джона Пойстера «The New American Bartender's Guide», а в 2000-х нью-йоркский бармен Джузеппе Гонсалес вернул его в моду с тёмным ромом. Ананасовый сок при встряхивании даёт густую пенку.",
+      recipe: [["45 мл", "тёмного рома"], ["15 мл", "кампари"], ["45 мл", "ананасового сока"], ["15 мл", "сока лайма"], ["15 мл", "сахарного сиропа"]],
+      steps: "Хорошо встряхни всё в шейкере со льдом — ананас даст пышную пенку. Процеди в рокс со свежим льдом и укрась долькой ананаса." },
     { id: "c-margarita", name: "Маргарита", base: "tequila", origin: "Мексика", method: "shake", need: ["tequila", "triple", "lime"],
       cup: "coupe", pour: "#e6e8a8", pourOp: .7, pourLevel: 40, garnish: "wheel",
       tagline: "Текила, апельсиновый ликёр и лайм",
@@ -9879,7 +9886,8 @@ const ADVICE = {
   fresh: {
     strong: [
       ["c-daiquiri", "«Дайкири»: ром, лайм и сахар, встряхнуть со льдом. Три ингредиента — и чистая свежесть."],
-      ["c-margarita", "«Маргарита»: текила, апельсиновый ликёр и лайм. Свежо и с характером."]
+      ["c-margarita", "«Маргарита»: текила, апельсиновый ликёр и лайм. Свежо и с характером."],
+      ["c-junglebird", "«Джангл бёрд»: тёмный ром, кампари, ананас и лайм. Куала-Лумпур, 1978 год — тропики с горчинкой, а сверху пенка от ананаса."]
     ],
     light: [
       ["c-mojito", "«Мохито»: мята, лайм, ром и колотый лёд доверху. Освежает лучше всего."],
@@ -9958,8 +9966,8 @@ async function askStrength(mood) {
 async function suggest(strength, next = false) {
   const g = SEAT.gen;
   SEAT.strength = strength;
-  if (next) SEAT.pickI++; else SEAT.pickI = Math.floor(rng() * 2);
   const list = strength === "none" ? ADVICE.none : ADVICE[SEAT.mood][strength];
+  if (next) SEAT.pickI++; else SEAT.pickI = Math.floor(rng() * list.length);
   const [id, line] = list[SEAT.pickI % list.length];
   answers([]);
   // задумался на секунду: взгляд на полку с бутылками
@@ -12997,6 +13005,139 @@ Music.mix({ crowd: [0, .45, .7, 1][crowd] ?? .7 });
   playRaid = async (...a) => { Music.mix({ crowd: .15 }); const r = await pr(...a); Music.mix({ crowd: [0, .45, .7, 1][crowd] ?? .7 }); return r; };
 }
 Object.assign(H3D, { closing: (...a) => playClosing(...a), raid: (...a) => playRaid(...a) });
+
+/* ================= пенка от ананаса и долька ананаса на ободке =================
+   Ананасовый сок, встряхнутый со льдом, даёт густую шелковистую пенку: после процеживания
+   она поднимается над напитком и дальше держится на поверхности, опускаясь вместе с ней
+   при каждом глотке. Гарнир — настоящая долька ананаса с коркой и листьями. */
+const FOAM = { T: .0085 };
+FOAM.tex = canvasTex(512, 128, (g, w, h) => {
+  g.fillStyle = "#f6ead4"; g.fillRect(0, 0, w, h);
+  // пузырьки разного размера: тень по нижнему краю, блик сверху
+  for (let i = 0; i < 1400; i++) {
+    const x = rng() * w, y = rng() * h, r = rng() < .85 ? R(.8, 2.2) : R(2.6, 4.6);
+    g.globalAlpha = R(.25, .5);
+    g.strokeStyle = "#b89a74"; g.lineWidth = .9; g.beginPath(); g.arc(x, y + r * .15, r, .2, 2.9); g.stroke();
+    g.globalAlpha = R(.5, .9);
+    g.strokeStyle = "#ffffff"; g.lineWidth = .8; g.beginPath(); g.arc(x, y - r * .1, r * .75, 3.5, 5.9); g.stroke();
+  }
+  g.globalAlpha = 1;
+}, { repeat: [4, 1] });
+// купол: плоское дно, мягко скруглённый край и чуть выпуклая середина
+FOAM.geo = lathe([[0, 0], [1, 0], [1, .38], [.95, .66], [.8, .85], [.5, .96], [0, 1]], 40);
+FOAM.mat = std({ map: FOAM.tex, bumpMap: FOAM.tex, bumpScale: 1.2, roughness: .85 });
+FOAM.proto = mesh(FOAM.geo, FOAM.mat, 0, -10, 0);   // для прогрева шейдера
+FOAM.proto.visible = false;
+
+const foamy = c => !!c && c.need && c.need.includes("pineapple") && (PROGS()[c.id] || []).some(s => s[0] === "shake");
+function foamColor(c) { return new THREE.Color(c.pour).lerp(new THREE.Color(0xfff6e6), .72); }
+function addFoam(V, c) {
+  if (V.foam) return V.foam;
+  const m = new THREE.Mesh(FOAM.geo, FOAM.mat.clone());
+  m.material.color.copy(foamColor(c));
+  m.material.emissive.copy(m.material.color).multiplyScalar(.06);
+  m.renderOrder = 4;
+  m.visible = false;
+  m.userData.k = 0;
+  V.g.add(m);
+  V.foam = m;
+  placeFoam(V);
+  return m;
+}
+/* пенка всегда лежит на поверхности: толщина по готовности, к концу бокала тает */
+function placeFoam(V) {
+  const m = V.foam;
+  if (!m) return;
+  const f = clamp(V.ml / V.cap, 0, .94);
+  const k = m.userData.k * clamp((f - .03) / .12, 0, 1);
+  m.visible = V.liq.visible && k > .02;
+  if (!m.visible) return;
+  const top = V.y0 + f * (V.y1 - V.y0), t = FOAM.T * k, r = V.r1 * .985;
+  m.position.y = top - t * .3;
+  m.scale.set(r, t, r);
+}
+{
+  const base = setLevel;
+  setLevel = V => { base(V); if (V.foam) placeFoam(V); };
+}
+/* во время процеживания пенка набирается, после — поднимается и успокаивается */
+{
+  const base = STEP.strain;
+  STEP.strain = async (st, c) => {
+    const G = SHOW.glassV;
+    if (!G || !foamy(c)) return base(st, c);
+    const m = addFoam(G, c);
+    const m0 = G.ml;
+    const off = onTickTmp(() => { m.userData.k = Math.min(.4, Math.max(m.userData.k, (G.ml - m0) / G.cap)); placeFoam(G); });
+    await base(st, c);
+    off();
+    if (SHOW.fast || reduceMotion.matches) { m.userData.k = 1; placeFoam(G); return; }
+    // пена поднимается с лёгким «вздохом» и чуть оседает
+    follow(mouth(G, .02));
+    const done = onTickTmp(() => placeFoam(G));
+    await tween(m.userData, { k: 1.12 }, 1.1, ease.out);
+    await tween(m.userData, { k: 1 }, .5, ease.sine);
+    done();
+    placeFoam(G);
+  };
+}
+/* если шоу пропустили целиком — у поданного бокала тоже есть пенка */
+{
+  const base = placeServed;
+  placeServed = c => {
+    base(c);
+    if (!servedGlass || !foamy(c)) return;
+    const L = servedGlass.userData.liq;
+    if (!L) return;
+    const r = L.mesh.geometry.parameters.radiusTop * .985;
+    const m = new THREE.Mesh(FOAM.geo, FOAM.mat.clone());
+    m.material.color.copy(foamColor(c));
+    m.material.emissive.copy(m.material.color).multiplyScalar(.06);
+    m.position.y = L.y1 - FOAM.T * .3;
+    m.scale.set(r, FOAM.T, r);
+    servedGlass.add(m);
+  };
+}
+
+/* долька ананаса: сектор мякоти с коркой, надрез садится на ободок, листья веером */
+const PINE = {
+  flesh: std({ color: 0xf8e47e, roughness: .38, emissive: 0x4a4208 }),
+  core: std({ color: 0xfbf0bc, roughness: .5, emissive: 0x262408 }),
+  rind: std({ color: 0x7a5e22, roughness: .85, emissive: 0x100a02 }),
+  leaf: std({ color: 0x3f7a2c, roughness: .55, emissive: 0x081a06, side: THREE.DoubleSide })
+};
+PINE.R = .034; PINE.A = .78; PINE.H = .011;
+function pineWedge() {
+  const g = new THREE.Group(), w = new THREE.Group();
+  const R = PINE.R, A = PINE.A, H = PINE.H;
+  // сектор в плоскости YZ: острие в начале координат, корка в сторону +z
+  const sector = (r, h, mat) => {
+    const geo = new THREE.CylinderGeometry(r, r, h, 16, 1, false, -A / 2, A);
+    geo.rotateZ(Math.PI / 2);
+    return mesh(geo, mat, 0, 0, 0, w);
+  };
+  sector(R, H * .94, PINE.rind);
+  sector(R * .9, H, PINE.flesh);
+  sector(R * .3, H * 1.04, PINE.core);
+  // листья: тонкие заострённые пластинки из корки вверх и наружу
+  for (let i = 0; i < 3; i++) {
+    const lg = new THREE.ConeGeometry(.0042, .052 - i * .008, 4, 1);
+    lg.translate(0, (.052 - i * .008) / 2, 0); lg.scale(1, 1, .22);
+    const l = mesh(lg, PINE.leaf, 0, R * Math.sin(A * .22), R * .97, w);
+    l.rotation.set(.35 + (i - 1) * .32, 0, (i - 1) * .12);
+  }
+  // наклон: мякоть смотрит внутрь бокала, корка — наружу и вверх; надрез на ободке
+  w.rotation.x = -.55;
+  w.position.set(0, -.006, -.016);
+  g.add(w);
+  world.add(g);
+  return g;
+}
+{
+  const base = garnishMesh;
+  garnishMesh = kind => kind === "pineapple" ? pineWedge() : base(kind);
+}
+PINE.proto = pineWedge(); PINE.proto.position.y = -10; PINE.proto.visible = false;
 
 /* ================= прогрев: все шейдеры собираются до входа, а не во время прогулки =================
    Видеокарта компилирует программу для каждого материала при первой встрече с ним — это и были
