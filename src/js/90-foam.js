@@ -21,8 +21,11 @@ FOAM.mat = std({ map: FOAM.tex, bumpMap: FOAM.tex, bumpScale: 1.2, roughness: .8
 FOAM.proto = mesh(FOAM.geo, FOAM.mat, 0, -10, 0);   // для прогрева шейдера
 FOAM.proto.visible = false;
 
-const foamy = c => !!c && c.need && c.need.includes("pineapple") && (PROGS()[c.id] || []).some(s => s[0] === "shake");
-function foamColor(c) { return new THREE.Color(c.pour).lerp(new THREE.Color(0xfff6e6), .72); }
+const eggy = c => !!c && (PROGS()[c.id] || []).some(s => s[0] === "egg");
+const foamy = c => !!c && (eggy(c) || c.need && c.need.includes("pineapple") && (PROGS()[c.id] || []).some(s => s[0] === "shake"));
+// белковая пена почти белая и толще ананасовой
+function foamColor(c) { return eggy(c) ? new THREE.Color(0xfbf6ea) : new THREE.Color(c.pour).lerp(new THREE.Color(0xfff6e6), .72); }
+const foamT = c => eggy(c) ? .0125 : FOAM.T;
 function addFoam(V, c) {
   if (V.foam) return V.foam;
   const m = new THREE.Mesh(FOAM.geo, FOAM.mat.clone());
@@ -31,6 +34,7 @@ function addFoam(V, c) {
   m.renderOrder = 4;
   m.visible = false;
   m.userData.k = 0;
+  m.userData.T = foamT(c);
   V.g.add(m);
   V.foam = m;
   placeFoam(V);
@@ -44,9 +48,10 @@ function placeFoam(V) {
   const k = m.userData.k * clamp((f - .03) / .12, 0, 1);
   m.visible = V.liq.visible && k > .02;
   if (!m.visible) return;
-  const top = V.y0 + f * (V.y1 - V.y0), t = FOAM.T * k, r = V.r1 * .985;
+  const top = V.y0 + f * (V.y1 - V.y0), t = (m.userData.T || FOAM.T) * k, r = V.r1 * .985;
   m.position.y = top - t * .3;
   m.scale.set(r, t, r);
+  if (V.ride) for (const o of V.ride) o.position.y = top + t * .7 + o.userData.dy;
 }
 {
   const base = setLevel;
@@ -85,9 +90,11 @@ function placeFoam(V) {
     const m = new THREE.Mesh(FOAM.geo, FOAM.mat.clone());
     m.material.color.copy(foamColor(c));
     m.material.emissive.copy(m.material.color).multiplyScalar(.06);
-    m.position.y = L.y1 - FOAM.T * .3;
-    m.scale.set(r, FOAM.T, r);
+    const T = foamT(c);
+    m.position.y = L.y1 - T * .3;
+    m.scale.set(r, T, r);
     servedGlass.add(m);
+    if (typeof eggFinish === "function" && eggy(c)) eggFinish(servedGlass, m, L.y1 + T * .7, r);
   };
 }
 

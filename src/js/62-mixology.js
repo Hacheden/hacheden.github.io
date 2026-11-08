@@ -721,7 +721,8 @@ async function stepDash(st) {
 }
 
 /* ---------- шейк ---------- */
-async function stepShake() {
+async function stepShake(st) {
+  const dry = !!st && st[1] === "dry";
   const V = P.tin, T = V.g, C = P.cap.g, R = bt.R, L = bt.L;
   await jiggerPark();
   shot(choose(["macro", "low"]), mouth(V, .05));
@@ -767,7 +768,7 @@ async function stepShake() {
   await move(T, base, { q, dur: .5, arc: .04 });
   follow(ctr);
   const dur = rr(2.4, 3.1), hz = rr(2.6, 3.3), amp = rr(.06, .085);
-  SND.rattle(Math.min(dur, 3), hz);
+  if (dry) SND.slosh(Math.min(dur, 3), hz); else SND.rattle(Math.min(dur, 3), hz);
   const side = V3().crossVectors(axis, V3(1, 0, 0)).normalize();
   await waitTicks(dur, (k, t) => {
     const ph = t * hz * Math.PI * 2;
@@ -780,9 +781,9 @@ async function stepShake() {
     bt.leanT = .1 + Math.sin(ph * .5) * .02;
   });
   BT.nod = 0; bt.spine.position.y = 0; bt.leanT = .1;
-  cardMix(SHOW.c.pour);
-  // на стойку: металл в инее
-  T.children[0].material = MX.frost;
+  if (!dry) cardMix(SHOW.c.pour);
+  // на стойку: металл в инее (после сухого шейка без льда инея нет)
+  if (!dry) T.children[0].material = MX.frost;
   shot(choose(["macro", "low"]), mouth(V, .09));
   await move(T, ST.tin, { q: Qe(0, 0, 0), dur: .5, arc: .05 });
   SND.tap();

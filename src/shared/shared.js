@@ -160,6 +160,7 @@
       <path d="${g.body}" fill="rgba(255,255,255,.06)"/>
       <g clip-path="url(#${id})"><rect${pour} x="0" y="${d.pourLevel}" width="120" height="170" fill="${fill}" fill-opacity="${d.pourOp || .9}"/></g>
       <g${late}>${d.ice ? ICE : ""}</g>
+      ${d.foam ? `<g clip-path="url(#${id})"><g${late}><rect x="0" y="${d.pourLevel - 2}" width="120" height="13" fill="#f7efdf"/><rect x="0" y="${d.pourLevel + 9}" width="120" height="2" fill="#e8d8b8" opacity=".7"/>${[50, 60, 70].map(x => `<ellipse cx="${x}" cy="${d.pourLevel + 2.5}" rx="2.6" ry="1.3" fill="#6a1c10"/>`).join("")}</g></g>` : ""}
       <path d="${g.body}" fill="none" stroke="rgba(255,235,200,.6)" stroke-width="1.5"/>
       <path d="${g.shine}" stroke="rgba(255,255,255,.35)" stroke-width="2" fill="none" stroke-linecap="round"/>
       <g${late}>${g.after}${garnish}</g>
@@ -1532,7 +1533,7 @@
       "c-collins": [["ice", "glass"], ["jig", "gin", 45], ["jig", "lemon", 30], ["jig", "syrup", 15], ["top", "soda"], ["stirIn"], ["garnish"]],
       "c-oldfashioned": [["jig", "syrup", 10, "glass"], ["dash", "bitters", 2, "glass"], ["ice", "glass"], ["jig", "whisky", 45, "glass"], ["stirIn"], ["garnish"]],
       "c-manhattan": [["ice", "mixer"], ["jig", "whisky", 50], ["jig", "vermouthR", 20], ["dash", "bitters", 1], ["stir"], ["strain"], ["garnish"]],
-      "c-sour": [["ice", "tin"], ["jig", "whisky", 45], ["jig", "lemon", 25], ["jig", "syrup", 20], ["shake"], ["ice", "glass"], ["strain"], ["garnish"]],
+      "c-sour": [["jig", "whisky", 45], ["jig", "lemon", 25], ["jig", "syrup", 20], ["egg", 20], ["shake", "dry"], ["ice", "tin"], ["shake"], ["ice", "glass"], ["strain"], ["drops", 3], ["garnish"]],
       "c-sidecar": [["ice", "tin"], ["jig", "cognac", 50], ["jig", "triple", 20], ["jig", "lemon", 20], ["shake"], ["strain"], ["garnish"]],
       "c-sangria": [["ice", "glass"], ["pour", "wine", 150], ["pour", "oj", 50], ["top", "soda"], ["stirIn"], ["garnish"]],
       "c-hacheden": [["pour", "syrup", 10], ["hot", 50], ["jig", "cognac", 50], ["jig", "cherry", 15], ["fire"], ["garnish"]],
@@ -1850,11 +1851,11 @@
       recipe: [["50 мл", "ржаного виски"], ["20 мл", "красного вермута"], ["1 капля", "ангостуры"]],
       steps: "Размешай всё со льдом в стакане для смешивания, процеди в охлаждённый бокал и укрась коктейльной вишней." },
     { id: "c-sour", name: "Виски сауэр", base: "whisky", origin: "США", method: "shake", need: ["whisky", "lemon", "syrup"],
-      cup: "rocks", ice: true, pour: "#e3bd62", pourOp: .85, pourLevel: 62, garnish: "cherry",
-      tagline: "Кисло-сладкий виски с лимоном",
-      history: "Сауэры — целое семейство коктейлей: крепкий напиток, кислый сок и сладкое. Рецепт виски сауэр напечатан уже в книге знаменитого бармена Джерри Томаса 1862 года.",
-      recipe: [["45 мл", "виски"], ["25 мл", "лимонного сока"], ["20 мл", "сахарного сиропа"]],
-      steps: "Хорошо встряхни всё в шейкере со льдом. Процеди в рокс со свежим льдом и укрась вишней. Иногда добавляют яичный белок для пышной пены." },
+      cup: "rocks", ice: true, pour: "#e3bd62", pourOp: .85, pourLevel: 62, garnish: "cherry", foam: true,
+      tagline: "Кисло-сладкий виски с лимоном под белой бархатной пеной",
+      history: "Сауэры — целое семейство коктейлей: крепкий напиток, кислый сок и сладкое. Рецепт виски сауэр напечатан уже в книге знаменитого бармена Джерри Томаса 1862 года — тогда ещё без белка. Вариант с яичным белком называют «бостонским сауэром»: белок не меняет вкус, но даёт густую шелковистую пену. Международная ассоциация барменов (IBA) указывает белок в рецепте как необязательный.",
+      recipe: [["45 мл", "виски"], ["25 мл", "лимонного сока"], ["20 мл", "сахарного сиропа"], ["20 мл", "яичного белка"], ["3 капли", "ангостуры на пену"]],
+      steps: "Сначала встряхни всё в шейкере без льда — это «сухой шейк», он взбивает белок в пену. Затем добавь лёд и встряхни ещё раз, чтобы охладить. Процеди в рокс со свежим льдом, капни на пену три капли ангостуры и положи вишню." },
     { id: "c-sidecar", name: "Сайдкар", base: "cognac", origin: "Франция или Англия", method: "shake", need: ["cognac", "triple", "lemon"],
       cup: "coupe", pour: "#dea04a", pourOp: .85, pourLevel: 40, garnish: "lemon",
       tagline: "Коньяк с апельсиновым ликёром и лимоном",
@@ -1973,6 +1974,7 @@
     prog.forEach(st => {
       if (st[0] === "jig" || st[0] === "pour") add(st[1], st[2]);
       else if (st[0] === "dash") add("bitters", st[2] * .8);
+      else if (st[0] === "egg") add("egg", st[1]);
       else if (st[0] === "hot") add("water", st[1]);
       else if (st[0] === "float") add("grenadine", 15);
       else if (st[0] === "squeeze") add("lime", 10);
