@@ -2222,6 +2222,7 @@
       gin: { kind: "square", glass: "#9cc4cf", op: .4, liq: "#eaf4f6", label: "#20505c", ink: "#f1e4cc", name: "ДЖИН" },
       whisky: { kind: "flask", glass: "#3a2410", liq: "#c27a1a", label: "#1f4034", ink: "#f1e4cc", name: "ВИСКИ" },
       cognac: { kind: "squat", glass: "#2a1a0e", liq: "#b8651a", label: "#1b1210", ink: "#e2b866", name: "КОНЬЯК" },
+      pisco: { kind: "spirit", glass: "#e4ecec", op: .36, liq: "#f6f3e6", label: "#efe6d2", ink: "#9a1a26", name: "ПИСКО" },
       wine: { kind: "wine", glass: "#1f2c1d", liq: "#6b0f24", label: "#eadcbc", ink: "#4a0f1c", name: "ВИНО" },
       triple: { kind: "squat", glass: "#c9752a", op: .8, liq: "#f3e9c8", label: "#2a1a10", ink: "#f2b25a", name: "ЛИКЁР" },
       cherry: { kind: "squat", glass: "#3a0610", op: .92, liq: "#7a0f1e", label: "#14080a", ink: "#e2b866", name: "ВИШНЯ" },
@@ -2590,12 +2591,13 @@
       "c-oldfashioned": [["jig", "syrup", 10, "glass"], ["dash", "bitters", 2, "glass"], ["ice", "glass"], ["jig", "whisky", 45, "glass"], ["stirIn"], ["garnish"]],
       "c-manhattan": [["ice", "mixer"], ["jig", "whisky", 50], ["jig", "vermouthR", 20], ["dash", "bitters", 1], ["stir"], ["strain"], ["garnish"]],
       "c-sour": [["jig", "whisky", 45], ["jig", "lemon", 25], ["jig", "syrup", 20], ["egg", 20], ["shake", "dry"], ["ice", "tin"], ["shake"], ["ice", "glass"], ["strain"], ["drops", 3], ["garnish"]],
+      "c-pisco": [["jig", "pisco", 60], ["jig", "lemon", 30], ["jig", "syrup", 20], ["egg", 30], ["shake", "dry"], ["ice", "tin"], ["shake"], ["strain"], ["drops", 3], ["hearts"]],
       "c-sidecar": [["ice", "tin"], ["jig", "cognac", 50], ["jig", "triple", 20], ["jig", "lemon", 20], ["shake"], ["strain"], ["garnish"]],
       "c-sangria": [["ice", "glass"], ["pour", "wine", 150], ["pour", "oj", 50], ["top", "soda"], ["stirIn"], ["garnish"]],
       "c-hacheden": [["pour", "syrup", 10], ["hot", 50], ["jig", "cognac", 50], ["jig", "cherry", 15], ["fire"], ["garnish"]],
       "c-nojito": [["leaves"], ["jig", "lime", 20], ["jig", "syrup", 15], ["muddle"], ["ice", "glass", true], ["top", "soda"], ["stirIn"], ["garnish"]]
     };
-    const GEN = { rum: "рома", tequila: "текилы", gin: "джина", whisky: "виски", cognac: "коньяка", wine: "вина", triple: "апельсинового ликёра", cherry: "вишнёвого ликёра",
+    const GEN = { rum: "рома", tequila: "текилы", gin: "джина", whisky: "виски", cognac: "коньяка", pisco: "писко", wine: "вина", triple: "апельсинового ликёра", cherry: "вишнёвого ликёра",
       campari: "кампари", vermouthR: "красного вермута", vermouthD: "сухого вермута", bitters: "ангостуры", tonic: "тоника", soda: "содовой",
       cola: "колы", oj: "апельсинового сока", pineapple: "ананасового сока", coconut: "кокосовых сливок", lime: "сока лайма",
       lemon: "лимонного сока", syrup: "сахарного сиропа", grenadine: "гренадина", coffee: "кофе", tea: "чая", cream: "сливок" };
@@ -2810,7 +2812,7 @@
   
 /* ---------- коктейли ---------- */
   const ING = [
-    ["Крепкое", [["wine", "Вино"], ["cognac", "Коньяк"], ["rum", "Ром"], ["whisky", "Виски"], ["gin", "Джин"], ["tequila", "Текила"]]],
+    ["Крепкое", [["wine", "Вино"], ["cognac", "Коньяк"], ["pisco", "Писко"], ["rum", "Ром"], ["whisky", "Виски"], ["gin", "Джин"], ["tequila", "Текила"]]],
     ["Ликёры и вермуты", [["triple", "Апельсиновый ликёр"], ["cherry", "Вишнёвый ликёр"], ["campari", "Кампари"], ["vermouthR", "Красный вермут"], ["vermouthD", "Сухой вермут"], ["bitters", "Ангостура"]]],
     ["Соки и газировка", [["tonic", "Тоник"], ["soda", "Содовая"], ["cola", "Кола"], ["oj", "Апельсиновый сок"], ["pineapple", "Ананасовый сок"], ["coconut", "Кокосовые сливки"]]],
     ["Свежее и сиропы", [["lime", "Лайм"], ["lemon", "Лимон"], ["mint", "Мята"], ["syrup", "Сахарный сироп"], ["grenadine", "Гренадин"]]],
@@ -2820,7 +2822,7 @@
   const low = id => ING_NAME[id].toLowerCase();
   const METHOD = { shake: "встряхнуть в шейкере", stir: "размешать со льдом", build: "собрать прямо в бокале", fire: "поджечь и перелить огненной струёй" };
   const GLASS_NAME = { highball: "высокий стакан", rocks: "рокс", coupe: "шампанское блюдце", martini: "коктейльный бокал", wine: "винный бокал" };
-  const BASES = [["rum", "С ромом"], ["tequila", "С текилой"], ["gin", "С джином"], ["whisky", "С виски"], ["cognac", "С коньяком"], ["wine", "С вином"], ["aperitif", "Аперитивы"], ["none", "Без алкоголя"], ["hot", "Кофе и чай"]];
+  const BASES = [["rum", "С ромом"], ["tequila", "С текилой"], ["gin", "С джином"], ["whisky", "С виски"], ["cognac", "С коньяком и писко"], ["wine", "С вином"], ["aperitif", "Аперитивы"], ["none", "Без алкоголя"], ["hot", "Кофе и чай"]];
   const COCKTAILS = [
     { id: "c-hacheden", name: "Hacheden", base: "cognac", origin: "Наш бар", method: "fire", need: ["cognac", "cherry", "syrup"], signature: true,
       cup: "rocks", pour: "#8e2a16", pourOp: .92, pourLevel: 62, garnish: "flame",
@@ -2912,6 +2914,12 @@
       history: "Сауэры — целое семейство коктейлей: крепкий напиток, кислый сок и сладкое. Рецепт виски сауэр напечатан уже в книге знаменитого бармена Джерри Томаса 1862 года — тогда ещё без белка. Вариант с яичным белком называют «бостонским сауэром»: белок не меняет вкус, но даёт густую шелковистую пену. Международная ассоциация барменов (IBA) указывает белок в рецепте как необязательный.",
       recipe: [["45 мл", "виски"], ["25 мл", "лимонного сока"], ["20 мл", "сахарного сиропа"], ["20 мл", "яичного белка"], ["3 капли", "ангостуры на пену"]],
       steps: "Сначала встряхни всё в шейкере без льда — это «сухой шейк», он взбивает белок в пену. Затем добавь лёд и встряхни ещё раз, чтобы охладить. Процеди в рокс со свежим льдом, капни на пену три капли ангостуры и положи вишню." },
+    { id: "c-pisco", name: "Писко сауэр", base: "cognac", origin: "Перу", method: "shake", need: ["pisco", "lemon", "syrup"],
+      cup: "coupe", pour: "#eee3ae", pourOp: .8, pourLevel: 42, garnish: null, foam: true,
+      tagline: "Виноградный бренди из Перу с лимоном под густой белой пеной",
+      history: "Писко — виноградный бренди Перу и Чили. Коктейль связывают с американцем Виктором Воном Моррисом: в 1916 году он открыл в Лиме «Бар Морриса», где и подавали писко сауэр. Нынешний вид — с яичным белком и каплями ангостуры на пене — приписывают Марио Брюже, перуанскому бармену того же бара. Перу и Чили до сих пор спорят, чей это напиток, а в Перу в первую субботу февраля отмечают Национальный день писко сауэр.",
+      recipe: [["60 мл", "писко"], ["30 мл", "лимонного сока"], ["20 мл", "сахарного сиропа"], ["1", "яичный белок (30 мл)"], ["3 капли", "ангостуры на пену"]],
+      steps: "Встряхни всё без льда — сухой шейк взбивает белок. Добавь лёд, встряхни ещё раз и процеди в охлаждённое блюдце. Капни на пену три капли ангостуры и протяни через них шпажку одной линией — получатся сердечки." },
     { id: "c-sidecar", name: "Сайдкар", base: "cognac", origin: "Франция или Англия", method: "shake", need: ["cognac", "triple", "lemon"],
       cup: "coupe", pour: "#dea04a", pourOp: .85, pourLevel: 40, garnish: "lemon",
       tagline: "Коньяк с апельсиновым ликёром и лимоном",
@@ -3022,7 +3030,7 @@
 
   /* ---------- объём и крепость: считаем по шагам рецепта ---------- */
   const escH = s => String(s).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
-  const ABV = { rum: 40, tequila: 38, gin: 40, whisky: 40, cognac: 40, wine: 13, triple: 40, cherry: 24, campari: 25, vermouthR: 16, vermouthD: 17, bitters: 44.7 };
+  const ABV = { rum: 40, tequila: 38, gin: 40, whisky: 40, cognac: 40, pisco: 40, wine: 13, triple: 40, cherry: 24, campari: 25, vermouthR: 16, vermouthD: 17, bitters: 44.7 };
   function drinkStats(c) {
     const prog = Closeup.PROGRAMS[c.id] || [];
     let ml = 0, alc = 0, tops = 0;
@@ -3076,7 +3084,7 @@
   SECRETS.forEach(s => { if (FOUND.has(s.id)) addDrink(s); });
 
   /* ---------- конструктор: бармен собирает рецепт из того, что выбрал гость ---------- */
-  const ROLE = { rum: "spirit", tequila: "spirit", gin: "spirit", whisky: "spirit", cognac: "spirit", wine: "wine",
+  const ROLE = { rum: "spirit", tequila: "spirit", gin: "spirit", whisky: "spirit", cognac: "spirit", pisco: "spirit", wine: "wine",
     triple: "liq", cherry: "liq", campari: "bitter", vermouthR: "verm", vermouthD: "verm", bitters: "dash",
     tonic: "top", soda: "top", cola: "top", oj: "juice", pineapple: "juice", coconut: "cream",
     lime: "sour", lemon: "sour", mint: "mint", syrup: "sweet", grenadine: "sweet", coffee: "top", tea: "top", cream: "cream" };
@@ -6920,7 +6928,7 @@ function live() { if (SHOW.on && SHOW.gen !== SG) throw ABORT; }
 const SL = () => SHOW.slow || 1;
 async function ws(s) { await sleep(SHOW.fast ? Math.min(s, .01) : s * SL()); live(); }
 const PROGS = () => Closeup.PROGRAMS;
-const NOM = { rum: "Ром", tequila: "Текила", gin: "Джин", whisky: "Виски", cognac: "Коньяк", wine: "Красное вино", triple: "Апельсиновый ликёр", cherry: "Вишнёвый ликёр",
+const NOM = { rum: "Ром", tequila: "Текила", gin: "Джин", whisky: "Виски", cognac: "Коньяк", pisco: "Писко", wine: "Красное вино", triple: "Апельсиновый ликёр", cherry: "Вишнёвый ликёр",
   campari: "Кампари", vermouthR: "Красный вермут", vermouthD: "Сухой вермут", bitters: "Ангостура", tonic: "Тоник", soda: "Содовая",
   cola: "Кола", oj: "Апельсиновый сок", pineapple: "Ананасовый сок", coconut: "Кокосовые сливки", lime: "Сок лайма",
   lemon: "Лимонный сок", syrup: "Сахарный сироп", grenadine: "Гренадин", coffee: "Кофе", tea: "Чай", cream: "Сливки" };
@@ -9890,7 +9898,8 @@ const ADVICE = {
     strong: [
       ["c-daiquiri", "«Дайкири»: ром, лайм и сахар, встряхнуть со льдом. Три ингредиента — и чистая свежесть."],
       ["c-margarita", "«Маргарита»: текила, апельсиновый ликёр и лайм. Свежо и с характером."],
-      ["c-junglebird", "«Джангл бёрд»: тёмный ром, кампари, ананас и лайм. Куала-Лумпур, 1978 год — тропики с горчинкой, а сверху пенка от ананаса."]
+      ["c-junglebird", "«Джангл бёрд»: тёмный ром, кампари, ананас и лайм. Куала-Лумпур, 1978 год — тропики с горчинкой, а сверху пенка от ананаса."],
+      ["c-pisco", "«Писко сауэр»: перуанский виноградный бренди, лимон и белок. Лима, «Бар Морриса», 1920-е — свежо, с бархатной пеной и тремя каплями ангостуры."]
     ],
     light: [
       ["c-mojito", "«Мохито»: мята, лайм, ром и колотый лёд доверху. Освежает лучше всего."],
@@ -13106,7 +13115,7 @@ function placeFoam(V) {
     m.position.y = L.y1 - T * .3;
     m.scale.set(r, T, r);
     servedGlass.add(m);
-    if (typeof eggFinish === "function" && eggy(c)) eggFinish(servedGlass, m, L.y1 + T * .7, r);
+    if (typeof eggFinish === "function" && eggy(c)) eggFinish(servedGlass, m, L.y1 + T * .7, r, c);
   };
 }
 
@@ -13340,7 +13349,7 @@ async function stepDrops(st) {
     const d = mesh(new THREE.SphereGeometry(.0028, 10, 8), EGG.dropM.clone(), 0, 0, 0);
     d.material.map = null; d.material.color.set(0x5a160c); d.material.transparent = false; d.material.depthWrite = true;
     b.localToWorld(d.position.copy(top));
-    tween(d.position, { x: land.x, y: land.y, z: land.z }, SHOW.fast ? .001 : .2, ease.in).then(() => { world.remove(d); addDrop(F, spots[i], G.scale, .6); });
+    tween(d.position, { x: land.x, y: land.y, z: land.z }, SHOW.fast ? .001 : .2, ease.in).then(() => { world.remove(d); (F.userData.drops = F.userData.drops || []).push(addDrop(F, spots[i], G.scale, .6)); });
     await move(b, over, { dur: .14, e: ease.out });
     await ws(.18);
   }
@@ -13384,14 +13393,86 @@ async function stepDrops(st) {
 }
 
 /* если шоу пропустили: капли на пене, вишня поверх пены */
-function eggFinish(glass, foam, topY, r) {
-  DROP_X.forEach(x => addDrop(foam, x, 1.35));
+function eggFinish(glass, foam, topY, r, c) {
+  const hearts = !!c && (PROGS()[c.id] || []).some(st => st[0] === "hearts");
+  DROP_X.forEach(x => { const d = addDrop(foam, x, 1.35); if (hearts) toHeart(d, 0); });
   const ch = glass.children.find(o => o.geometry && o.geometry.type === "SphereGeometry" && Math.abs((o.geometry.parameters.radius || 0) - .012) < 1e-6);
   if (ch) ch.position.set(0, topY + .012 * .45, -.56 * r);
 }
 
 /* шаги в общей программе, подписи и строки карточки */
-Object.assign(STEP, { egg: stepEgg, drops: stepDrops });
+/* ---------- шаг: шпажкой через капли — три сердечка ----------
+   Бармен ведёт тонкую деревянную шпажку одной линией через середины капель: каждая капля
+   вытягивается хвостиком по ходу шпажки и становится сердечком. */
+EGG.heartTex = canvasTex(128, 128, (g, w, h) => {
+  // сердечко остриём вправо (+x): лопасти слева, хвостик справа
+  g.save(); g.translate(w / 2, h / 2);
+  g.shadowColor = "rgba(120,40,22,.55)"; g.shadowBlur = 7;
+  g.beginPath();
+  for (let i = 0; i <= 96; i++) {
+    const t = i / 96 * Math.PI * 2;
+    const x = 16 * Math.sin(t) ** 3, y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+    const X = -y * 2.9 + 4, Y = x * 2.9;
+    i ? g.lineTo(X, Y) : g.moveTo(X, Y);
+  }
+  g.closePath();
+  const r = g.createRadialGradient(-12, 0, 0, -6, 0, 54);
+  r.addColorStop(0, "rgba(84,18,10,1)"); r.addColorStop(.7, "rgba(100,26,14,.97)"); r.addColorStop(1, "rgba(130,44,24,.9)");
+  g.fillStyle = r; g.fill();
+  g.restore();
+});
+EGG.heartM = std({ map: EGG.heartTex, transparent: true, depthWrite: false, roughness: .3, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+EGG.protoHeart = mesh(EGG.dropGeo, EGG.heartM, 0, -10, 0); EGG.protoHeart.visible = false;
+EGG.pickM = std({ color: 0xd9bf8e, roughness: .6 });
+/* капля превращается в сердечко: вытягивается по линии шпажки */
+function toHeart(d, dur = .28) {
+  const s = d.scale.z;
+  d.material = EGG.heartM;
+  d.rotation.y = 0;
+  if (dur <= 0 || SHOW.fast) { d.scale.set(s * 2, 1, s * 1.7); return; }
+  d.scale.set(s * 1.05, 1, s);
+  tween(d.scale, { x: s * 2, z: s * 1.7 }, dur, ease.out);
+}
+async function stepHearts() {
+  const G = SHOW.glassV, R = bt.R;
+  await jiggerPark();
+  if (!G || !G.foam || !(G.foam.userData.drops || []).length) return;
+  const F = G.foam, drops = F.userData.drops.slice().sort((a, b) => a.position.x - b.position.x);
+  // шпажка: тонкая палочка, остриё в начале координат
+  const pick = new THREE.Group();
+  const geo = new THREE.CylinderGeometry(.0015, .0003, .085, 6); geo.translate(0, .0425, 0);
+  mesh(geo, EGG.pickM, 0, 0, 0, pick);
+  world.add(pick);
+  const q = Qz(.42);
+  place(pick, ST.tray.clone().add(V3(.02, .03, 0)), q);
+  shot("top", mouth(G, -.01), 1);
+  bt.look = ST.tray;
+  await grip(R, pick, PINCH(V3(0, .062, 0)), .4);
+  F.updateMatrixWorld(true);
+  const at = x => F.localToWorld(V3(x, 1 - .08 * Math.abs(x) + .02, 0));
+  follow(mouth(G, -.01));
+  bt.look = mouth(G);
+  await move(pick, posFor(pick, V3(), at(-.62).add(V3(0, .04, 0)), q), { dur: .6, arc: .03 });
+  await ws(.15);
+  await move(pick, posFor(pick, V3(), at(-.62), q), { dur: .22, e: ease.out });
+  // одна ровная линия через все капли
+  const done = new Set();
+  await waitTicks(2, k => {
+    const x = -.62 + 1.24 * ease.io(k);
+    F.updateMatrixWorld(true);
+    pick.position.copy(posFor(pick, V3(), at(x), q));
+    for (const d of drops) if (!done.has(d) && x > d.position.x - .06) { done.add(d); toHeart(d); }
+  });
+  for (const d of drops) if (!done.has(d)) toHeart(d, 0);
+  await move(pick, posFor(pick, V3(), at(.62).add(V3(0, .05, 0)), q), { dur: .25, e: ease.out });
+  bt.look = null;
+  await move(pick, B(.14, TOP() - .3, .16), { dur: .5, e: ease.in, arc: .02 });
+  letGo(R);
+  world.remove(pick);
+  await rest(R);
+  await ws(.4);
+}
+Object.assign(STEP, { egg: stepEgg, drops: stepDrops, hearts: stepHearts });
 {
   const base = stepCaption;
   stepCaption = (st, c) => {
@@ -13399,6 +13480,7 @@ Object.assign(STEP, { egg: stepEgg, drops: stepDrops });
     if (st[0] === "shake" && st[1] === "dry") return "Сухой шейк без льда — белок взбивается в пену";
     if (st[0] === "ice" && st[1] === "tin" && eggy(c)) return "Теперь лёд — и второй шейк, чтобы охладить";
     if (st[0] === "drops") return "Три капли ангостуры на белую пену";
+    if (st[0] === "hearts") return "Шпажкой одной линией через капли — три сердечка";
     if (st[0] === "garnish" && eggy(c) && c.garnish === "cherry") return "Вишня ложится на пену";
     return base(st, c);
   };
@@ -13408,6 +13490,7 @@ Object.assign(STEP, { egg: stepEgg, drops: stepDrops });
   cardRow = (st, c) => {
     if (st[0] === "egg") return { name: "Яичный белок", amt: `${st[1] || 20} мл`, col: "#f1ecd8" };
     if (st[0] === "shake" && st[1] === "dry") return { name: "Сухой шейк", amt: "без льда", tech: true };
+    if (st[0] === "hearts") return { name: "Сердечки", amt: "шпажкой", tech: true };
     if (st[0] === "drops") return { name: NOM.bitters, amt: `${st[1] || 3} капли на пену`, col: "#" + liqOf("bitters").getHexString() };
     return base(st, c);
   };

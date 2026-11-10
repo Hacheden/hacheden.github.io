@@ -1166,6 +1166,7 @@
       gin: { kind: "square", glass: "#9cc4cf", op: .4, liq: "#eaf4f6", label: "#20505c", ink: "#f1e4cc", name: "ДЖИН" },
       whisky: { kind: "flask", glass: "#3a2410", liq: "#c27a1a", label: "#1f4034", ink: "#f1e4cc", name: "ВИСКИ" },
       cognac: { kind: "squat", glass: "#2a1a0e", liq: "#b8651a", label: "#1b1210", ink: "#e2b866", name: "КОНЬЯК" },
+      pisco: { kind: "spirit", glass: "#e4ecec", op: .36, liq: "#f6f3e6", label: "#efe6d2", ink: "#9a1a26", name: "ПИСКО" },
       wine: { kind: "wine", glass: "#1f2c1d", liq: "#6b0f24", label: "#eadcbc", ink: "#4a0f1c", name: "ВИНО" },
       triple: { kind: "squat", glass: "#c9752a", op: .8, liq: "#f3e9c8", label: "#2a1a10", ink: "#f2b25a", name: "ЛИКЁР" },
       cherry: { kind: "squat", glass: "#3a0610", op: .92, liq: "#7a0f1e", label: "#14080a", ink: "#e2b866", name: "ВИШНЯ" },
@@ -1534,12 +1535,13 @@
       "c-oldfashioned": [["jig", "syrup", 10, "glass"], ["dash", "bitters", 2, "glass"], ["ice", "glass"], ["jig", "whisky", 45, "glass"], ["stirIn"], ["garnish"]],
       "c-manhattan": [["ice", "mixer"], ["jig", "whisky", 50], ["jig", "vermouthR", 20], ["dash", "bitters", 1], ["stir"], ["strain"], ["garnish"]],
       "c-sour": [["jig", "whisky", 45], ["jig", "lemon", 25], ["jig", "syrup", 20], ["egg", 20], ["shake", "dry"], ["ice", "tin"], ["shake"], ["ice", "glass"], ["strain"], ["drops", 3], ["garnish"]],
+      "c-pisco": [["jig", "pisco", 60], ["jig", "lemon", 30], ["jig", "syrup", 20], ["egg", 30], ["shake", "dry"], ["ice", "tin"], ["shake"], ["strain"], ["drops", 3], ["hearts"]],
       "c-sidecar": [["ice", "tin"], ["jig", "cognac", 50], ["jig", "triple", 20], ["jig", "lemon", 20], ["shake"], ["strain"], ["garnish"]],
       "c-sangria": [["ice", "glass"], ["pour", "wine", 150], ["pour", "oj", 50], ["top", "soda"], ["stirIn"], ["garnish"]],
       "c-hacheden": [["pour", "syrup", 10], ["hot", 50], ["jig", "cognac", 50], ["jig", "cherry", 15], ["fire"], ["garnish"]],
       "c-nojito": [["leaves"], ["jig", "lime", 20], ["jig", "syrup", 15], ["muddle"], ["ice", "glass", true], ["top", "soda"], ["stirIn"], ["garnish"]]
     };
-    const GEN = { rum: "рома", tequila: "текилы", gin: "джина", whisky: "виски", cognac: "коньяка", wine: "вина", triple: "апельсинового ликёра", cherry: "вишнёвого ликёра",
+    const GEN = { rum: "рома", tequila: "текилы", gin: "джина", whisky: "виски", cognac: "коньяка", pisco: "писко", wine: "вина", triple: "апельсинового ликёра", cherry: "вишнёвого ликёра",
       campari: "кампари", vermouthR: "красного вермута", vermouthD: "сухого вермута", bitters: "ангостуры", tonic: "тоника", soda: "содовой",
       cola: "колы", oj: "апельсинового сока", pineapple: "ананасового сока", coconut: "кокосовых сливок", lime: "сока лайма",
       lemon: "лимонного сока", syrup: "сахарного сиропа", grenadine: "гренадина", coffee: "кофе", tea: "чая", cream: "сливок" };
@@ -1754,7 +1756,7 @@
   
 /* ---------- коктейли ---------- */
   const ING = [
-    ["Крепкое", [["wine", "Вино"], ["cognac", "Коньяк"], ["rum", "Ром"], ["whisky", "Виски"], ["gin", "Джин"], ["tequila", "Текила"]]],
+    ["Крепкое", [["wine", "Вино"], ["cognac", "Коньяк"], ["pisco", "Писко"], ["rum", "Ром"], ["whisky", "Виски"], ["gin", "Джин"], ["tequila", "Текила"]]],
     ["Ликёры и вермуты", [["triple", "Апельсиновый ликёр"], ["cherry", "Вишнёвый ликёр"], ["campari", "Кампари"], ["vermouthR", "Красный вермут"], ["vermouthD", "Сухой вермут"], ["bitters", "Ангостура"]]],
     ["Соки и газировка", [["tonic", "Тоник"], ["soda", "Содовая"], ["cola", "Кола"], ["oj", "Апельсиновый сок"], ["pineapple", "Ананасовый сок"], ["coconut", "Кокосовые сливки"]]],
     ["Свежее и сиропы", [["lime", "Лайм"], ["lemon", "Лимон"], ["mint", "Мята"], ["syrup", "Сахарный сироп"], ["grenadine", "Гренадин"]]],
@@ -1764,7 +1766,7 @@
   const low = id => ING_NAME[id].toLowerCase();
   const METHOD = { shake: "встряхнуть в шейкере", stir: "размешать со льдом", build: "собрать прямо в бокале", fire: "поджечь и перелить огненной струёй" };
   const GLASS_NAME = { highball: "высокий стакан", rocks: "рокс", coupe: "шампанское блюдце", martini: "коктейльный бокал", wine: "винный бокал" };
-  const BASES = [["rum", "С ромом"], ["tequila", "С текилой"], ["gin", "С джином"], ["whisky", "С виски"], ["cognac", "С коньяком"], ["wine", "С вином"], ["aperitif", "Аперитивы"], ["none", "Без алкоголя"], ["hot", "Кофе и чай"]];
+  const BASES = [["rum", "С ромом"], ["tequila", "С текилой"], ["gin", "С джином"], ["whisky", "С виски"], ["cognac", "С коньяком и писко"], ["wine", "С вином"], ["aperitif", "Аперитивы"], ["none", "Без алкоголя"], ["hot", "Кофе и чай"]];
   const COCKTAILS = [
     { id: "c-hacheden", name: "Hacheden", base: "cognac", origin: "Наш бар", method: "fire", need: ["cognac", "cherry", "syrup"], signature: true,
       cup: "rocks", pour: "#8e2a16", pourOp: .92, pourLevel: 62, garnish: "flame",
@@ -1856,6 +1858,12 @@
       history: "Сауэры — целое семейство коктейлей: крепкий напиток, кислый сок и сладкое. Рецепт виски сауэр напечатан уже в книге знаменитого бармена Джерри Томаса 1862 года — тогда ещё без белка. Вариант с яичным белком называют «бостонским сауэром»: белок не меняет вкус, но даёт густую шелковистую пену. Международная ассоциация барменов (IBA) указывает белок в рецепте как необязательный.",
       recipe: [["45 мл", "виски"], ["25 мл", "лимонного сока"], ["20 мл", "сахарного сиропа"], ["20 мл", "яичного белка"], ["3 капли", "ангостуры на пену"]],
       steps: "Сначала встряхни всё в шейкере без льда — это «сухой шейк», он взбивает белок в пену. Затем добавь лёд и встряхни ещё раз, чтобы охладить. Процеди в рокс со свежим льдом, капни на пену три капли ангостуры и положи вишню." },
+    { id: "c-pisco", name: "Писко сауэр", base: "cognac", origin: "Перу", method: "shake", need: ["pisco", "lemon", "syrup"],
+      cup: "coupe", pour: "#eee3ae", pourOp: .8, pourLevel: 42, garnish: null, foam: true,
+      tagline: "Виноградный бренди из Перу с лимоном под густой белой пеной",
+      history: "Писко — виноградный бренди Перу и Чили. Коктейль связывают с американцем Виктором Воном Моррисом: в 1916 году он открыл в Лиме «Бар Морриса», где и подавали писко сауэр. Нынешний вид — с яичным белком и каплями ангостуры на пене — приписывают Марио Брюже, перуанскому бармену того же бара. Перу и Чили до сих пор спорят, чей это напиток, а в Перу в первую субботу февраля отмечают Национальный день писко сауэр.",
+      recipe: [["60 мл", "писко"], ["30 мл", "лимонного сока"], ["20 мл", "сахарного сиропа"], ["1", "яичный белок (30 мл)"], ["3 капли", "ангостуры на пену"]],
+      steps: "Встряхни всё без льда — сухой шейк взбивает белок. Добавь лёд, встряхни ещё раз и процеди в охлаждённое блюдце. Капни на пену три капли ангостуры и протяни через них шпажку одной линией — получатся сердечки." },
     { id: "c-sidecar", name: "Сайдкар", base: "cognac", origin: "Франция или Англия", method: "shake", need: ["cognac", "triple", "lemon"],
       cup: "coupe", pour: "#dea04a", pourOp: .85, pourLevel: 40, garnish: "lemon",
       tagline: "Коньяк с апельсиновым ликёром и лимоном",
@@ -1966,7 +1974,7 @@
 
   /* ---------- объём и крепость: считаем по шагам рецепта ---------- */
   const escH = s => String(s).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
-  const ABV = { rum: 40, tequila: 38, gin: 40, whisky: 40, cognac: 40, wine: 13, triple: 40, cherry: 24, campari: 25, vermouthR: 16, vermouthD: 17, bitters: 44.7 };
+  const ABV = { rum: 40, tequila: 38, gin: 40, whisky: 40, cognac: 40, pisco: 40, wine: 13, triple: 40, cherry: 24, campari: 25, vermouthR: 16, vermouthD: 17, bitters: 44.7 };
   function drinkStats(c) {
     const prog = Closeup.PROGRAMS[c.id] || [];
     let ml = 0, alc = 0, tops = 0;
@@ -2020,7 +2028,7 @@
   SECRETS.forEach(s => { if (FOUND.has(s.id)) addDrink(s); });
 
   /* ---------- конструктор: бармен собирает рецепт из того, что выбрал гость ---------- */
-  const ROLE = { rum: "spirit", tequila: "spirit", gin: "spirit", whisky: "spirit", cognac: "spirit", wine: "wine",
+  const ROLE = { rum: "spirit", tequila: "spirit", gin: "spirit", whisky: "spirit", cognac: "spirit", pisco: "spirit", wine: "wine",
     triple: "liq", cherry: "liq", campari: "bitter", vermouthR: "verm", vermouthD: "verm", bitters: "dash",
     tonic: "top", soda: "top", cola: "top", oj: "juice", pineapple: "juice", coconut: "cream",
     lime: "sour", lemon: "sour", mint: "mint", syrup: "sweet", grenadine: "sweet", coffee: "top", tea: "top", cream: "cream" };

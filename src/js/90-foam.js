@@ -94,7 +94,7 @@ function placeFoam(V) {
     m.position.y = L.y1 - T * .3;
     m.scale.set(r, T, r);
     servedGlass.add(m);
-    if (typeof eggFinish === "function" && eggy(c)) eggFinish(servedGlass, m, L.y1 + T * .7, r);
+    if (typeof eggFinish === "function" && eggy(c)) eggFinish(servedGlass, m, L.y1 + T * .7, r, c);
   };
 }
 

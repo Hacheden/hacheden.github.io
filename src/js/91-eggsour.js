@@ -188,7 +188,7 @@ async function stepDrops(st) {
     const d = mesh(new THREE.SphereGeometry(.0028, 10, 8), EGG.dropM.clone(), 0, 0, 0);
     d.material.map = null; d.material.color.set(0x5a160c); d.material.transparent = false; d.material.depthWrite = true;
     b.localToWorld(d.position.copy(top));
-    tween(d.position, { x: land.x, y: land.y, z: land.z }, SHOW.fast ? .001 : .2, ease.in).then(() => { world.remove(d); addDrop(F, spots[i], G.scale, .6); });
+    tween(d.position, { x: land.x, y: land.y, z: land.z }, SHOW.fast ? .001 : .2, ease.in).then(() => { world.remove(d); (F.userData.drops = F.userData.drops || []).push(addDrop(F, spots[i], G.scale, .6)); });
     await move(b, over, { dur: .14, e: ease.out });
     await ws(.18);
   }
@@ -232,14 +232,86 @@ async function stepDrops(st) {
 }
 
 /* если шоу пропустили: капли на пене, вишня поверх пены */
-function eggFinish(glass, foam, topY, r) {
-  DROP_X.forEach(x => addDrop(foam, x, 1.35));
+function eggFinish(glass, foam, topY, r, c) {
+  const hearts = !!c && (PROGS()[c.id] || []).some(st => st[0] === "hearts");
+  DROP_X.forEach(x => { const d = addDrop(foam, x, 1.35); if (hearts) toHeart(d, 0); });
   const ch = glass.children.find(o => o.geometry && o.geometry.type === "SphereGeometry" && Math.abs((o.geometry.parameters.radius || 0) - .012) < 1e-6);
   if (ch) ch.position.set(0, topY + .012 * .45, -.56 * r);
 }
 
 /* шаги в общей программе, подписи и строки карточки */
-Object.assign(STEP, { egg: stepEgg, drops: stepDrops });
+/* ---------- шаг: шпажкой через капли — три сердечка ----------
+   Бармен ведёт тонкую деревянную шпажку одной линией через середины капель: каждая капля
+   вытягивается хвостиком по ходу шпажки и становится сердечком. */
+EGG.heartTex = canvasTex(128, 128, (g, w, h) => {
+  // сердечко остриём вправо (+x): лопасти слева, хвостик справа
+  g.save(); g.translate(w / 2, h / 2);
+  g.shadowColor = "rgba(120,40,22,.55)"; g.shadowBlur = 7;
+  g.beginPath();
+  for (let i = 0; i <= 96; i++) {
+    const t = i / 96 * Math.PI * 2;
+    const x = 16 * Math.sin(t) ** 3, y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+    const X = -y * 2.9 + 4, Y = x * 2.9;
+    i ? g.lineTo(X, Y) : g.moveTo(X, Y);
+  }
+  g.closePath();
+  const r = g.createRadialGradient(-12, 0, 0, -6, 0, 54);
+  r.addColorStop(0, "rgba(84,18,10,1)"); r.addColorStop(.7, "rgba(100,26,14,.97)"); r.addColorStop(1, "rgba(130,44,24,.9)");
+  g.fillStyle = r; g.fill();
+  g.restore();
+});
+EGG.heartM = std({ map: EGG.heartTex, transparent: true, depthWrite: false, roughness: .3, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+EGG.protoHeart = mesh(EGG.dropGeo, EGG.heartM, 0, -10, 0); EGG.protoHeart.visible = false;
+EGG.pickM = std({ color: 0xd9bf8e, roughness: .6 });
+/* капля превращается в сердечко: вытягивается по линии шпажки */
+function toHeart(d, dur = .28) {
+  const s = d.scale.z;
+  d.material = EGG.heartM;
+  d.rotation.y = 0;
+  if (dur <= 0 || SHOW.fast) { d.scale.set(s * 2, 1, s * 1.7); return; }
+  d.scale.set(s * 1.05, 1, s);
+  tween(d.scale, { x: s * 2, z: s * 1.7 }, dur, ease.out);
+}
+async function stepHearts() {
+  const G = SHOW.glassV, R = bt.R;
+  await jiggerPark();
+  if (!G || !G.foam || !(G.foam.userData.drops || []).length) return;
+  const F = G.foam, drops = F.userData.drops.slice().sort((a, b) => a.position.x - b.position.x);
+  // шпажка: тонкая палочка, остриё в начале координат
+  const pick = new THREE.Group();
+  const geo = new THREE.CylinderGeometry(.0015, .0003, .085, 6); geo.translate(0, .0425, 0);
+  mesh(geo, EGG.pickM, 0, 0, 0, pick);
+  world.add(pick);
+  const q = Qz(.42);
+  place(pick, ST.tray.clone().add(V3(.02, .03, 0)), q);
+  shot("top", mouth(G, -.01), 1);
+  bt.look = ST.tray;
+  await grip(R, pick, PINCH(V3(0, .062, 0)), .4);
+  F.updateMatrixWorld(true);
+  const at = x => F.localToWorld(V3(x, 1 - .08 * Math.abs(x) + .02, 0));
+  follow(mouth(G, -.01));
+  bt.look = mouth(G);
+  await move(pick, posFor(pick, V3(), at(-.62).add(V3(0, .04, 0)), q), { dur: .6, arc: .03 });
+  await ws(.15);
+  await move(pick, posFor(pick, V3(), at(-.62), q), { dur: .22, e: ease.out });
+  // одна ровная линия через все капли
+  const done = new Set();
+  await waitTicks(2, k => {
+    const x = -.62 + 1.24 * ease.io(k);
+    F.updateMatrixWorld(true);
+    pick.position.copy(posFor(pick, V3(), at(x), q));
+    for (const d of drops) if (!done.has(d) && x > d.position.x - .06) { done.add(d); toHeart(d); }
+  });
+  for (const d of drops) if (!done.has(d)) toHeart(d, 0);
+  await move(pick, posFor(pick, V3(), at(.62).add(V3(0, .05, 0)), q), { dur: .25, e: ease.out });
+  bt.look = null;
+  await move(pick, B(.14, TOP() - .3, .16), { dur: .5, e: ease.in, arc: .02 });
+  letGo(R);
+  world.remove(pick);
+  await rest(R);
+  await ws(.4);
+}
+Object.assign(STEP, { egg: stepEgg, drops: stepDrops, hearts: stepHearts });
 {
   const base = stepCaption;
   stepCaption = (st, c) => {
@@ -247,6 +319,7 @@ Object.assign(STEP, { egg: stepEgg, drops: stepDrops });
     if (st[0] === "shake" && st[1] === "dry") return "Сухой шейк без льда — белок взбивается в пену";
     if (st[0] === "ice" && st[1] === "tin" && eggy(c)) return "Теперь лёд — и второй шейк, чтобы охладить";
     if (st[0] === "drops") return "Три капли ангостуры на белую пену";
+    if (st[0] === "hearts") return "Шпажкой одной линией через капли — три сердечка";
     if (st[0] === "garnish" && eggy(c) && c.garnish === "cherry") return "Вишня ложится на пену";
     return base(st, c);
   };
@@ -256,6 +329,7 @@ Object.assign(STEP, { egg: stepEgg, drops: stepDrops });
   cardRow = (st, c) => {
     if (st[0] === "egg") return { name: "Яичный белок", amt: `${st[1] || 20} мл`, col: "#f1ecd8" };
     if (st[0] === "shake" && st[1] === "dry") return { name: "Сухой шейк", amt: "без льда", tech: true };
+    if (st[0] === "hearts") return { name: "Сердечки", amt: "шпажкой", tech: true };
     if (st[0] === "drops") return { name: NOM.bitters, amt: `${st[1] || 3} капли на пену`, col: "#" + liqOf("bitters").getHexString() };
     return base(st, c);
   };
