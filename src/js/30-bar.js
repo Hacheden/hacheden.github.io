@@ -259,7 +259,7 @@ const coneMat = new THREE.ShaderMaterial({
   vertexShader: `varying float vY; varying vec3 vN; varying vec3 vV;
     void main(){ vY = uv.y; vec4 mv = modelViewMatrix * vec4(position, 1.); vV = normalize(-mv.xyz); vN = normalize(normalMatrix * normal); gl_Position = projectionMatrix * mv; }`,
   fragmentShader: `uniform float uOp; uniform vec3 uCol; varying float vY; varying vec3 vN; varying vec3 vV;
-    void main(){ float f = pow(abs(dot(vN, vV)), 2.2); float a = uOp * f * pow(vY, 1.6); gl_FragColor = vec4(uCol * a, a); }`,
+    void main(){ float f = pow(clamp(abs(dot(normalize(vN), normalize(vV))), .0001, 1.), 2.2); float a = clamp(uOp * f * pow(clamp(vY, .0001, 1.), 1.6), 0., 1.); gl_FragColor = vec4(uCol * a, a); }`,
   transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide
 });
 const pendants = [];
