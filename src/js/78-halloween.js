@@ -2,6 +2,7 @@
    Проверить в другой день: ?holiday=halloween */
 const HALLOWEEN = (() => {
   if (QS.get("holiday") === "halloween") return true;
+  if (QS.get("holiday") === "off") return false;
   const d = nowDate();
   return (d.getMonth() === 9 && d.getDate() === 31) || (d.getMonth() === 10 && d.getDate() === 1 && d.getHours() < 3);
 })();
