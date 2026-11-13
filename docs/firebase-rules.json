@@ -7,7 +7,7 @@
           "$uid": {
             ".write": "auth != null && auth.uid === $uid && $room.matches(/^[a-z0-9-]{3,32}$/)",
             ".validate": "newData.hasChildren(['name', 'look', 'zone', 'seat', 'seen'])",
-            "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24 && !newData.val().matches(/[<>{}\\[\\]\\\\]/)" },
+            "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24 && !newData.val().contains('<') && !newData.val().contains('>') && !newData.val().contains('{') && !newData.val().contains('}') && !newData.val().contains('[') && !newData.val().contains(']')" },
             "look": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5 && newData.val() % 1 === 0" },
             "zone": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 4 && newData.val() % 1 === 0" },
             "seat": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 5 && newData.val() % 1 === 0" },
@@ -15,7 +15,7 @@
             "drink": {
               ".validate": "newData.hasChildren(['id', 'name', 'cup', 'pour'])",
               "id": { ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9-]{1,40}$/)" },
-              "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 32 && !newData.val().matches(/[<>{}\\[\\]\\\\]/)" },
+              "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 32 && !newData.val().contains('<') && !newData.val().contains('>') && !newData.val().contains('{') && !newData.val().contains('}') && !newData.val().contains('[') && !newData.val().contains(']')" },
               "cup": { ".validate": "newData.isString() && newData.val().matches(/^(coupe|highball|martini|rocks|shot|snifter|wine)$/)" },
               "pour": { ".validate": "newData.isString() && newData.val().matches(/^#[0-9a-fA-F]{6}$/)" },
               "garnish": { ".validate": "newData.isString() && newData.val().matches(/^[a-z]{0,16}$/)" },
