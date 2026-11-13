@@ -30,7 +30,7 @@ const SDOOR2 = { g: group(SECRET.hx, 0, SECRET.hz), a: 0 };
   mesh(new THREE.BoxGeometry(.004, .03, .052), M.brass, b.d + .037, b.h * .7, 0, hinge);
   mesh(new THREE.BoxGeometry(.004, .03, .052), M.brass, b.d + .037, b.h * .3, 0, hinge);
   SDOOR2.lever = hinge;
-  hot(hinge, 0, "Книга, которая торчит", () => enterCellar(), { grow: .15 });
+  if (FEAT.cellar) hot(hinge, 0, "Книга, которая торчит", () => enterCellar(), { grow: .15 });
 })();
 /* потайной ход за стеной: каменные стены, площадка и ступени вниз, свеча */
 (() => {
@@ -316,14 +316,6 @@ function drip() {
   o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * 1.9, t + .05);
   g.gain.setValueAtTime(.05, t); g.gain.exponentialRampToValueAtTime(.0001, t + .16);
   o.connect(g).connect(c.destination); o.start(t); o.stop(t + .2);
-}
-
-/* ---------- затемнение экрана ---------- */
-const fadeEl = document.getElementById("fade");
-function fade(on, dur = .6) {
-  fadeEl.style.transitionDuration = (STILL ? 0 : dur) + "s";
-  fadeEl.classList.toggle("on", on);
-  return sleep(STILL ? 0 : dur);
 }
 
 /* ---------- вход: книга, шкаф поворачивается, ход вниз ---------- */

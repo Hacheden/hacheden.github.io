@@ -691,7 +691,7 @@
           <button class="cook" type="button" data-cook="${c.id}">Приготовить у стойки</button></div>`);
       });
       // последняя страница: пометка карандашом — начало квеста через три зала
-      if (VENUE.quest) pages.push(`<div class="pg pg-note" data-quest-note><h3>Последняя страница</h3><p class="pencil">${VENUE.quest.note}</p></div>`);
+      if (VENUE.quest && FEAT.quests) pages.push(`<div class="pg pg-note" data-quest-note><h3>Последняя страница</h3><p class="pencil">${VENUE.quest.note}</p></div>`);
     }
     const page = k => pages[k] ? pages[k] + `<span class="pg-num">${k + 1}</span>` : "";
     const stepSize = () => wide.matches ? 2 : 1;
@@ -2276,7 +2276,7 @@
     mixDlg.close();
     hintEl.textContent = `Бармен готовит: ${c.name}`;
     Bartender.prep();
-    if (!reduceMotion.matches) await Closeup.play(c);
+    if (!reduceMotion.matches && FEAT.bartenderShow) await Closeup.play(c);   // без шоу бармена напиток подаётся сразу
     served.innerHTML = glassSVG(c, { pre: "sv-" });
     served.style.left = Bartender.glassX() + "px";
     Bartender.done();

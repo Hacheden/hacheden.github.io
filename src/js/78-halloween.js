@@ -57,8 +57,10 @@ if (HALLOWEEN) {
   lantern(WIN.x - .55, WIN.sill + .005, -4.82, .9, 0);
   lantern(WIN.x + .58, WIN.sill + .005, -4.82, .7, -.15);
   // сцена: по краям рампы
-  lantern(STG.x0 + .45, STG.h, STG.z0 + .18, 1.1, Math.PI);
-  lantern(STG.x1 - .45, STG.h, STG.z0 + .18, 1.1, Math.PI);
+  if (FEAT.stage) {
+    lantern(STG.x0 + .45, STG.h, STG.z0 + .18, 1.1, Math.PI);
+    lantern(STG.x1 - .45, STG.h, STG.z0 + .18, 1.1, Math.PI);
+  }
   // улица: у двери
   lantern(-1.45, 0, FZ + .6, 3.2, .1, street);
   lantern(.3, 0, FZ + .6, 2.6, -.15, street);

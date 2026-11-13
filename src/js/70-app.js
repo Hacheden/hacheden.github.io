@@ -61,6 +61,7 @@ function runFlight() {
 
 /* ---------- интерфейс ---------- */
 const navBtns = [...document.querySelectorAll("#nav button")];
+if (!FEAT.stage && navBtns[3]) navBtns[3].hidden = true;   // у заведения нет сцены
 const titleEl = document.getElementById("zone-title"), subEl = document.getElementById("zone-sub");
 const spotsEl = document.getElementById("spots"), tip = document.getElementById("tip");
 function renderZoneUI(i) {
@@ -88,6 +89,8 @@ function renderZoneUI(i) {
 }
 function goZone(i, dur = 1.9) {
   i = clamp(i, 0, ZONES.length - 1);
+  if (i === 3 && !FEAT.stage) i = 1;        // выключенные залы: вместо сцены — бар, вместо погреба — читальня
+  if (i === 4 && !FEAT.cellar) i = 0;
   if (typeof CEL !== "undefined" && CEL.busy) return Promise.resolve();
   const cross = (curZone === 4) !== (i === 4);
   leaveSeat();

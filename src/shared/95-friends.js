@@ -109,7 +109,7 @@
   function mySnapshot() { return { name: myName(), look: FR.look, zone: typeof cur === "number" ? cur : 1, drink: drinkInfo(LAST_DRINK) }; }
   FR.look = (() => { try { let v = localStorage.getItem("hacheden-look"); if (v == null) { v = String(Math.floor(Math.random() * 6)); localStorage.setItem("hacheden-look", v); } return +v; } catch (e) { return 0; } })();
   async function goLive() {
-    if (FR.on || FR.connecting || FR.invisible) return;
+    if (!FEAT.liveBar || FR.on || FR.connecting || FR.invisible) return;
     FR.connecting = true;
     try {
       FR.net = FR.net || (QS_FR.get("net") === "local" ? localNet() : firebaseNet());
@@ -212,3 +212,4 @@
   function openLive() { renderLive(); openSheet(frDlg); }
   document.getElementById("t-friends").addEventListener("click", openLive);
   const FRIENDS = { get on() { return FR.on; }, get uid() { return FR.uid; }, get peers() { return FR.peers; }, open: openLive, live: goLive, quiet: goQuiet, say: sayPhrase };
+  if (!FEAT.liveBar) { const b = document.getElementById("t-friends"); if (b) b.hidden = true; }   // у заведения нет живого бара

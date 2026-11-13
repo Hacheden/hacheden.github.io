@@ -1134,6 +1134,8 @@
   PROG.visits++;
   saveProgress();
 
+  const SCENE_BUNDLES = [];   /* заведения со своими залами (tools/build.py) */
+
 /* ================= реестр заведений =================
    Каждый файл src/venues/<id>.js кладёт сюда свой бар: VENUES[id] = { meta, theme, rooms, menu, … }.
    Бар на основе другого (тот же 3D-зал, свои название, цены и контакты) — VENUE_PATCHES.push({ id, base, make }).
@@ -1206,6 +1208,11 @@
       currency: "₸",
       codePrefix: "HCH"
     },
+    /* возможности заведения: выключенное движок не показывает и не запускает.
+       cellar — тайный погреб, stage — сцена с джаз-бэндом, bartenderShow — 3D-шоу приготовления,
+       booking — бронь мест и барный пропуск (ещё нужны контакты в meta), quests — сквозной квест,
+       liveBar — живой общий бар через Firebase */
+    features: { cellar: true, stage: true, bartenderShow: true, booking: true, quests: true, liveBar: true },
     theme: {
       vars: { "--brass": "#d6aa5c", "--cream": "#f1e4cc", "--muted": "#c2a784", "--walnut": "#4a2c1a", "--bg": "#070304" },
       fonts: { display: "Forum", text: "Literata" }
@@ -1578,10 +1585,13 @@
    Собирается последним из src/venues: к этому моменту все бары уже в VENUES. */
   for (const p of VENUE_PATCHES) {
     if (!VENUE_ID_RE.test(p.id) || !VENUES[p.base]) { console.warn("venue: пропущен", p.id); continue; }
-    VENUES[p.id] = Object.assign({}, VENUES[p.base], p.make(VENUES[p.base]), { id: p.id });
+    VENUES[p.id] = Object.assign({}, VENUES[p.base], p.make(VENUES[p.base]), { id: p.id, scene: VENUES[p.base].scene || p.base });
   }
   const VENUE_ID = (() => { try { const b = new URLSearchParams(location.search).get("bar"); return b && VENUE_ID_RE.test(b) && VENUES[b] ? b : "hacheden"; } catch (e) { return "hacheden"; } })();
   const VENUE = VENUES[VENUE_ID];
+  /* 3D-сцена: у флагмана встроена в страницу, у бара со своими залами — отдельный бандл (tools/build.py) */
+  const VENUE_SCENE = SCENE_BUNDLES.includes(VENUE_ID) ? VENUE_ID : (VENUE.scene || VENUE_ID);   // свои залы важнее залов базового бара
+  const SCENE_EXT = SCENE_BUNDLES.includes(VENUE_SCENE) ? `./venues/${VENUE_SCENE}/scene.js` : "";
   (() => {
     const r = document.documentElement.style;
     for (const [k, v] of Object.entries(VENUE.theme.vars)) r.setProperty(k, v);
@@ -1589,8 +1599,10 @@
     if (f.display) r.setProperty("--font-display", `"${f.display}", "Palatino Linotype", Georgia, serif`);
     if (f.text) r.setProperty("--font-text", `"${f.text}", Georgia, "Times New Roman", serif`);
   })();
+  /* возможности заведения (features в его файле); чего нет в файле — включено. Заглушка зала (src/stubs) выключает свой флаг сама */
+  const FEAT = Object.assign({ cellar: true, stage: true, bartenderShow: true, booking: true, quests: true, liveBar: true }, VENUE.features || {});
   /* бронь и «код бармена» работают у заведения с настоящими контактами; у демо-профиля — для показа владельцам */
-  const O2O = !!(VENUE.meta.contacts.whatsapp || VENUE.meta.contacts.telegram || VENUE.meta.demo);
+  const O2O = FEAT.booking && !!(VENUE.meta.contacts.whatsapp || VENUE.meta.contacts.telegram || VENUE.meta.demo);
 
   /* имя на вывесках: неон, сцена, табличка у двери, подставка, фото и сторис */
   const BAR_NAME = VENUE.meta.name;
@@ -2302,7 +2314,7 @@
           <button class="cook" type="button" data-cook="${c.id}">Приготовить у стойки</button></div>`);
       });
       // последняя страница: пометка карандашом — начало квеста через три зала
-      if (VENUE.quest) pages.push(`<div class="pg pg-note" data-quest-note><h3>Последняя страница</h3><p class="pencil">${VENUE.quest.note}</p></div>`);
+      if (VENUE.quest && FEAT.quests) pages.push(`<div class="pg pg-note" data-quest-note><h3>Последняя страница</h3><p class="pencil">${VENUE.quest.note}</p></div>`);
     }
     const page = k => pages[k] ? pages[k] + `<span class="pg-num">${k + 1}</span>` : "";
     const stepSize = () => wide.matches ? 2 : 1;
@@ -3887,7 +3899,7 @@
     mixDlg.close();
     hintEl.textContent = `Бармен готовит: ${c.name}`;
     Bartender.prep();
-    if (!reduceMotion.matches) await Closeup.play(c);
+    if (!reduceMotion.matches && FEAT.bartenderShow) await Closeup.play(c);   // без шоу бармена напиток подаётся сразу
     served.innerHTML = glassSVG(c, { pre: "sv-" });
     served.style.left = Bartender.glassX() + "px";
     Bartender.done();
@@ -4428,7 +4440,7 @@
   function mySnapshot() { return { name: myName(), look: FR.look, zone: typeof cur === "number" ? cur : 1, drink: drinkInfo(LAST_DRINK) }; }
   FR.look = (() => { try { let v = localStorage.getItem("hacheden-look"); if (v == null) { v = String(Math.floor(Math.random() * 6)); localStorage.setItem("hacheden-look", v); } return +v; } catch (e) { return 0; } })();
   async function goLive() {
-    if (FR.on || FR.connecting || FR.invisible) return;
+    if (!FEAT.liveBar || FR.on || FR.connecting || FR.invisible) return;
     FR.connecting = true;
     try {
       FR.net = FR.net || (QS_FR.get("net") === "local" ? localNet() : firebaseNet());
@@ -4531,6 +4543,7 @@
   function openLive() { renderLive(); openSheet(frDlg); }
   document.getElementById("t-friends").addEventListener("click", openLive);
   const FRIENDS = { get on() { return FR.on; }, get uid() { return FR.uid; }, get peers() { return FR.peers; }, open: openLive, live: goLive, quiet: goQuiet, say: sayPhrase };
+  if (!FEAT.liveBar) { const b = document.getElementById("t-friends"); if (b) b.hidden = true; }   // у заведения нет живого бара
 
 /* ================= воронка для заведения: сколько гостей дошли до каждого шага =================
    stats/<бар>/<гггг-мм-дд>/<событие>: n — счётчик, u/<анонимный id> — отметка, что этот браузер уже посчитан.
@@ -4686,7 +4699,7 @@
   function vxQuestSet(n) { if (n <= VX.quest) return; VX.quest = n; keepSet("hacheden-quest", n); }
   function vxQuestNote() { if (VX.quest < 1) { vxQuestSet(1); toast("Пометка на полях", "Кто-то оставил подсказку. Похоже, речь о камине в курилке.", "secret"); } }
   function vxQuestEmber() {   // зовёт 3D-сцена, когда гость подбрасывает дров
-    if (VX.quest !== 1) return false;
+    if (!FEAT.quests || VX.quest !== 1) return false;
     vxQuestSet(2);
     vxSound("ember");
     setTimeout(() => toast("Угли", VENUE.quest.ember, "secret"), 700);
@@ -4701,9 +4714,9 @@
     addDrink(L);
     if (fresh) { track("count", "recipe"); setTimeout(() => { uiSound("chime"); toast("Легендарный рецепт", L.name, "secret"); }, 300); }
   }
-  if (VENUE.legend && VX.quest >= 3) addDrink(VENUE.legend);
+  if (FEAT.quests && VENUE.legend && VX.quest >= 3) addDrink(VENUE.legend);
   function vxQuestBar() {      // гость пришёл к стойке после камина: бармен шёпотом называет состав
-    if (VX.quest !== 2 || VX.questTold) return "";
+    if (!FEAT.quests || VX.quest !== 2 || VX.questTold) return "";
     VX.questTold = true;
     return VENUE.quest.bar;
   }
@@ -5118,6 +5131,14 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { BokehPass } from "three/addons/postprocessing/BokehPass.js";
+import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+if (SCENE_EXT) await import(SCENE_EXT);
+else {
 
 /* ================= ядро: рендер, помощники, анимации ================= */
 const canvas = document.getElementById("gl");
@@ -5380,12 +5401,6 @@ const SEASON_DRINK = {
   }
 };
 
-import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
-import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
-import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
-import { BokehPass } from "three/addons/postprocessing/BokehPass.js";
-import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
-import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 
 /* ================= кинематографичная картинка: постобработка =================
    Высокое: сглаживание, мягкое свечение ламп и неона, глубина резкости на крупных планах, плёночное зерно.
@@ -5737,8 +5752,8 @@ TEX.news = canvasTex(256, 320, (g, w, h) => {
   for (let c = 0; c < 3; c++) for (let i = 0; i < 16; i++) g.fillRect(16 + c * 78, 86 + i * 13, 70 - (i % 6 === 5 ? 30 : 0), 4);
 });
 
-/* ================= комната: пол, стены, потолок, свет ================= */
-const ROOM = { x0: -8, x1: 8, z0: -5, z1: 6, h: 3.8 };
+/* ================= набор движка: материалы, свет, бутылки и бокалы =================
+   Общее для всех заведений. Залы конкретного бара (src/venues/<id>/rooms) строятся из этих деталей. */
 const M = {
   floor: std({ map: TEX.floor, roughness: .38, envMapIntensity: .8 }),
   walnut: std({ map: TEX.walnut, roughness: .45, envMapIntensity: .6 }),
@@ -5762,6 +5777,86 @@ const M = {
   paper: std({ map: TEX.page, roughness: .9 }),
   candle: std({ color: 0xefe3c8, roughness: .6, emissive: 0x3a2410, emissiveIntensity: .6 })
 };
+
+/* ---------- свет ---------- */
+const hemi = new THREE.HemisphereLight(0x8a4a3a, 0x1a0c08, 1.6);
+scene.add(hemi);
+const LIGHTS = {};
+function point(name, color, intensity, dist, x, y, z) {
+  const l = new THREE.PointLight(color, intensity, dist, 2);
+  l.position.set(x, y, z);
+  world.add(l);
+  LIGHTS[name] = l;
+  l.userData.base = intensity;
+  return l;
+}
+
+/* профили бутылок в сантиметрах: [радиус, высота]; крышка отдельно */
+const BOTTLE = {
+  bordeaux: { p: [[0, 0], [3.5, 0], [3.75, .6], [3.75, 20], [3.5, 22.5], [2.5, 25], [1.45, 26.6], [1.3, 28], [1.3, 30.4]], cap: [1.45, 2.6], seg: 24 },
+  squat:    { p: [[0, 0], [5.1, 0], [5.4, .6], [5.4, 12.5], [5, 15], [3.4, 17.2], [1.8, 18.6], [1.5, 20], [1.5, 21.6]], cap: [2, 2.8], seg: 24 },
+  tall:     { p: [[0, 0], [3.3, 0], [3.55, .6], [3.55, 22], [3.2, 24], [1.8, 25.6], [1.4, 27], [1.4, 30.6]], cap: [1.6, 2.4], seg: 24 },
+  flask:    { p: [[0, 0], [4.3, 0], [4.6, .6], [4.6, 16.5], [4.2, 19], [2.4, 21.2], [1.5, 22.6], [1.5, 25.8]], cap: [1.8, 2.6], seg: 24 },
+  square:   { p: [[0, 0], [5.4, 0], [5.6, .6], [5.6, 18.5], [4.8, 20.6], [1.9, 22.2], [1.5, 22.8], [1.5, 25.6]], cap: [1.8, 2.6], seg: 4 },
+  round:    { p: [[0, 0], [3.6, 0], [4.1, 1.2], [4.5, 6], [4.5, 13], [4.1, 17], [2.9, 19.4], [1.6, 20.8], [1.4, 21.8], [1.4, 25.4]], cap: [1.7, 2.4], seg: 24 }
+};
+const bodyR = s => Math.max(...BOTTLE[s].p.map(q => q[0])) / 100;
+const neckTop = s => BOTTLE[s].p[BOTTLE[s].p.length - 1][1] / 100;
+const BGEO = {};
+for (const k in BOTTLE) {
+  const b = BOTTLE[k];
+  const g = lathe(b.p.map(([r, y]) => [r / 100, y / 100]).concat([[0, b.p[b.p.length - 1][1] / 100]]), b.seg);
+  if (b.seg === 4) g.rotateY(Math.PI / 4);
+  BGEO[k] = g;
+  const lo = lathe(b.p.map(([r, y]) => [r / 100, y / 100]).concat([[0, b.p[b.p.length - 1][1] / 100]]), b.seg > 4 ? 10 : 4);
+  if (b.seg === 4) lo.rotateY(Math.PI / 4);
+  BGEO[k + "Lo"] = lo;
+}
+
+/* ---------- посуда для коктейлей ---------- */
+const CUPS = {
+  highball: { p: [[0, 0], [3, 0], [3.1, .5], [3.3, 14.5]], liq: [2.9, 3.15, .6, 13.2] },
+  rocks:    { p: [[0, 0], [4, 0], [4.1, .8], [4.4, 9]], liq: [3.85, 4.2, .9, 7.4] },
+  shot:     { p: [[0, 0], [2.1, 0], [2.2, .8], [2.6, 6.2]], liq: [2.05, 2.45, .9, 5.2] },
+  coupe:    { p: [[0, 0], [3.5, 0], [3.5, .3], [.6, .8], [.4, 7.6], [1.6, 8.4], [4.4, 9.8], [5.4, 11.8]], liq: [.8, 5, 8.2, 11] },
+  martini:  { p: [[0, 0], [3.5, 0], [3.5, .3], [.6, .8], [.4, 8], [.7, 8.4], [6, 14]], liq: [.7, 5.4, 8.5, 13.2] },
+  wine:     { p: [[0, 0], [3.5, 0], [3.5, .3], [.6, .8], [.4, 8], [2.4, 9.4], [4, 12.8], [3.7, 18.2]], liq: [2.2, 3.9, 9.4, 13] },
+  snifter:  { p: [[0, 0], [3.5, 0], [3.5, .3], [.6, .8], [.4, 4], [3, 5.4], [4.9, 8.6], [4.5, 12.4], [3.4, 13.8]], liq: [3, 4.9, 5.5, 8.6] }
+};
+const glassMat = std({ color: 0xeef4ff, transparent: true, opacity: .2, roughness: .02, envMapIntensity: 2.5, side: THREE.DoubleSide, depthWrite: false });
+function makeGlass(cup, color, { garnish = null, ice = false, op = .85 } = {}) {
+  const c = CUPS[cup] || CUPS.rocks, gr = new THREE.Group();
+  const g = mesh(lathe(c.p.map(([r, y]) => [r / 100, y / 100]), 28), glassMat, 0, 0, 0, gr);
+  g.renderOrder = 5;
+  const [r0, r1, y0, y1] = c.liq.map(v => v / 100);
+  const liq = mesh(new THREE.CylinderGeometry(r1, r0, y1 - y0, 24), std({ color, transparent: true, opacity: op, roughness: .15, emissive: new THREE.Color(color), emissiveIntensity: .25 }), 0, (y0 + y1) / 2, 0, gr);
+  liq.renderOrder = 4;
+  gr.userData.liq = { mesh: liq, y0, y1 };
+  if (ice) for (let i = 0; i < 2; i++) {
+    const cube = mesh(new RoundedBoxGeometry(.028, .028, .028, 2, .006), std({ color: 0xffffff, transparent: true, opacity: .35, roughness: .05 }), R(-.012, .012), y1 - .016 - i * .02, R(-.012, .012), gr);
+    cube.rotation.set(R(0, 1), R(0, 1), 0);
+    cube.renderOrder = 5;
+  }
+  if (garnish) {
+    const col = { flame: 0xf08a22, wheel: 0x9fc23a, wedge: 0x9fc23a, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0x9a0f1e, pineapple: 0xf2c84a, olive: 0x7a8a2a }[garnish] || 0x9fc23a;
+    const topR = c.p[c.p.length - 1][0] / 100, topY = c.p[c.p.length - 1][1] / 100;
+    if (garnish === "cherry" || garnish === "olive") mesh(new THREE.SphereGeometry(.012, 12, 8), std({ color: col, roughness: .3 }), 0, y1 - .004, 0, gr);
+    else if (garnish === "mint") for (let i = 0; i < 3; i++) { const l = mesh(new THREE.SphereGeometry(.016, 8, 6), std({ color: col }), R(-.01, .01), topY + .01, R(-.01, .01), gr); l.scale.set(1, .35, .6); l.rotation.set(R(0, 1), R(0, 3), 0); }
+    else { const w = mesh(new THREE.CylinderGeometry(.024, .024, .005, 18), std({ color: col, roughness: .5 }), topR - .01, topY - .012, 0, gr); w.rotation.z = Math.PI / 2.4; }
+  }
+  return gr;
+}
+
+/* ---------- затемнение экрана (закрытие смены, вход, погреб) ---------- */
+const fadeEl = document.getElementById("fade");
+function fade(on, dur = .6) {
+  fadeEl.style.transitionDuration = (STILL ? 0 : dur) + "s";
+  fadeEl.classList.toggle("on", on);
+  return sleep(STILL ? 0 : dur);
+}
+
+/* ================= комната: пол, стены, потолок, свет ================= */
+const ROOM = { x0: -8, x1: 8, z0: -5, z1: 6, h: 3.8 };
 
 /* пол */
 const floorGeo = new THREE.PlaneGeometry(ROOM.x1 - ROOM.x0, ROOM.z1 - ROOM.z0);
@@ -5834,18 +5929,7 @@ for (const sx of [-1, 1]) {
   box(x - .14, x + .14, .4, 3.2, -2.69, -2.66, M.walnut, world, .8);
 }
 
-/* ---------- свет ---------- */
-const hemi = new THREE.HemisphereLight(0x8a4a3a, 0x1a0c08, 1.6);
-scene.add(hemi);
-const LIGHTS = {};
-function point(name, color, intensity, dist, x, y, z) {
-  const l = new THREE.PointLight(color, intensity, dist, 2);
-  l.position.set(x, y, z);
-  world.add(l);
-  LIGHTS[name] = l;
-  l.userData.base = intensity;
-  return l;
-}
+/* ---------- свет залов Hacheden (point и LIGHTS — в 19-kit.js) ---------- */
 point("pendL", 0xffb066, 3.4, 6.5, -1.7, 2.45, -2.35);
 point("pendC", 0xffb066, 3.2, 6.5, 0, 2.45, -2.35);
 point("pendR", 0xffb066, 3.4, 6.5, 1.7, 2.45, -2.35);
@@ -5862,28 +5946,6 @@ box(.62, .76, 0, 2.56, 5.94, 6.0, M.walnut, world, .8);
 box(-.76, .76, 2.42, 2.56, 5.94, 6.0, M.walnut, world, .8);
 
 /* ================= БАР: задняя стенка с бутылками, стойка, табуреты, лампы ================= */
-
-/* профили бутылок в сантиметрах: [радиус, высота]; крышка отдельно */
-const BOTTLE = {
-  bordeaux: { p: [[0, 0], [3.5, 0], [3.75, .6], [3.75, 20], [3.5, 22.5], [2.5, 25], [1.45, 26.6], [1.3, 28], [1.3, 30.4]], cap: [1.45, 2.6], seg: 24 },
-  squat:    { p: [[0, 0], [5.1, 0], [5.4, .6], [5.4, 12.5], [5, 15], [3.4, 17.2], [1.8, 18.6], [1.5, 20], [1.5, 21.6]], cap: [2, 2.8], seg: 24 },
-  tall:     { p: [[0, 0], [3.3, 0], [3.55, .6], [3.55, 22], [3.2, 24], [1.8, 25.6], [1.4, 27], [1.4, 30.6]], cap: [1.6, 2.4], seg: 24 },
-  flask:    { p: [[0, 0], [4.3, 0], [4.6, .6], [4.6, 16.5], [4.2, 19], [2.4, 21.2], [1.5, 22.6], [1.5, 25.8]], cap: [1.8, 2.6], seg: 24 },
-  square:   { p: [[0, 0], [5.4, 0], [5.6, .6], [5.6, 18.5], [4.8, 20.6], [1.9, 22.2], [1.5, 22.8], [1.5, 25.6]], cap: [1.8, 2.6], seg: 4 },
-  round:    { p: [[0, 0], [3.6, 0], [4.1, 1.2], [4.5, 6], [4.5, 13], [4.1, 17], [2.9, 19.4], [1.6, 20.8], [1.4, 21.8], [1.4, 25.4]], cap: [1.7, 2.4], seg: 24 }
-};
-const bodyR = s => Math.max(...BOTTLE[s].p.map(q => q[0])) / 100;
-const neckTop = s => BOTTLE[s].p[BOTTLE[s].p.length - 1][1] / 100;
-const BGEO = {};
-for (const k in BOTTLE) {
-  const b = BOTTLE[k];
-  const g = lathe(b.p.map(([r, y]) => [r / 100, y / 100]).concat([[0, b.p[b.p.length - 1][1] / 100]]), b.seg);
-  if (b.seg === 4) g.rotateY(Math.PI / 4);
-  BGEO[k] = g;
-  const lo = lathe(b.p.map(([r, y]) => [r / 100, y / 100]).concat([[0, b.p[b.p.length - 1][1] / 100]]), b.seg > 4 ? 10 : 4);
-  if (b.seg === 4) lo.rotateY(Math.PI / 4);
-  BGEO[k + "Lo"] = lo;
-}
 
 /* ---------- задняя стенка бара ---------- */
 const BB = { x0: -3.3, x1: 3.3, z0: -4.98, z1: -4.42, top: 1.04, shelves: [1.44, 1.9, 2.36], cor: 2.8 };
@@ -6160,40 +6222,6 @@ stemGeo.rotateX(Math.PI);
   world.add(im);
 })();
 
-/* ---------- посуда для коктейлей ---------- */
-const CUPS = {
-  highball: { p: [[0, 0], [3, 0], [3.1, .5], [3.3, 14.5]], liq: [2.9, 3.15, .6, 13.2] },
-  rocks:    { p: [[0, 0], [4, 0], [4.1, .8], [4.4, 9]], liq: [3.85, 4.2, .9, 7.4] },
-  shot:     { p: [[0, 0], [2.1, 0], [2.2, .8], [2.6, 6.2]], liq: [2.05, 2.45, .9, 5.2] },
-  coupe:    { p: [[0, 0], [3.5, 0], [3.5, .3], [.6, .8], [.4, 7.6], [1.6, 8.4], [4.4, 9.8], [5.4, 11.8]], liq: [.8, 5, 8.2, 11] },
-  martini:  { p: [[0, 0], [3.5, 0], [3.5, .3], [.6, .8], [.4, 8], [.7, 8.4], [6, 14]], liq: [.7, 5.4, 8.5, 13.2] },
-  wine:     { p: [[0, 0], [3.5, 0], [3.5, .3], [.6, .8], [.4, 8], [2.4, 9.4], [4, 12.8], [3.7, 18.2]], liq: [2.2, 3.9, 9.4, 13] },
-  snifter:  { p: [[0, 0], [3.5, 0], [3.5, .3], [.6, .8], [.4, 4], [3, 5.4], [4.9, 8.6], [4.5, 12.4], [3.4, 13.8]], liq: [3, 4.9, 5.5, 8.6] }
-};
-const glassMat = std({ color: 0xeef4ff, transparent: true, opacity: .2, roughness: .02, envMapIntensity: 2.5, side: THREE.DoubleSide, depthWrite: false });
-function makeGlass(cup, color, { garnish = null, ice = false, op = .85 } = {}) {
-  const c = CUPS[cup] || CUPS.rocks, gr = new THREE.Group();
-  const g = mesh(lathe(c.p.map(([r, y]) => [r / 100, y / 100]), 28), glassMat, 0, 0, 0, gr);
-  g.renderOrder = 5;
-  const [r0, r1, y0, y1] = c.liq.map(v => v / 100);
-  const liq = mesh(new THREE.CylinderGeometry(r1, r0, y1 - y0, 24), std({ color, transparent: true, opacity: op, roughness: .15, emissive: new THREE.Color(color), emissiveIntensity: .25 }), 0, (y0 + y1) / 2, 0, gr);
-  liq.renderOrder = 4;
-  gr.userData.liq = { mesh: liq, y0, y1 };
-  if (ice) for (let i = 0; i < 2; i++) {
-    const cube = mesh(new RoundedBoxGeometry(.028, .028, .028, 2, .006), std({ color: 0xffffff, transparent: true, opacity: .35, roughness: .05 }), R(-.012, .012), y1 - .016 - i * .02, R(-.012, .012), gr);
-    cube.rotation.set(R(0, 1), R(0, 1), 0);
-    cube.renderOrder = 5;
-  }
-  if (garnish) {
-    const col = { flame: 0xf08a22, wheel: 0x9fc23a, wedge: 0x9fc23a, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0x9a0f1e, pineapple: 0xf2c84a, olive: 0x7a8a2a }[garnish] || 0x9fc23a;
-    const topR = c.p[c.p.length - 1][0] / 100, topY = c.p[c.p.length - 1][1] / 100;
-    if (garnish === "cherry" || garnish === "olive") mesh(new THREE.SphereGeometry(.012, 12, 8), std({ color: col, roughness: .3 }), 0, y1 - .004, 0, gr);
-    else if (garnish === "mint") for (let i = 0; i < 3; i++) { const l = mesh(new THREE.SphereGeometry(.016, 8, 6), std({ color: col }), R(-.01, .01), topY + .01, R(-.01, .01), gr); l.scale.set(1, .35, .6); l.rotation.set(R(0, 1), R(0, 3), 0); }
-    else { const w = mesh(new THREE.CylinderGeometry(.024, .024, .005, 18), std({ color: col, roughness: .5 }), topR - .01, topY - .012, 0, gr); w.rotation.z = Math.PI / 2.4; }
-  }
-  return gr;
-}
-
 /* на стойке: свечи, лаймы, шейкер, карта коктейлей */
 const STATIC_TOOLS = [];
 (() => {
@@ -6220,6 +6248,9 @@ const STATIC_TOOLS = [];
   mesh(new THREE.BoxGeometry(.12, .01, .06), M.brass, 0, .005, -.02, menu);
   hot(menu, 1, "Барная карта", () => openMix(), { grow: .1 });
 })();
+
+/* ================= подача: готовый коктейль встаёт на стойку перед гостем =================
+   От залов заведения нужна стойка CT (top); от движка — makeGlass, SEAT, SEAT_X, BT. */
 let servedGlass = null, servedV = null;
 function placeServed(c) {
   abortSip();
@@ -10255,7 +10286,7 @@ const SDOOR2 = { g: group(SECRET.hx, 0, SECRET.hz), a: 0 };
   mesh(new THREE.BoxGeometry(.004, .03, .052), M.brass, b.d + .037, b.h * .7, 0, hinge);
   mesh(new THREE.BoxGeometry(.004, .03, .052), M.brass, b.d + .037, b.h * .3, 0, hinge);
   SDOOR2.lever = hinge;
-  hot(hinge, 0, "Книга, которая торчит", () => enterCellar(), { grow: .15 });
+  if (FEAT.cellar) hot(hinge, 0, "Книга, которая торчит", () => enterCellar(), { grow: .15 });
 })();
 /* потайной ход за стеной: каменные стены, площадка и ступени вниз, свеча */
 (() => {
@@ -10541,14 +10572,6 @@ function drip() {
   o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * 1.9, t + .05);
   g.gain.setValueAtTime(.05, t); g.gain.exponentialRampToValueAtTime(.0001, t + .16);
   o.connect(g).connect(c.destination); o.start(t); o.stop(t + .2);
-}
-
-/* ---------- затемнение экрана ---------- */
-const fadeEl = document.getElementById("fade");
-function fade(on, dur = .6) {
-  fadeEl.style.transitionDuration = (STILL ? 0 : dur) + "s";
-  fadeEl.classList.toggle("on", on);
-  return sleep(STILL ? 0 : dur);
 }
 
 /* ---------- вход: книга, шкаф поворачивается, ход вниз ---------- */
@@ -12035,6 +12058,7 @@ function runFlight() {
 
 /* ---------- интерфейс ---------- */
 const navBtns = [...document.querySelectorAll("#nav button")];
+if (!FEAT.stage && navBtns[3]) navBtns[3].hidden = true;   // у заведения нет сцены
 const titleEl = document.getElementById("zone-title"), subEl = document.getElementById("zone-sub");
 const spotsEl = document.getElementById("spots"), tip = document.getElementById("tip");
 function renderZoneUI(i) {
@@ -12062,6 +12086,8 @@ function renderZoneUI(i) {
 }
 function goZone(i, dur = 1.9) {
   i = clamp(i, 0, ZONES.length - 1);
+  if (i === 3 && !FEAT.stage) i = 1;        // выключенные залы: вместо сцены — бар, вместо погреба — читальня
+  if (i === 4 && !FEAT.cellar) i = 0;
   if (typeof CEL !== "undefined" && CEL.busy) return Promise.resolve();
   const cross = (curZone === 4) !== (i === 4);
   leaveSeat();
@@ -13221,8 +13247,10 @@ if (HALLOWEEN) {
   lantern(WIN.x - .55, WIN.sill + .005, -4.82, .9, 0);
   lantern(WIN.x + .58, WIN.sill + .005, -4.82, .7, -.15);
   // сцена: по краям рампы
-  lantern(STG.x0 + .45, STG.h, STG.z0 + .18, 1.1, Math.PI);
-  lantern(STG.x1 - .45, STG.h, STG.z0 + .18, 1.1, Math.PI);
+  if (FEAT.stage) {
+    lantern(STG.x0 + .45, STG.h, STG.z0 + .18, 1.1, Math.PI);
+    lantern(STG.x1 - .45, STG.h, STG.z0 + .18, 1.1, Math.PI);
+  }
   // улица: у двери
   lantern(-1.45, 0, FZ + .6, 3.2, .1, street);
   lantern(.3, 0, FZ + .6, 2.6, -.15, street);
@@ -14812,6 +14840,8 @@ H3D.venue = () => ({ seats: SEAT_MARKS.filter(g => g.visible).length, ember: EMB
   progress(1);
   if (!closedNow && !started) { enter.disabled = false; if (document.activeElement === document.body) enter.focus({ preventScroll: true }); }
 })();
+
+}
 
 </script>
 </body>

@@ -80,7 +80,7 @@
   function vxQuestSet(n) { if (n <= VX.quest) return; VX.quest = n; keepSet("hacheden-quest", n); }
   function vxQuestNote() { if (VX.quest < 1) { vxQuestSet(1); toast("Пометка на полях", "Кто-то оставил подсказку. Похоже, речь о камине в курилке.", "secret"); } }
   function vxQuestEmber() {   // зовёт 3D-сцена, когда гость подбрасывает дров
-    if (VX.quest !== 1) return false;
+    if (!FEAT.quests || VX.quest !== 1) return false;
     vxQuestSet(2);
     vxSound("ember");
     setTimeout(() => toast("Угли", VENUE.quest.ember, "secret"), 700);
@@ -95,9 +95,9 @@
     addDrink(L);
     if (fresh) { track("count", "recipe"); setTimeout(() => { uiSound("chime"); toast("Легендарный рецепт", L.name, "secret"); }, 300); }
   }
-  if (VENUE.legend && VX.quest >= 3) addDrink(VENUE.legend);
+  if (FEAT.quests && VENUE.legend && VX.quest >= 3) addDrink(VENUE.legend);
   function vxQuestBar() {      // гость пришёл к стойке после камина: бармен шёпотом называет состав
-    if (VX.quest !== 2 || VX.questTold) return "";
+    if (!FEAT.quests || VX.quest !== 2 || VX.questTold) return "";
     VX.questTold = true;
     return VENUE.quest.bar;
   }

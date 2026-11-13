@@ -1,28 +1,5 @@
 /* ================= комната: пол, стены, потолок, свет ================= */
 const ROOM = { x0: -8, x1: 8, z0: -5, z1: 6, h: 3.8 };
-const M = {
-  floor: std({ map: TEX.floor, roughness: .38, envMapIntensity: .8 }),
-  walnut: std({ map: TEX.walnut, roughness: .45, envMapIntensity: .6 }),
-  walnutGloss: std({ map: TEX.walnut, roughness: .2, envMapIntensity: 1.1 }),
-  darkwood: std({ map: TEX.darkwood, roughness: .55, envMapIntensity: .5 }),
-  oak: std({ map: TEX.oak, roughness: .5 }),
-  panel: lam({ map: TEX.darkwood }),
-  ceiling: lam({ color: 0x1a0f0a }),
-  beam: lam({ map: TEX.darkwood, color: 0x8a7a70 }),
-  brass: std({ color: 0xc9944a, metalness: 1, roughness: .28, envMapIntensity: 1.4 }),
-  brassDark: std({ color: 0x8a6430, metalness: 1, roughness: .4 }),
-  chrome: std({ color: 0xd8dde2, metalness: 1, roughness: .16, envMapIntensity: 1.6 }),
-  black: std({ color: 0x0b0908, roughness: .6 }),
-  iron: std({ color: 0x1a1816, metalness: .7, roughness: .5 }),
-  leatherRed: std({ map: TEX.leather, color: 0x5a1a14, roughness: .45, envMapIntensity: .7 }),
-  leatherBrown: std({ map: TEX.leather, color: 0x4a2414, roughness: .5, envMapIntensity: .6 }),
-  velvetGreen: std({ map: TEX.velvet, color: 0x1f3a2a, roughness: .9 }),
-  velvetRed: std({ map: TEX.velvet, color: 0x4a0e18, roughness: .9 }),
-  marble: std({ color: 0x1b1816, roughness: .22, envMapIntensity: .9 }),
-  stone: std({ color: 0x24201c, roughness: .8 }),
-  paper: std({ map: TEX.page, roughness: .9 }),
-  candle: std({ color: 0xefe3c8, roughness: .6, emissive: 0x3a2410, emissiveIntensity: .6 })
-};
 
 /* пол */
 const floorGeo = new THREE.PlaneGeometry(ROOM.x1 - ROOM.x0, ROOM.z1 - ROOM.z0);
@@ -95,18 +72,7 @@ for (const sx of [-1, 1]) {
   box(x - .14, x + .14, .4, 3.2, -2.69, -2.66, M.walnut, world, .8);
 }
 
-/* ---------- свет ---------- */
-const hemi = new THREE.HemisphereLight(0x8a4a3a, 0x1a0c08, 1.6);
-scene.add(hemi);
-const LIGHTS = {};
-function point(name, color, intensity, dist, x, y, z) {
-  const l = new THREE.PointLight(color, intensity, dist, 2);
-  l.position.set(x, y, z);
-  world.add(l);
-  LIGHTS[name] = l;
-  l.userData.base = intensity;
-  return l;
-}
+/* ---------- свет залов Hacheden (point и LIGHTS — в 19-kit.js) ---------- */
 point("pendL", 0xffb066, 3.4, 6.5, -1.7, 2.45, -2.35);
 point("pendC", 0xffb066, 3.2, 6.5, 0, 2.45, -2.35);
 point("pendR", 0xffb066, 3.4, 6.5, 1.7, 2.45, -2.35);
