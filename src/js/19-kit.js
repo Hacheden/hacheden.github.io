@@ -70,6 +70,7 @@ const CUPS = {
   snifter:  { p: [[0, 0], [3.5, 0], [3.5, .3], [.6, .8], [.4, 4], [3, 5.4], [4.9, 8.6], [4.5, 12.4], [3.4, 13.8]], liq: [3, 4.9, 5.5, 8.6] }
 };
 const glassMat = std({ color: 0xeef4ff, transparent: true, opacity: .2, roughness: .02, envMapIntensity: 2.5, side: THREE.DoubleSide, depthWrite: false });
+KEEP.add(glassMat); Object.values(M).forEach(m => KEEP.add(m)); Object.values(BGEO).forEach(g => KEEP.add(g));
 function makeGlass(cup, color, { garnish = null, ice = false, op = .85 } = {}) {
   const c = CUPS[cup] || CUPS.rocks, gr = new THREE.Group();
   const g = mesh(lathe(c.p.map(([r, y]) => [r / 100, y / 100]), 28), glassMat, 0, 0, 0, gr);

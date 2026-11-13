@@ -133,7 +133,7 @@ const CM = {
   merged(rack, CM.rackWood, g);
   const bot = new THREE.CylinderGeometry(.037, .037, .3, 14); bot.rotateX(Math.PI / 2);
   const neck = new THREE.CylinderGeometry(.013, .016, .1, 8); neck.rotateX(Math.PI / 2); neck.translate(0, 0, -.2);
-  const bgeo = mergeGeometries([bot.toNonIndexed(), neck.toNonIndexed()]);
+  const bgeo = mergeGeometries([(bot.index ? bot.toNonIndexed() : bot), (neck.index ? neck.toNonIndexed() : neck)]);
   const bm = new THREE.InstancedMesh(bgeo, std({ color: 0xffffff, roughness: .12, metalness: .2, envMapIntensity: 1.6 }), nx * ny);
   const m4 = new THREE.Matrix4(), col = new THREE.Color(), GL = [0x1a2a14, 0x14200f, 0x2a140a, 0x101010, 0x3a1a0a, 0x1f2a1a];
   let n = 0;
@@ -156,7 +156,7 @@ const CM = {
   barrelG.rotateZ(Math.PI / 2);
   const hoopG = [];
   for (const y of [-.36, -.24, .24, .36]) { const t = new THREE.TorusGeometry(y > .3 || y < -.3 ? .285 : .325, .012, 6, 28); t.rotateY(Math.PI / 2); t.translate(y, 0, 0); hoopG.push(t); }
-  const hoopM = mergeGeometries(hoopG.map(x => x.toNonIndexed()));
+  const hoopM = mergeGeometries(hoopG.map(x => (x.index ? x.toNonIndexed() : x)));
   const marks = ["1912", "1921", "1924", "XO", "№7"];
   [[-3.55, .36, -1.75], [-3.55, .36, -1.05], [-3.55, .36, -.35], [-3.55, .98, -1.4], [-3.55, .98, -.7]].forEach(([x, y, z], i) => {
     const b = group(x + .42, y, z, g);
@@ -326,7 +326,7 @@ async function bookcaseTo(open, dur = 2.4) {
   if (open && !STILL) for (let i = 0; i < 18; i++) {
     const s = glowSprite(0xd8c8b0, .03, SECRET.hx + R(.05, .3), R(2.6, 3.3), R(SECRET.a0, SECRET.a1), world, .5);
     tween(s.position, { y: R(.2, 1.5) }, R(1.2, 2.2), ease.in);
-    tween(s.material, { opacity: 0 }, R(1.4, 2.4), ease.in).then(() => world.remove(s));
+    tween(s.material, { opacity: 0 }, R(1.4, 2.4), ease.in).then(() => drop(s));
   }
   await tween(SDOOR2.g.rotation, { y: target }, STILL ? 0 : dur, ease.io);
   if (!open) SDOOR2.lever.rotation.z = 0;
@@ -405,7 +405,7 @@ async function greet() {
 function endTasting() {
   celAnswers([]);
   app.classList.remove("seated");
-  if (CEL.glass) { world.remove(CEL.glass.g); CEL.glass = null; }
+  if (CEL.glass) { drop(CEL.glass.g); CEL.glass = null; }
   if (CEL.fizz) { CEL.fizz.g.parent && CEL.fizz.g.parent.remove(CEL.fizz.g); CEL.fizz = null; }
   for (const a of [SOM.L, SOM.R]) { HANDS.delete(a); a.manual = false; a.snap = false; a.k = 9; }
   streamOff();
@@ -423,7 +423,7 @@ async function taste(w) {
   app.classList.add("seated");
   const T = CEL.T, R_ = SOM.R, L_ = SOM.L;
   // убрать прошлый бокал
-  if (CEL.glass) { const old = CEL.glass; CEL.glass = null; tween(old.g.scale, { x: .001, y: .001, z: .001 }, .3).then(() => world.remove(old.g)); }
+  if (CEL.glass) { const old = CEL.glass; CEL.glass = null; tween(old.g.scale, { x: .001, y: .001, z: .001 }, .3).then(() => drop(old.g)); }
   if (CEL.fizz) { CEL.fizz.g.parent && CEL.fizz.g.parent.remove(CEL.fizz.g); CEL.fizz = null; }
   // новый бокал перед гостем
   const gd = WGLASS[w.glass];

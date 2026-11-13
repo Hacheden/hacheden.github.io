@@ -106,7 +106,7 @@ async function playClosing() {
       bt.R.curlT = .2;
       await cw(g, .2);
     }
-    if (servedGlass && !servedGlass.visible) { world.remove(servedGlass); servedGlass = null; }
+    if (servedGlass && !servedGlass.visible) { drop(servedGlass); servedGlass = null; }
 
     // 4. протирает стойку
     cCaption("Протирает стойку до блеска");

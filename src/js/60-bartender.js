@@ -22,7 +22,7 @@ const ragGeo = (() => {
   const flap = new THREE.PlaneGeometry(.08, .12, 4, 6), q = flap.attributes.position;
   for (let i = 0; i < q.count; i++) q.setZ(i, Math.sin(q.getY(i) * 40) * .008 + Math.sin(q.getX(i) * 50) * .006);
   flap.translate(.01, -.07, .0);
-  const g = mergeGeometries([blob.toNonIndexed(), flap.toNonIndexed()]);
+  const g = mergeGeometries([(blob.index ? blob.toNonIndexed() : blob), (flap.index ? flap.toNonIndexed() : flap)]);
   g.computeVertexNormals();
   return g;
 })();

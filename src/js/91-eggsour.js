@@ -65,8 +65,8 @@ SND.slosh = (dur, hz) => { if (SHOW.fast) return; for (let i = 0; i < dur * hz *
 /* подставка для яйца ставится вместе с остальным реквизитом */
 const EGGS = { cup: null, e: null };
 function eggClear() {
-  if (EGGS.cup) world.remove(EGGS.cup);
-  if (EGGS.e) { world.remove(EGGS.e.b); world.remove(EGGS.e.t); world.remove(EGGS.e.yolk); }
+  if (EGGS.cup) drop(EGGS.cup);
+  if (EGGS.e) { drop(EGGS.e.b); drop(EGGS.e.t); drop(EGGS.e.yolk); }
   EGGS.cup = EGGS.e = null;
 }
 {
@@ -161,7 +161,7 @@ async function stepEgg(st) {
     move(E.t, B(.12, TOP() - .3, .16), { dur: .5, e: ease.in, arc: .02 })
   ]);
   letGo(R); letGo(L);
-  world.remove(E.b); world.remove(E.t);
+  drop(E.b); drop(E.t);
   EGGS.e = null;
   await Promise.all([rest(R), rest(L)]);
 }
@@ -188,7 +188,7 @@ async function stepDrops(st) {
     const d = mesh(new THREE.SphereGeometry(.0028, 10, 8), EGG.dropM.clone(), 0, 0, 0);
     d.material.map = null; d.material.color.set(0x5a160c); d.material.transparent = false; d.material.depthWrite = true;
     b.localToWorld(d.position.copy(top));
-    tween(d.position, { x: land.x, y: land.y, z: land.z }, SHOW.fast ? .001 : .2, ease.in).then(() => { world.remove(d); (F.userData.drops = F.userData.drops || []).push(addDrop(F, spots[i], G.scale, .6)); });
+    tween(d.position, { x: land.x, y: land.y, z: land.z }, SHOW.fast ? .001 : .2, ease.in).then(() => { drop(d); (F.userData.drops = F.userData.drops || []).push(addDrop(F, spots[i], G.scale, .6)); });
     await move(b, over, { dur: .14, e: ease.out });
     await ws(.18);
   }
@@ -307,7 +307,7 @@ async function stepHearts() {
   bt.look = null;
   await move(pick, B(.14, TOP() - .3, .16), { dur: .5, e: ease.in, arc: .02 });
   letGo(R);
-  world.remove(pick);
+  drop(pick);
   await rest(R);
   await ws(.4);
 }

@@ -613,7 +613,7 @@ async function bottleDown(b) {
   tagOff();
   await move(b, ST.rail.clone().add(V3(0, .06, 0)), { q: Qe(0, 0, 0), dur: .45, arc: .03 });
   letGo(bt.R);
-  move(b, ST.rail.clone().add(V3(0, -.35, 0)), { dur: .3, e: ease.in }).then(() => world.remove(b), () => world.remove(b));
+  move(b, ST.rail.clone().add(V3(0, -.35, 0)), { dur: .3, e: ease.in }).then(() => drop(b), () => drop(b));
   rest(bt.R);
 }
 /* налить из предмета с носиком: носик подходит к цели, поворот вокруг носика, струя */
@@ -712,7 +712,7 @@ async function stepDash(st) {
     await move(b, p0.clone().add(V3(0, -.03, 0)), { dur: .08, e: ease.in });
     const d = mesh(new THREE.SphereGeometry(.004, 8, 6), std({ color: 0x5a1a0c }), 0, 0, 0);
     b.localToWorld(d.position.copy(top));
-    tween(d.position, { y: surface(V).y }, .18, ease.in).then(() => world.remove(d));
+    tween(d.position, { y: surface(V).y }, .18, ease.in).then(() => drop(d));
     await move(b, p0, { dur: .14, e: ease.out });
     await ws(.12);
   }
@@ -944,7 +944,7 @@ async function stepSqueeze() {
   for (let i = 0; i < 8; i++) {
     const d = mesh(new THREE.SphereGeometry(.0028, 6, 4), std({ color: 0xe0eeb0, emissive: 0x3a4a10 }), 0, 0, 0);
     d.position.copy(wedge.position);
-    tween(d.position, { y: surface(G).y, x: d.position.x + rr(-.01, .01) }, .22, ease.in).then(() => world.remove(d));
+    tween(d.position, { y: surface(G).y, x: d.position.x + rr(-.01, .01) }, .22, ease.in).then(() => drop(d));
     await ws(.04);
   }
   letGo(R, "open");
@@ -1034,7 +1034,7 @@ async function stepGarnish(c) {
       const dst = G.g.localToWorld(V3(0, G.y0 + Math.max(.012, (G.y1 - G.y0) * .55), 0));
       await tween(gm.position, { x: dst.x, y: dst.y, z: dst.z }, SHOW.fast ? .001 : .3, ease.in);
       SND.plop();
-      for (let i = 0; i < 6; i++) { const s = mesh(new THREE.SphereGeometry(.003, 6, 4), std({ color: new THREE.Color(c.pour), transparent: true, opacity: .9 }), 0, 0, 0); s.position.copy(dst).add(V3(0, .02, 0)); tween(s.position, { x: s.position.x + rr(-.03, .03), y: s.position.y + rr(.02, .05), z: s.position.z + rr(-.03, .03) }, .25, ease.out).then(() => world.remove(s)); }
+      for (let i = 0; i < 6; i++) { const s = mesh(new THREE.SphereGeometry(.003, 6, 4), std({ color: new THREE.Color(c.pour), transparent: true, opacity: .9 }), 0, 0, 0); s.position.copy(dst).add(V3(0, .02, 0)); tween(s.position, { x: s.position.x + rr(-.03, .03), y: s.position.y + rr(.02, .05), z: s.position.z + rr(-.03, .03) }, .25, ease.out).then(() => drop(s)); }
     } else {
       const dst = G.g.localToWorld(V3(0, G.y0 + (G.y1 - G.y0) * .4, 0));
       await move(gm, dst, { q: Qz(.3), dur: 1.1, e: ease.out });
@@ -1060,7 +1060,7 @@ async function stepGarnish(c) {
     await move(gm, m.clone().add(V3(0, .1, 0)), { q: Qe(0, Math.PI * 1.5, 0), dur: .45 });
     for (let i = 0; i < 12; i++) {
       const s = glowSprite(0xfff0a0, .035, gm.position.x, gm.position.y, gm.position.z, world, .9);
-      tween(s.position, { x: s.position.x + rr(-.05, .05), y: s.position.y - rr(.03, .08), z: s.position.z + rr(-.05, .05) }, .45).then(() => world.remove(s));
+      tween(s.position, { x: s.position.x + rr(-.05, .05), y: s.position.y - rr(.03, .08), z: s.position.z + rr(-.05, .05) }, .45).then(() => drop(s));
     }
     await ws(.3);
     await move(gm, m.clone().add(V3(rw * .85, -.012, 0)), { q: Qz(.4), dur: .4 });
@@ -1164,7 +1164,7 @@ function puff(p, n = 7) {
     const d = SHOW.fast ? .001 : rr(1.4, 2.2);
     tween(s.position, { y: s.position.y + rr(.18, .32), x: s.position.x + rr(-.06, .06) }, d, ease.out);
     tween(s.scale, { x: .2, y: .2 }, d, ease.out);
-    tween(s.material, { opacity: 0 }, d, ease.in).then(() => world.remove(s));
+    tween(s.material, { opacity: 0 }, d, ease.in).then(() => drop(s));
   }
 }
 /* свет огня: на время шоу берём свет камина из курилки и переносим к пламени */
@@ -1298,7 +1298,7 @@ function steam(at, n = 6, spread = .02) {
     setTimeout(() => {
       tween(s.material, { opacity: .32 }, .3).then(() => tween(s.material, { opacity: 0 }, d - .3));
       tween(s.position, { y: s.position.y + rr(.14, .24), x: s.position.x + rr(-.03, .03) }, d, ease.out);
-      tween(s.scale, { x: .11, y: .11 }, d, ease.out).then(() => world.remove(s));
+      tween(s.scale, { x: .11, y: .11 }, d, ease.out).then(() => drop(s));
     }, SHOW.fast ? 0 : dl * 1000);
   }
 }
@@ -1496,12 +1496,12 @@ async function stepFlameZest(gm, G) {
     const d = SHOW.fast ? .001 : rr(.22, .4);
     tween(s.position, { x: to.x, y: to.y, z: to.z }, d, ease.out);
     tween(s.scale, { x: rr(.05, .09), y: rr(.06, .11) }, d, ease.out);
-    tween(s.material, { opacity: 0 }, d * 1.3, ease.in).then(() => world.remove(s));
+    tween(s.material, { opacity: 0 }, d * 1.3, ease.in).then(() => drop(s));
     if (i % 2) spark(matchAt.clone(), V3(rr(-.1, .3), rr(-.05, .25), rr(-.1, .1)), rr(.3, .7));
   }
   if (FIRELT.on) FIRELT.lev = 1.6;
   const flash = glowSprite(0xffb050, .35, matchAt.x, matchAt.y, matchAt.z, world, .9);
-  tween(flash.material, { opacity: 0 }, .5).then(() => world.remove(flash));
+  tween(flash.material, { opacity: 0 }, .5).then(() => drop(flash));
   await ws(.5);
   await matchOut(mf, bt.L);
   rest(bt.L);
@@ -1560,7 +1560,7 @@ async function setupStation(c) {
     P.bucket.g.visible = P.scoop.g.visible = false;
   }
   if (!fiery && prog.some(s => s[0] === "hot")) place(P.kettle.g, ST.kettle);
-  if (SHOW.glassV) world.remove(SHOW.glassV.g);
+  if (SHOW.glassV) drop(SHOW.glassV.g);
   SHOW.glassV = buildGlass(c);
   place(SHOW.glassV.g, ST.glass);
   if (!SHOW.main) SHOW.main = SHOW.glassV;
@@ -1592,13 +1592,13 @@ function cleanup(c, aborted) {
   PROPS().forEach(o => { o.visible = false; o.quaternion.identity(); });
   STATIC_TOOLS.forEach(o => { o.visible = true; });
   btGlass.visible = btRag.visible = true;
-  for (const o of [...world.children]) if (o.userData && o.userData.ing) world.remove(o);
+  for (const o of [...world.children]) if (o.userData && o.userData.ing) drop(o);
   if (aborted || !SHOW.glassV) {
-    if (SHOW.glassV) world.remove(SHOW.glassV.g);
+    if (SHOW.glassV) drop(SHOW.glassV.g);
     SHOW.glassV = null;
     placeServed(c);
   } else {
-    if (servedGlass && servedGlass !== SHOW.glassV.g) world.remove(servedGlass);
+    if (servedGlass && servedGlass !== SHOW.glassV.g) drop(servedGlass);
     const V = SHOW.glassV;
     if (V.ml < V.cap * .5) { V.ml = V.cap * .82; V.col.set(c.pour); setLevel(V); }
     V.g.position.copy(ST.serve); V.g.quaternion.identity();

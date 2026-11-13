@@ -46,7 +46,7 @@ function liveGlass(s, d) {
   const id = d && s.seated ? d.id + d.pour : null;
   if (id === s.drinkId) return;
   s.drinkId = id;
-  if (s.glass) { world.remove(s.glass); s.glass = null; }
+  if (s.glass) { drop(s.glass); s.glass = null; }
   if (!id) return;
   s.spot = s.spot || fromFig(s.F, V3(-.1, CT.top, .62));
   s.glass = makeGlass(d.cup || "rocks", d.pour || "#c27a1a", { garnish: d.garnish || null, ice: !!d.ice, op: .85 });

@@ -116,7 +116,7 @@ onTick((t, dt) => {
 /* ---------- бокал от друга: стоит у свободного табурета с табличкой «Для вас» ---------- */
 const TREAT = { glass: null, card: null, armed: !!VX.treat, wait: 0 };
 function treatClear() {
-  for (const o of [TREAT.glass, TREAT.card]) if (o) world.remove(o);
+  for (const o of [TREAT.glass, TREAT.card]) if (o) drop(o);
   TREAT.glass = TREAT.card = null;
 }
 H3D.treatClear = treatClear;

@@ -42,7 +42,7 @@ function toastAbort() {
   HANDS.delete(bt.L); HANDS.delete(bt.R);
   for (const a of [bt.L, bt.R]) { a.manual = false; a.snap = false; a.k = 9; }
   streamOff();
-  for (const o of [...world.children]) if (o.userData && o.userData.ing) world.remove(o);
+  for (const o of [...world.children]) if (o.userData && o.userData.ing) drop(o);
   TOAST_V.g.visible = false; toastPlane.constant = 100; TOAST.glass = null;
   bt.nod = 0; bt.leanT = .07;
   if (!bt.held.some(h => h.obj === btGlass)) unstash().then(() => { if (!SEAT.on && !busy) BT.busy = false; });

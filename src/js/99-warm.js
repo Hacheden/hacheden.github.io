@@ -20,6 +20,7 @@
     POST.ap = wasAp; POST.apWant = 0; POST.target = wasTarget;
     POST.render(0);
   } catch (e) { console.warn("прогрев эффектов:", e && e.message); }
+  keepAll();   // всё построенное к этому моменту — общие детали: drop() их не освобождает
   WARM_DONE = true;
   progress(1);
   if (!closedNow && !started) { enter.disabled = false; if (document.activeElement === document.body) enter.focus({ preventScroll: true }); }

@@ -49,11 +49,11 @@ for (const [x0, x1] of [[-3.1, -1.09], [-1.01, 1.01], [1.09, 3.1]]) {
   merged(geos, M.walnut);
   const sh = [];
   for (const y of BB.shelves) for (const [x0, x1] of [[-3.135, -1.095], [-1.005, 1.005], [1.095, 3.135]]) sh.push(boxAt(x0, x1, y - .03, y, BB.z0, BB.z0 + .3, 0));
-  mesh(mergeGeometries(sh.map(g => g.toNonIndexed())), std({ color: 0x2a1a14, roughness: .15, metalness: .3, envMapIntensity: 1.2 }));
+  mesh(mergeGeometries(sh.map(g => (g.index ? g.toNonIndexed() : g))), std({ color: 0x2a1a14, roughness: .15, metalness: .3, envMapIntensity: 1.2 }));
   // светодиодные ленты под полками
   const led = [];
   for (const y of BB.shelves.concat([BB.cor])) for (const [x0, x1] of [[-3.135, -1.095], [-1.005, 1.005], [1.095, 3.135]]) led.push(boxAt(x0, x1, y - .042, y - .03, BB.z0 + .26, BB.z0 + .29, 0));
-  BACKLIT.led = mesh(mergeGeometries(led.map(g => g.toNonIndexed())), basic({ color: 0xff5a70, toneMapped: false })).material;
+  BACKLIT.led = mesh(mergeGeometries(led.map(g => (g.index ? g.toNonIndexed() : g))), basic({ color: 0xff5a70, toneMapped: false })).material;
 })();
 
 /* неоновая вывеска Hacheden */

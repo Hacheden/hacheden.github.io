@@ -40,6 +40,21 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x060203);
 scene.fog = new THREE.FogExp2(0x0a0405, .028);
 const world = new THREE.Group();
+/* ---------- уборка: убрать объект насовсем и освободить его геометрию и материалы в видеокарте ----------
+   Общие детали (всё, что построено при загрузке, — KEEP) и то, чем ещё пользуются другие объекты сцены, не трогаются.
+   Для переноса объекта в другую группу — обычный remove/attach, не drop. */
+const KEEP = new WeakSet();
+const mats = m => m ? (Array.isArray(m) ? m : [m]) : [];
+function keepAll() { scene.traverse(x => { if (x.geometry) KEEP.add(x.geometry); mats(x.material).forEach(m => KEEP.add(m)); }); }
+function drop(o) {
+  if (!o) return;
+  if (o.parent) o.parent.remove(o);
+  const gs = new Set(), ms = new Set();
+  o.traverse(x => { if (x.geometry && !KEEP.has(x.geometry)) gs.add(x.geometry); mats(x.material).forEach(m => { if (!KEEP.has(m)) ms.add(m); }); });
+  if (!gs.size && !ms.size) return;
+  scene.traverse(x => { if (x.geometry) gs.delete(x.geometry); mats(x.material).forEach(m => ms.delete(m)); });
+  gs.forEach(g => g.dispose()); ms.forEach(m => m.dispose());
+}
 scene.add(world);
 const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, .05, 60);
 

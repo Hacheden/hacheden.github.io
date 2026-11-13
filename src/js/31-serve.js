@@ -4,7 +4,7 @@ let servedGlass = null, servedV = null;
 function placeServed(c) {
   abortSip();
   servedV = null;
-  if (servedGlass) world.remove(servedGlass);
+  if (servedGlass) drop(servedGlass);
   servedGlass = makeGlass(c.cup, c.pour, { garnish: c.garnish, ice: c.cup === "rocks" || c.cup === "highball", op: c.pourOp || .88 });
   // сидящему гостю — прямо перед ним
   if (SEAT.on) servedGlass.position.set(SEAT_X + .08, CT.top, -2.12);
