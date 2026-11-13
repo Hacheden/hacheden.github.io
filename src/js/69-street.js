@@ -140,7 +140,7 @@ const SDOOR = { g: group(-.6, 0, FZ + .12, street) };
   // табличка с часами работы
   const plate = canvasTex(256, 96, (c, w, h) => {
     c.fillStyle = "#b8864a"; c.fillRect(0, 0, w, h); c.strokeStyle = "#5a3a18"; c.lineWidth = 4; c.strokeRect(6, 6, w - 12, h - 12);
-    c.fillStyle = "#2a1408"; c.textAlign = "center"; c.font = "30px Forum, Georgia, serif"; c.fillText("HACHEDEN", w / 2, 44);
+    c.fillStyle = "#2a1408"; c.textAlign = "center"; fitFont(c, BAR_SIGN, w - 30, 30, "Forum, Georgia, serif"); c.fillText(BAR_SIGN, w / 2, 44);
     c.font = "18px Literata, Georgia, serif"; c.fillText("с 17:00 до 3:00", w / 2, 72);
   });
   mesh(new THREE.PlaneGeometry(.34, .13), std({ map: plate, metalness: .4, roughness: .4 }), 1.14, 1.55, FZ + .33, street);
@@ -320,7 +320,7 @@ let greeted = false;
 try { greeted = localStorage.getItem("hacheden-visited") === "1"; } catch (e) {}
 let GREET = () => OWNER ? "Хозяин! Проходите, всё готово."
   : greeted ? pickOne(["С возвращением. Ваше место ждёт.", "Рады снова видеть. Проходите.", "А, это вы. Проходите, у нас тепло."])
-  : pickOne(["Добрый вечер. Добро пожаловать в Hacheden.", "Добрый вечер. Проходите, вас ждут.", "Добро пожаловать. Музыка уже играет."]);
+  : pickOne([`Добрый вечер. Добро пожаловать в ${BAR_NAME}.`, "Добрый вечер. Проходите, вас ждут.", "Добро пожаловать. Музыка уже играет."]);
 
 function streetIntro() {
   STREET.on = true;

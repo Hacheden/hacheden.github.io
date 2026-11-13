@@ -45,7 +45,7 @@ const STAGE_M = {
     g.fillStyle = "#120608"; g.fillRect(0, 0, w, hh);
     g.strokeStyle = "#c9944a"; g.lineWidth = 8; g.strokeRect(10, 10, w - 20, hh - 20);
     g.fillStyle = "#ffd9a0"; g.textAlign = "center"; g.textBaseline = "middle";
-    g.font = "400 112px Forum, serif"; g.fillText("HACHEDEN  JAZZ", w / 2, hh / 2 + 6);
+    fitFont(g, `${BAR_SIGN}  JAZZ`, w - 80, 112, "Forum, serif"); g.fillText(`${BAR_SIGN}  JAZZ`, w / 2, hh / 2 + 6);
   });
   mesh(new THREE.PlaneGeometry(1.9, .46), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }), 0, 0, 0, sign);
   const bulbs = [];
@@ -194,7 +194,7 @@ const KIT = {};
   const kick = group(0, .26, -.02, g);
   mesh(new THREE.CylinderGeometry(.27, .27, .36, 32, 1, true), STAGE_M.drum, 0, 0, 0, kick).rotation.x = Math.PI / 2;
   for (const sz of [-1, 1]) mesh(new THREE.TorusGeometry(.272, .012, 6, 32), M.chrome, 0, 0, sz * .18, kick);
-  const logo = canvasTex(256, 256, (c, w, h) => { c.fillStyle = "#efe6d2"; c.beginPath(); c.arc(128, 128, 126, 0, 7); c.fill(); c.fillStyle = "#6a0c18"; c.textAlign = "center"; c.textBaseline = "middle"; c.font = "400 40px Forum, serif"; c.fillText("HACHEDEN", 128, 118); c.font = "400 22px Literata, serif"; c.fillText("JAZZ · 1924", 128, 158); c.strokeStyle = "#c9944a"; c.lineWidth = 5; c.beginPath(); c.arc(128, 128, 112, 0, 7); c.stroke(); });
+  const logo = canvasTex(256, 256, (c, w, h) => { c.fillStyle = "#efe6d2"; c.beginPath(); c.arc(128, 128, 126, 0, 7); c.fill(); c.fillStyle = "#6a0c18"; c.textAlign = "center"; c.textBaseline = "middle"; fitFont(c, BAR_SIGN, 210, 40, "Forum, serif"); c.fillText(BAR_SIGN, 128, 118); c.font = "400 22px Literata, serif"; c.fillText("JAZZ · 1924", 128, 158); c.strokeStyle = "#c9944a"; c.lineWidth = 5; c.beginPath(); c.arc(128, 128, 112, 0, 7); c.stroke(); });
   KIT.head = mesh(new THREE.CircleGeometry(.268, 32), std({ map: logo, roughness: .7 }), 0, 0, -.182, kick);
   KIT.head.rotation.y = Math.PI;
   KIT.kick = kick;

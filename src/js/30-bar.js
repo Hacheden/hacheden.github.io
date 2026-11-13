@@ -81,14 +81,14 @@ for (const [x0, x1] of [[-3.1, -1.09], [-1.01, 1.01], [1.09, 3.1]]) {
 /* неоновая вывеска Hacheden */
 const neonTex = canvasTex(1024, 256, (g, w, h) => {
   g.textAlign = "center"; g.textBaseline = "middle";
-  g.font = "150px Forum, 'Palatino Linotype', Georgia, serif";
+  fitFont(g, BAR_NAME, w * .86, 150, "Forum, 'Palatino Linotype', Georgia, serif");   // название бара из src/venues
   g.lineJoin = "round";
   for (const [blur, col, lw, a] of [[60, "#ff1840", 10, .9], [28, "#ff2a55", 8, 1], [10, "#ff7a90", 5, 1]]) {
     g.shadowBlur = blur; g.shadowColor = col; g.strokeStyle = col; g.lineWidth = lw; g.globalAlpha = a;
-    g.strokeText("Hacheden", w / 2, h / 2 + 8);
+    g.strokeText(BAR_NAME, w / 2, h / 2 + 8);
   }
   g.shadowBlur = 6; g.shadowColor = "#fff"; g.strokeStyle = "#ffe8ee"; g.lineWidth = 2.2; g.globalAlpha = 1;
-  g.strokeText("Hacheden", w / 2, h / 2 + 8);
+  g.strokeText(BAR_NAME, w / 2, h / 2 + 8);
 });
 neonTex.wrapS = neonTex.wrapT = THREE.ClampToEdgeWrapping;
 const neonMat = basic({ map: neonTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
@@ -108,8 +108,8 @@ function labelTex(d) {
     g.fillStyle = d.labelInk; g.textAlign = "center"; g.textBaseline = "middle";
     g.font = "44px Forum, Georgia, serif";
     g.fillText(d.name.toUpperCase(), w / 2, h / 2 - 6);
-    g.font = "18px Literata, Georgia, serif";
-    g.globalAlpha = .75; g.fillText("HACHEDEN", w / 2, h / 2 + 34);
+    fitFont(g, BAR_SIGN, w - 44, 18, "Literata, Georgia, serif");
+    g.globalAlpha = .75; g.fillText(BAR_SIGN, w / 2, h / 2 + 34);
   });
 }
 const HERO_X = [-2.55, -1.6, -.5, .5, 1.6, 2.55];

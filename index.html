@@ -643,6 +643,7 @@
   @media (prefers-reduced-motion: reduce) { .vx-card { transition: none; } dialog.vx-deck[open] { animation: none; } }
   @media (max-width: 420px) { .vx-two { grid-template-columns: 1fr; } .vx-sp-row { grid-template-columns: 30px 1fr; } .vx-sp-row .make { grid-column: 1 / -1; } }
   .sheet .acts[hidden], .vx-form[hidden], .vx-link[hidden], .vx-out[hidden], .vx-deck .acts[hidden] { display: none; }
+  .demo-badge { margin: 6px auto 0; padding: 5px 12px; width: fit-content; border-radius: 999px; border: 1px dashed rgba(214,170,92,.6); color: var(--brass); font: italic 400 13px/1.3 var(--font-text); letter-spacing: .02em; }
 
 
   /* ================= 3D ================= */
@@ -1133,12 +1134,65 @@
   PROG.visits++;
   saveProgress();
 
+/* ================= реестр заведений =================
+   Каждый файл src/venues/<id>.js кладёт сюда свой бар: VENUES[id] = { meta, theme, rooms, menu, … }.
+   Бар на основе другого (тот же 3D-зал, свои название, цены и контакты) — VENUE_PATCHES.push({ id, base, make }).
+   id заведения — латиница, цифры и дефис, 3–32 знака: он же имя комнаты живого бара и раздела статистики.
+   Файлы собираются по алфавиту: этот — первым, zz-select.js — последним. */
+  const VENUES = {};
+  const VENUE_PATCHES = [];
+  const VENUE_ID_RE = /^[a-z0-9-]{3,32}$/;
+
+/* ================= демо-профиль для владельцев баров: ?bar=demo-almaty =================
+   Вымышленный коктейльный бар в Алматы на той же 3D-сцене, что и Hacheden: своё название на вывесках,
+   цены в тенге, бронь мест и барный пропуск включены для всех гостей.
+   Цены условные — ориентир для коктейльного бара в Алматы, не предложение и не прайс настоящего заведения.
+   Для теста брони впишите в contacts свои WhatsApp (номер в международном виде без «+», например 77011234567)
+   и Telegram (имя без «@»): заявки придут вам, в начале текста будет пометка «[Тест с демо-страницы]». */
+  VENUE_PATCHES.push({
+    id: "demo-almaty",
+    base: "hacheden",
+    make: base => {
+      /* ₸ за порцию: классика, фирменный, безалкогольные и горячие */
+      const PRICE = {
+        "c-hacheden": 6500, "c-mojito": 4200, "c-daiquiri": 4200, "c-cubalibre": 3500, "c-pinacolada": 4500,
+        "c-junglebird": 4800, "c-margarita": 4500, "c-sunrise": 3900, "c-gintonic": 3800, "c-negroni": 4800,
+        "c-martini": 4900, "c-collins": 4200, "c-oldfashioned": 5200, "c-manhattan": 5200, "c-sour": 4800,
+        "c-pisco": 5500, "c-sidecar": 5200, "c-sangria": 3500, "c-nojito": 2500, "c-irish": 3800,
+        "c-toddy": 3500, "c-coffee": 1500, "c-tea": 1800
+      };
+      const menu = base.menu.map(c => {
+        const d = Object.assign({}, c, PRICE[c.id] ? { price: PRICE[c.id].toLocaleString("ru-RU") } : {});
+        if (c.id === "c-hacheden") Object.assign(d, { name: "Алатау", origin: "Наш бар",
+          history: "Фирменный коктейль бара. Огненная подача — дань «Блю Блейзеру» Джерри Томаса: в его книге 1862 года, первом пособии для барменов, горящий виски переливают между двумя кружками высокой огненной струёй." });
+        return d;
+      });
+      return {
+        meta: {
+          name: "Алатау",
+          sign: "Алатау",
+          slogan: "Коктейльный бар у подножия гор",
+          intro: "Демо-версия платформы: вымышленный коктейльный бар в Алматы. Цены условные; бронь места и барный пропуск показывают, как всё работает в настоящем заведении.",
+          city: "Алматы",
+          address: "Алматы · адрес укажет заведение",
+          hours: { open: "17:00", close: "03:00", last: "02:30" },
+          site: "hacheden.github.io/?bar=demo-almaty",
+          contacts: { whatsapp: "", telegram: "" },   // ← тестовые контакты для показа брони
+          currency: "₸",
+          codePrefix: "ALT",
+          demo: true
+        },
+        menu
+      };
+    }
+  });
+
 /* ================= ЗАВЕДЕНИЕ: всё, что отличает один бар от другого =================
    Движок (src/js, src/shared) берёт отсюда название, палитру, залы, места для брони,
    барную карту, тайные рецепты, колоду вопросов и квест. Новый бар — новый файл
    src/venues/<id>.js с тем же устройством; выбирается адресом ?bar=<id>.
-   Бронь и «код бармена» включаются сами, когда в meta.contacts указан WhatsApp или Telegram. */
-  const VENUES = {};
+   Бронь и «код бармена» включаются сами, когда в meta.contacts указан WhatsApp или Telegram.
+   Реестр VENUES — в 00-registry.js, выбор по адресу и палитра — в zz-select.js. */
   VENUES.hacheden = {
     id: "hacheden",
     meta: {
@@ -1520,8 +1574,13 @@
     ]
   };
 
-  /* ---------- выбор заведения по адресу и применение его палитры ---------- */
-  const VENUE_ID = (() => { try { const b = new URLSearchParams(location.search).get("bar"); return b && VENUES[b] ? b : "hacheden"; } catch (e) { return "hacheden"; } })();
+/* ================= выбор заведения по адресу (?bar=<id>) и его оформление =================
+   Собирается последним из src/venues: к этому моменту все бары уже в VENUES. */
+  for (const p of VENUE_PATCHES) {
+    if (!VENUE_ID_RE.test(p.id) || !VENUES[p.base]) { console.warn("venue: пропущен", p.id); continue; }
+    VENUES[p.id] = Object.assign({}, VENUES[p.base], p.make(VENUES[p.base]), { id: p.id });
+  }
+  const VENUE_ID = (() => { try { const b = new URLSearchParams(location.search).get("bar"); return b && VENUE_ID_RE.test(b) && VENUES[b] ? b : "hacheden"; } catch (e) { return "hacheden"; } })();
   const VENUE = VENUES[VENUE_ID];
   (() => {
     const r = document.documentElement.style;
@@ -1530,8 +1589,25 @@
     if (f.display) r.setProperty("--font-display", `"${f.display}", "Palatino Linotype", Georgia, serif`);
     if (f.text) r.setProperty("--font-text", `"${f.text}", Georgia, "Times New Roman", serif`);
   })();
-  /* бронь и «код бармена» работают только у заведения с настоящими контактами */
-  const O2O = !!(VENUE.meta.contacts.whatsapp || VENUE.meta.contacts.telegram);
+  /* бронь и «код бармена» работают у заведения с настоящими контактами; у демо-профиля — для показа владельцам */
+  const O2O = !!(VENUE.meta.contacts.whatsapp || VENUE.meta.contacts.telegram || VENUE.meta.demo);
+
+  /* имя на вывесках: неон, сцена, табличка у двери, подставка, фото и сторис */
+  const BAR_NAME = VENUE.meta.name;
+  const BAR_SIGN = (VENUE.meta.sign || VENUE.meta.name).toUpperCase();
+  /* надпись на холсте, ужатая по ширине: длинное название бара не вылезет за вывеску */
+  function fitFont(g, text, maxW, px, family) {
+    g.font = `${px}px ${family}`;
+    const w = g.measureText(text).width;
+    if (w > maxW) g.font = `${Math.floor(px * maxW / w)}px ${family}`;
+  }
+  if (VENUE_ID !== "hacheden") {
+    document.title = BAR_NAME;
+    const h1 = document.querySelector("#intro h1"); if (h1) h1.textContent = BAR_NAME;
+    const it = document.getElementById("intro-text"); if (it && VENUE.meta.intro) it.textContent = VENUE.meta.intro;
+    if (VENUE.meta.demo && h1) h1.insertAdjacentHTML("afterend", `<p class="demo-badge">Демо платформы · вымышленный бар · цены условные</p>`);
+    const md = document.querySelector('meta[name="description"]'); if (md && VENUE.meta.slogan) md.content = `${BAR_NAME}: ${VENUE.meta.slogan}`;
+  }
 
 /* ---------- формы бутылок ---------- */
   const SHAPES = {
@@ -3458,7 +3534,7 @@
 
     const c = { id, custom: true, name: spec.name || `${adj} ${noun}`, auto: `${adj} ${noun}`,
       base: by("spirit")[0] || (has("wine") ? "wine" : has("bitter") || has("verm") || has("liq") ? "aperitif" : "none"),
-      origin: "Hacheden, ваш рецепт", method, need: ings, cup, ice: cup === "rocks" && ice !== "none",
+      origin: `${BAR_NAME}, ваш рецепт`, method, need: ings, cup, ice: cup === "rocks" && ice !== "none",
       pour: col.hex, pourOp: h("coconut") ? .95 : Math.min(.95, Math.max(.45, .42 + (1 - col.lum) * .85)),
       pourLevel: { highball: 30, rocks: 62, coupe: 40, martini: 32, wine: 40 }[cup], garnish, spec: { ings, cup: spec.cup || "auto", ice: spec.ice || "auto", method: spec.method || "auto" } };
     Closeup.PROGRAMS[id] = prog;
@@ -4255,7 +4331,18 @@
     appId: "1:774316675789:web:9347526f7df621d2d34f84"
   };
   const FB_VER = "10.12.2";
-  const PUBLIC_ROOM = "hacheden";   // один общий бар для всех
+  /* одно подключение к Firebase на страницу: им пользуются и живой бар, и счётчик воронки (95-stats.js) */
+  let FB_CONN = null;
+  function fbOpen() {
+    return FB_CONN || (FB_CONN = (async () => {
+      const base = `https://www.gstatic.com/firebasejs/${FB_VER}/`;
+      const [app, auth, rdb] = await Promise.all([import(base + "firebase-app.js"), import(base + "firebase-auth.js"), import(base + "firebase-database.js")]);
+      const a = app.initializeApp(FIREBASE_CONFIG);
+      const cred = await auth.signInAnonymously(auth.getAuth(a));
+      return { F: rdb, db: rdb.getDatabase(a), uid: cred.user.uid };
+    })().catch(e => { FB_CONN = null; throw e; }));
+  }
+  const PUBLIC_ROOM = VENUE_ID;   // у каждого заведения своя общая комната: гости разных баров не смешиваются
   /* готовые фразы: показываются только они, что бы ни пришло из сети */
   const PHRASES = [
     ["hi", "Добрый вечер!"], ["cheers", "За вас! 🥂"], ["music", "Отличная музыка"], ["advice", "Что посоветуете выпить?"],
@@ -4306,14 +4393,7 @@
       uid: null,
       on(e, f) { (H[e] = H[e] || []).push(f); },
       async join(me) {
-        if (!F) {
-          const base = `https://www.gstatic.com/firebasejs/${FB_VER}/`;
-          const [app, auth, rdb] = await Promise.all([import(base + "firebase-app.js"), import(base + "firebase-auth.js"), import(base + "firebase-database.js")]);
-          const a = app.initializeApp(FIREBASE_CONFIG);
-          const cred = await auth.signInAnonymously(auth.getAuth(a));
-          api.uid = cred.user.uid;
-          db = rdb.getDatabase(a); F = rdb;
-        }
+        if (!F) { const c = await fbOpen(); api.uid = c.uid; db = c.db; F = c.F; }
         const usersRef = F.ref(db, `rooms/${PUBLIC_ROOM}/users`);
         meRef = F.ref(db, `rooms/${PUBLIC_ROOM}/users/${api.uid}`);
         await F.onDisconnect(meRef).remove();
@@ -4336,7 +4416,15 @@
   }
 
   /* ---------- присутствие ---------- */
-  function drinkInfo(c) { return c ? { id: c.id, name: String(c.name).slice(0, 32), cup: c.cup, pour: c.pour, garnish: c.garnish || "", ice: !!c.ice } : null; }
+  /* напиток в руке — только в том виде, который пропускают правила базы (docs/firebase-rules.json) */
+  const FR_CUPS = ["coupe", "highball", "martini", "rocks", "shot", "snifter", "wine"];
+  function drinkInfo(c) {
+    if (!c) return null;
+    const id = String(c.id || "").toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 40) || "drink";
+    const name = String(c.name || "").replace(/[<>{}\[\]\\]/g, "").slice(0, 32) || "Коктейль";
+    return { id, name, cup: FR_CUPS.includes(c.cup) ? c.cup : "rocks", pour: /^#[0-9a-f]{6}$/i.test(c.pour) ? c.pour : "#6b1228",
+      garnish: /^[a-z]{1,16}$/.test(c.garnish || "") ? c.garnish : "", ice: !!c.ice };
+  }
   function mySnapshot() { return { name: myName(), look: FR.look, zone: typeof cur === "number" ? cur : 1, drink: drinkInfo(LAST_DRINK) }; }
   FR.look = (() => { try { let v = localStorage.getItem("hacheden-look"); if (v == null) { v = String(Math.floor(Math.random() * 6)); localStorage.setItem("hacheden-look", v); } return +v; } catch (e) { return 0; } })();
   async function goLive() {
@@ -4380,7 +4468,7 @@
   function sayPhrase(p) {
     if (!FR.on || !PHRASE[p] || Date.now() - FR.lastSay < 1500) return;
     FR.lastSay = Date.now();
-    FR.net.send({ kind: p === "cheers" ? "cheers" : "say", p, text: PHRASE[p] });
+    FR.net.send({ kind: p === "cheers" ? "cheers" : "say", p });   // только код фразы: свободный текст база не принимает
     if (p === "cheers" && H3D.friends) H3D.friends.cheers();
   }
   onProgress(ev => { if (FR.on && (ev === "drink" || ev === "room")) FR.net.update({ drink: drinkInfo(LAST_DRINK), zone: cur }); });
@@ -4444,6 +4532,38 @@
   document.getElementById("t-friends").addEventListener("click", openLive);
   const FRIENDS = { get on() { return FR.on; }, get uid() { return FR.uid; }, get peers() { return FR.peers; }, open: openLive, live: goLive, quiet: goQuiet, say: sayPhrase };
 
+/* ================= воронка для заведения: сколько гостей дошли до каждого шага =================
+   stats/<бар>/<гггг-мм-дд>/<событие>: n — счётчик, u/<анонимный id> — отметка, что этот браузер уже посчитан.
+   Правила базы пропускают только «+1» вместе с новой отметкой: один браузер — один раз в день на событие.
+   Личных данных нет: только анонимный id Firebase. Не считаются: хозяин, проверки (?time=, #test…), локальный запуск.
+   События: menu — открыл барную карту, seat — нажал место для брони в 3D, book — подготовил заявку,
+   send — нажал WhatsApp или Telegram, story — получил карточку для сторис, story_save — поделился или скачал её,
+   treat — открыл ссылку «угостить». Смотреть цифры: консоль Firebase → Realtime Database → stats. */
+  const STAT_EVENTS = ["menu", "seat", "book", "send", "story", "story_save", "treat"];
+  const STAT_OFF = (() => {
+    try {
+      const q = new URLSearchParams(location.search);
+      return location.protocol !== "https:" || /^(localhost|127\.|\[::1\])/.test(location.hostname) || location.hash === "#test"
+        || ["net", "time", "season", "wx", "rare", "holiday"].some(k => q.has(k));
+    } catch (e) { return true; }
+  })();
+  const statDay = () => { const d = new Date(), p = n => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };
+  async function vxStat(ev) {
+    if (!STAT_EVENTS.includes(ev) || STAT_OFF || (typeof H3D !== "undefined" && H3D.owner)) return;
+    const key = `hacheden-stat-${VENUE_ID}-${ev}`;          // один раз за сессию — дальше даже не стучимся в базу
+    try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, "1"); } catch (e) { return; }
+    try {
+      const { F, db, uid } = await fbOpen();
+      const base = `stats/${VENUE_ID}/${statDay()}/${ev}`;
+      await F.update(F.ref(db), { [`${base}/n`]: F.increment(1), [`${base}/u/${uid}`]: true });
+    } catch (e) { /* этот браузер сегодня уже посчитан, или нет сети — гостю это не мешает */ }
+  }
+  /* барная карта открылась — откуда бы её ни открыли */
+  (() => {
+    const mix = document.getElementById("mix");
+    if (mix) new MutationObserver(() => { if (mix.open) vxStat("menu"); }).observe(mix, { attributes: true, attributeFilter: ["open"] });
+  })();
+
 /* ================= интерфейс: «сейчас играет» и компактное меню на телефоне ================= */
   /* при смене композиции под заголовком зала ненадолго появляется её название */
   const npPill = document.createElement("div");
@@ -4498,7 +4618,17 @@
   };
   const VX_SEATS = VENUE.rooms.flatMap((r, zone) => (r.seats || []).map(s => Object.assign({ zone, room: r.name }, s)));
   const vxO2O = () => O2O || (!!H3D.owner && VX.preview);   // бронь и пропуск видны
-  const vxDemo = () => !O2O;                                   // контактов нет: только предпросмотр, ничего не отправляется
+  const vxReal = !!(VENUE.meta.contacts.whatsapp || VENUE.meta.contacts.telegram);
+  const vxDemo = () => !vxReal;                                // контактов нет: только предпросмотр, ничего не отправляется
+  /* пометка над бронью и пропуском: у Hacheden — предпросмотр хозяина, у демо-профиля — пояснение для владельцев баров */
+  function vxTag(kind) {
+    const n = escH(VENUE.meta.name);
+    if (VENUE.meta.demo) return vxReal
+      ? (kind === "pass" ? "Демо: так выглядит пропуск в настоящем баре, этот код нигде не действует" : "Демо для владельцев заведений: заявка уйдёт на тестовый номер, а не в настоящий бар")
+      : "Демо для владельцев заведений: впишите тестовые WhatsApp или Telegram в src/venues/demo-almaty.js, и кнопки заработают";
+    if (!vxReal) return kind === "pass" ? `Предпросмотр: у ${n} нет настоящего зала, код не действует` : `Предпросмотр для хозяина: у ${n} нет настоящего зала, заявка никуда не уйдёт`;
+    return "";
+  }
   function vxSheet(id, title, extra) {
     if (!VX.sheets[id]) VX.sheets[id] = makeSheet(id, title, extra);
     const d = VX.sheets[id];
@@ -4653,7 +4783,7 @@
     const crafted = d.signature || d.secret || d.custom;
     if (VX.passOpen && VX.passFor === d.id && crafted && vxO2O()) {
       h += `<div class="vx-pass" role="group" aria-label="Барный пропуск">
-        ${vxDemo() ? `<span class="vx-demo-tag">Предпросмотр: у ${escH(VENUE.meta.name)} нет настоящего зала, код не действует</span>` : ""}
+        ${vxTag("pass") ? `<span class="vx-demo-tag">${vxTag("pass")}</span>` : ""}
         <span class="vx-pass-h">Барный пропуск</span><b>${VX.passCode}</b><small>Покажите этот код бармену у стойки</small></div>`;
     }
     const sendable = !d.custom || d.ings || d.need;
@@ -4760,8 +4890,11 @@
       <div class="acts">${canShare ? `<button class="make" type="button" data-vx-share>Поделиться</button>` : ""}
         <a class="make${canShare ? " ghost" : ""}" href="${url}" download="${file.name}">Скачать картинку</a></div>
       <p class="note">${canShare ? "«Поделиться» откроет Instagram, Telegram и другие приложения." : "Картинка 1080×1920 — ровно в размер сторис."}</p>`;
+    vxStat("story");
     const sb = d.querySelector("[data-vx-share]");
-    if (sb) sb.addEventListener("click", () => navigator.share({ files: [file], title: c.name }).catch(() => {}));
+    if (sb) sb.addEventListener("click", () => { vxStat("story_save"); navigator.share({ files: [file], title: c.name }).catch(() => {}); });
+    const dl = d.querySelector("a[download]");
+    if (dl) dl.addEventListener("click", () => vxStat("story_save"));
     d.addEventListener("close", () => setTimeout(() => URL.revokeObjectURL(url), 1000), { once: true });
   }
 
@@ -4831,6 +4964,7 @@
     const t = VX.treat;
     if (!t) return null;
     VX.treat = null;
+    vxStat("treat");
     try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
     const c = vxTreatDrink(t);
     const d = vxSheet("vx-gift", "Для вас оставили коктейль");
@@ -4869,7 +5003,8 @@
     if (!s || !vxO2O()) return;
     const M = VENUE.meta, d = vxSheet("vx-book", s.name);
     const pad = n => String(n).padStart(2, "0"), today = new Date(), iso = x => `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`;
-    d.body.innerHTML = `${vxDemo() ? `<p class="vx-demo-tag">Предпросмотр для хозяина: у ${escH(M.name)} нет настоящего зала, заявка никуда не уйдёт</p>` : ""}
+    vxStat("seat");
+    d.body.innerHTML = `${vxTag("book") ? `<p class="vx-demo-tag">${vxTag("book")}</p>` : ""}
       <p class="vx-room">${escH(s.room)} · ${escH(s.cap)}</p>
       <p>${escH(s.mood)}</p>
       <div class="acts"><button class="make" type="button" data-vx-take>Занять это место</button></div>
@@ -4893,13 +5028,15 @@
       out.hidden = false;
       if (!inHours) { out.innerHTML = `<p class="vx-err">В это время бар закрыт: мы работаем с ${M.hours.open} до ${M.hours.close}.</p>`; return; }
       const date = new Date(f.get("date") + "T12:00").toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
-      const text = `Привет! Хочу забронировать «${s.name}» в баре ${M.name} на ${date}, ${f.get("time")}, гостей: ${f.get("n")}. Имя: ${vxClean(f.get("name"), 40)}.`;
+      vxStat("book");
+      const text = `${M.demo ? "[Тест с демо-страницы] " : ""}Привет! Хочу забронировать «${s.name}» в баре ${M.name} на ${date}, ${f.get("time")}, гостей: ${f.get("n")}. Имя: ${vxClean(f.get("name"), 40)}.`;
       const wa = M.contacts.whatsapp ? `https://wa.me/${M.contacts.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(text)}` : "";
       const tg = M.contacts.telegram ? `https://t.me/${M.contacts.telegram.replace(/^@/, "")}` : "";
       out.innerHTML = `<p class="vx-msg">${escH(text)}</p>
         <div class="acts">${vxDemo() ? `<button class="make" type="button" disabled>WhatsApp</button><button class="make ghost" type="button" disabled>Telegram</button>`
           : `${wa ? `<a class="make" href="${wa}" target="_blank" rel="noopener">Отправить в WhatsApp</a>` : ""}${tg ? `<a class="make ghost" href="${tg}" target="_blank" rel="noopener" data-vx-tg>Открыть Telegram</a>` : ""}`}</div>
-        <p class="note">${vxDemo() ? "Кнопки заработают, когда в настройках заведения появятся настоящие WhatsApp и Telegram." : tg ? "Telegram не умеет подставлять текст в чат: мы скопируем заявку, останется вставить её." : "Хостес подтвердит бронь в ответном сообщении."}</p>`;
+        <p class="note">${vxDemo() ? (VENUE.meta.demo ? "Так заявка выглядит у гостя: с настоящими контактами кнопки откроют чат заведения." : "Кнопки заработают, когда в настройках заведения появятся настоящие WhatsApp и Telegram.") : tg ? "Telegram не умеет подставлять текст в чат: мы скопируем заявку, останется вставить её." : "Хостес подтвердит бронь в ответном сообщении."}</p>`;
+      out.querySelectorAll("a.make").forEach(a => a.addEventListener("click", () => vxStat("send")));
       const tl = out.querySelector("[data-vx-tg]");
       if (tl) tl.addEventListener("click", () => { try { navigator.clipboard.writeText(text); } catch (er) {} });
     });
@@ -5807,14 +5944,14 @@ for (const [x0, x1] of [[-3.1, -1.09], [-1.01, 1.01], [1.09, 3.1]]) {
 /* неоновая вывеска Hacheden */
 const neonTex = canvasTex(1024, 256, (g, w, h) => {
   g.textAlign = "center"; g.textBaseline = "middle";
-  g.font = "150px Forum, 'Palatino Linotype', Georgia, serif";
+  fitFont(g, BAR_NAME, w * .86, 150, "Forum, 'Palatino Linotype', Georgia, serif");   // название бара из src/venues
   g.lineJoin = "round";
   for (const [blur, col, lw, a] of [[60, "#ff1840", 10, .9], [28, "#ff2a55", 8, 1], [10, "#ff7a90", 5, 1]]) {
     g.shadowBlur = blur; g.shadowColor = col; g.strokeStyle = col; g.lineWidth = lw; g.globalAlpha = a;
-    g.strokeText("Hacheden", w / 2, h / 2 + 8);
+    g.strokeText(BAR_NAME, w / 2, h / 2 + 8);
   }
   g.shadowBlur = 6; g.shadowColor = "#fff"; g.strokeStyle = "#ffe8ee"; g.lineWidth = 2.2; g.globalAlpha = 1;
-  g.strokeText("Hacheden", w / 2, h / 2 + 8);
+  g.strokeText(BAR_NAME, w / 2, h / 2 + 8);
 });
 neonTex.wrapS = neonTex.wrapT = THREE.ClampToEdgeWrapping;
 const neonMat = basic({ map: neonTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
@@ -5834,8 +5971,8 @@ function labelTex(d) {
     g.fillStyle = d.labelInk; g.textAlign = "center"; g.textBaseline = "middle";
     g.font = "44px Forum, Georgia, serif";
     g.fillText(d.name.toUpperCase(), w / 2, h / 2 - 6);
-    g.font = "18px Literata, Georgia, serif";
-    g.globalAlpha = .75; g.fillText("HACHEDEN", w / 2, h / 2 + 34);
+    fitFont(g, BAR_SIGN, w - 44, 18, "Literata, Georgia, serif");
+    g.globalAlpha = .75; g.fillText(BAR_SIGN, w / 2, h / 2 + 34);
   });
 }
 const HERO_X = [-2.55, -1.6, -.5, .5, 1.6, 2.55];
@@ -7804,7 +7941,7 @@ function bigLabel(ing) {
     const name = L.name || (NOM[ing] || "").toUpperCase();
     g.font = `400 ${name.length > 7 ? 38 : 50}px Forum, serif`;
     g.fillText(name, 256, 68);
-    g.font = "400 19px Literata, serif"; g.globalAlpha = .75; g.fillText("HACHEDEN · 1924", 256, 118);
+    fitFont(g, `${BAR_SIGN} · 1924`, 440, 19, "Literata, serif"); g.globalAlpha = .75; g.fillText(`${BAR_SIGN} · 1924`, 256, 118);
   });
   return (LABELS[ing] = t);
 }
@@ -9700,7 +9837,7 @@ const STAGE_M = {
     g.fillStyle = "#120608"; g.fillRect(0, 0, w, hh);
     g.strokeStyle = "#c9944a"; g.lineWidth = 8; g.strokeRect(10, 10, w - 20, hh - 20);
     g.fillStyle = "#ffd9a0"; g.textAlign = "center"; g.textBaseline = "middle";
-    g.font = "400 112px Forum, serif"; g.fillText("HACHEDEN  JAZZ", w / 2, hh / 2 + 6);
+    fitFont(g, `${BAR_SIGN}  JAZZ`, w - 80, 112, "Forum, serif"); g.fillText(`${BAR_SIGN}  JAZZ`, w / 2, hh / 2 + 6);
   });
   mesh(new THREE.PlaneGeometry(1.9, .46), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }), 0, 0, 0, sign);
   const bulbs = [];
@@ -9849,7 +9986,7 @@ const KIT = {};
   const kick = group(0, .26, -.02, g);
   mesh(new THREE.CylinderGeometry(.27, .27, .36, 32, 1, true), STAGE_M.drum, 0, 0, 0, kick).rotation.x = Math.PI / 2;
   for (const sz of [-1, 1]) mesh(new THREE.TorusGeometry(.272, .012, 6, 32), M.chrome, 0, 0, sz * .18, kick);
-  const logo = canvasTex(256, 256, (c, w, h) => { c.fillStyle = "#efe6d2"; c.beginPath(); c.arc(128, 128, 126, 0, 7); c.fill(); c.fillStyle = "#6a0c18"; c.textAlign = "center"; c.textBaseline = "middle"; c.font = "400 40px Forum, serif"; c.fillText("HACHEDEN", 128, 118); c.font = "400 22px Literata, serif"; c.fillText("JAZZ · 1924", 128, 158); c.strokeStyle = "#c9944a"; c.lineWidth = 5; c.beginPath(); c.arc(128, 128, 112, 0, 7); c.stroke(); });
+  const logo = canvasTex(256, 256, (c, w, h) => { c.fillStyle = "#efe6d2"; c.beginPath(); c.arc(128, 128, 126, 0, 7); c.fill(); c.fillStyle = "#6a0c18"; c.textAlign = "center"; c.textBaseline = "middle"; fitFont(c, BAR_SIGN, 210, 40, "Forum, serif"); c.fillText(BAR_SIGN, 128, 118); c.font = "400 22px Literata, serif"; c.fillText("JAZZ · 1924", 128, 158); c.strokeStyle = "#c9944a"; c.lineWidth = 5; c.beginPath(); c.arc(128, 128, 112, 0, 7); c.stroke(); });
   KIT.head = mesh(new THREE.CircleGeometry(.268, 32), std({ map: logo, roughness: .7 }), 0, 0, -.182, kick);
   KIT.head.rotation.y = Math.PI;
   KIT.kick = kick;
@@ -10599,7 +10736,7 @@ const ADVICE = {
     strong: [
       ["c-sidecar", "Тогда «Сайдкар»: коньяк, апельсиновый ликёр и лимон. Классика Парижа и Лондона, ровесница ревущих двадцатых."],
       ["c-manhattan", "«Манхэттен»: ржаной виски, красный вермут и вишня. Нью-Йорк конца XIX века — торжественно и без суеты."],
-      ["c-hacheden", "Тогда наш фирменный «Hacheden»: горящий коньяк с вишней, огненная струя между двух кружек и цедра через пламя. Смотрите внимательно."]
+      ["c-hacheden", `Тогда наш фирменный «${BAR_NAME}»: горящий коньяк с вишней, огненная струя между двух кружек и цедра через пламя. Смотрите внимательно.`]
     ],
     light: [
       ["c-sunrise", "«Текила санрайз» — рассвет в стакане. Её прославили The Rolling Stones в американском туре 1972 года."],
@@ -11025,7 +11162,7 @@ const TOAST_V = (() => {
 const TOAST_LINES = [
   ["С удовольствием. Себе — на палец виски.", "За этот вечер!"],
   ["Почту за честь. Мне — немного виски.", "За вас!"],
-  ["Не откажусь. Капля виски — и я с вами.", "За тех, кто нашёл дорогу в Hacheden!"]
+  ["Не откажусь. Капля виски — и я с вами.", `За тех, кто нашёл дорогу в ${BAR_NAME}!`]
 ];
 /* радиус бокала на высоте y (профиль в сантиметрах, как в CUPS) */
 function cupRadAt(p, y) {
@@ -11578,7 +11715,7 @@ const SDOOR = { g: group(-.6, 0, FZ + .12, street) };
   // табличка с часами работы
   const plate = canvasTex(256, 96, (c, w, h) => {
     c.fillStyle = "#b8864a"; c.fillRect(0, 0, w, h); c.strokeStyle = "#5a3a18"; c.lineWidth = 4; c.strokeRect(6, 6, w - 12, h - 12);
-    c.fillStyle = "#2a1408"; c.textAlign = "center"; c.font = "30px Forum, Georgia, serif"; c.fillText("HACHEDEN", w / 2, 44);
+    c.fillStyle = "#2a1408"; c.textAlign = "center"; fitFont(c, BAR_SIGN, w - 30, 30, "Forum, Georgia, serif"); c.fillText(BAR_SIGN, w / 2, 44);
     c.font = "18px Literata, Georgia, serif"; c.fillText("с 17:00 до 3:00", w / 2, 72);
   });
   mesh(new THREE.PlaneGeometry(.34, .13), std({ map: plate, metalness: .4, roughness: .4 }), 1.14, 1.55, FZ + .33, street);
@@ -11758,7 +11895,7 @@ let greeted = false;
 try { greeted = localStorage.getItem("hacheden-visited") === "1"; } catch (e) {}
 let GREET = () => OWNER ? "Хозяин! Проходите, всё готово."
   : greeted ? pickOne(["С возвращением. Ваше место ждёт.", "Рады снова видеть. Проходите.", "А, это вы. Проходите, у нас тепло."])
-  : pickOne(["Добрый вечер. Добро пожаловать в Hacheden.", "Добрый вечер. Проходите, вас ждут.", "Добро пожаловать. Музыка уже играет."]);
+  : pickOne([`Добрый вечер. Добро пожаловать в ${BAR_NAME}.`, "Добрый вечер. Проходите, вас ждут.", "Добро пожаловать. Музыка уже играет."]);
 
 function streetIntro() {
   STREET.on = true;
@@ -12393,7 +12530,7 @@ peekBtn.addEventListener("click", () => {
 });
 
 function cCaption(t) { caption("", t); }
-const CL_LINES = ["Спокойной ночи!", "До завтра, Hacheden!", "Лучший вечер за неделю.", "Ещё увидимся."];
+const CL_LINES = ["Спокойной ночи!", `До завтра, ${BAR_NAME}!`, "Лучший вечер за неделю.", "Ещё увидимся."];
 async function playClosing() {
   track("secret", "closing");
   if (CLOSING.on) return;
@@ -12741,8 +12878,8 @@ const LIB = {};
   LIB.glowMat = basic({ map: canvasTex(256, 340, (c, w, h) => {
     c.clearRect(0, 0, w, h); c.strokeStyle = "#bfe8ff"; c.fillStyle = "#bfe8ff"; c.lineWidth = 3;
     c.strokeRect(18, 18, w - 36, h - 36);
-    c.font = "28px Forum, Georgia, serif"; c.textAlign = "center";
-    c.fillText("HACHEDEN", w / 2, 90);
+    c.textAlign = "center"; fitFont(c, BAR_SIGN, w - 60, 28, "Forum, Georgia, serif");
+    c.fillText(BAR_SIGN, w / 2, 90);
     for (let i = 0; i < 7; i++) c.fillRect(48, 140 + i * 24, w - 96 - (i % 3) * 30, 3);
     c.beginPath(); c.arc(w / 2, 300, 12, 0, Math.PI * 2); c.stroke();
   }), transparent: true, opacity: 0, depthWrite: false, toneMapped: false });
@@ -13159,7 +13296,7 @@ RAID.today = Math.random() < RAID.chance;
     g.strokeStyle = "#c9944a"; g.lineWidth = 6; g.strokeRect(10, 10, w - 20, h - 20);
     g.fillStyle = "#e8c890"; g.textAlign = "center";
     g.font = "40px Forum, Georgia, serif"; g.fillText("КЛУБ ЛЮБИТЕЛЕЙ ЧАЯ", w / 2, 92);
-    g.font = "64px Forum, Georgia, serif"; g.fillText("«Hacheden»", w / 2, 170);
+    g.font = "64px Forum, Georgia, serif"; g.fillText(`«${BAR_NAME}»`, w / 2, 170);
     g.font = "24px Literata, Georgia, serif"; g.globalAlpha = .8; g.fillText("основан в 1921 году · только для членов клуба", w / 2, 232);
   });
   const mat = std({ map: wood, roughness: .6 });
@@ -13442,7 +13579,7 @@ function compose() {
   g.textBaseline = "alphabetic"; g.textAlign = "left";
   g.fillStyle = "#ff8aa0"; g.shadowColor = "#ff2a50"; g.shadowBlur = band * .15;
   g.font = `${Math.round(band * .42)}px Forum, Georgia, serif`;
-  g.fillText("Hacheden", b * 1.4, cy);
+  g.fillText(BAR_NAME, b * 1.4, cy);
   g.shadowBlur = 0;
   const date = M.when.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" }) + ", " + M.when.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
   g.fillStyle = "#e8d8bc"; g.font = `${Math.round(band * .2)}px Literata, Georgia, serif`;
@@ -13483,7 +13620,7 @@ phDlg.addEventListener("click", async e => {
   else if ("phShare" in b.dataset) {
     PHOTO.canvas.toBlob(async blob => {
       const file = new File([blob], fileName(), { type: "image/jpeg" });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: "Hacheden", text: "Вечер в баре Hacheden" }); } catch (er) {} }
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: BAR_NAME, text: `Вечер в баре ${BAR_NAME}` }); } catch (er) {} }
       else toast("Отправка недоступна", "Скачайте снимок и отправьте его сами");
     }, "image/jpeg", .92);
   } else if ("phAgain" in b.dataset) { phDlg.close(); setTimeout(takePhoto, 300); }
@@ -13903,7 +14040,7 @@ FIN.coasterTex = canvasTex(256, 256, (g, w, h) => {
   g.strokeStyle = "#8a1428"; g.lineWidth = 6; g.beginPath(); g.arc(w / 2, h / 2, w / 2 - 14, 0, Math.PI * 2); g.stroke();
   g.lineWidth = 2; g.beginPath(); g.arc(w / 2, h / 2, w / 2 - 24, 0, Math.PI * 2); g.stroke();
   g.fillStyle = "#8a1428"; g.textAlign = "center"; g.textBaseline = "middle";
-  g.font = "44px Forum, Georgia, serif"; g.fillText("Hacheden", w / 2, h / 2 + 2);
+  fitFont(g, BAR_NAME, w - 70, 44, "Forum, Georgia, serif"); g.fillText(BAR_NAME, w / 2, h / 2 + 2);
   g.font = "16px Literata, Georgia, serif"; g.fillText("EST. 1921", w / 2, h / 2 + 40);
 });
 FIN.coasterMat = std({ map: FIN.coasterTex, roughness: .9 });

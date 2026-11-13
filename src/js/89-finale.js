@@ -5,7 +5,7 @@ FIN.coasterTex = canvasTex(256, 256, (g, w, h) => {
   g.strokeStyle = "#8a1428"; g.lineWidth = 6; g.beginPath(); g.arc(w / 2, h / 2, w / 2 - 14, 0, Math.PI * 2); g.stroke();
   g.lineWidth = 2; g.beginPath(); g.arc(w / 2, h / 2, w / 2 - 24, 0, Math.PI * 2); g.stroke();
   g.fillStyle = "#8a1428"; g.textAlign = "center"; g.textBaseline = "middle";
-  g.font = "44px Forum, Georgia, serif"; g.fillText("Hacheden", w / 2, h / 2 + 2);
+  fitFont(g, BAR_NAME, w - 70, 44, "Forum, Georgia, serif"); g.fillText(BAR_NAME, w / 2, h / 2 + 2);
   g.font = "16px Literata, Georgia, serif"; g.fillText("EST. 1921", w / 2, h / 2 + 40);
 });
 FIN.coasterMat = std({ map: FIN.coasterTex, roughness: .9 });

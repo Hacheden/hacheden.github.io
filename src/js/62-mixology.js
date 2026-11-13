@@ -153,7 +153,7 @@ function bigLabel(ing) {
     const name = L.name || (NOM[ing] || "").toUpperCase();
     g.font = `400 ${name.length > 7 ? 38 : 50}px Forum, serif`;
     g.fillText(name, 256, 68);
-    g.font = "400 19px Literata, serif"; g.globalAlpha = .75; g.fillText("HACHEDEN · 1924", 256, 118);
+    fitFont(g, `${BAR_SIGN} · 1924`, 440, 19, "Literata, serif"); g.globalAlpha = .75; g.fillText(`${BAR_SIGN} · 1924`, 256, 118);
   });
   return (LABELS[ing] = t);
 }

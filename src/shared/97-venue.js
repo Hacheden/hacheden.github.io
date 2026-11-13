@@ -12,7 +12,17 @@
   };
   const VX_SEATS = VENUE.rooms.flatMap((r, zone) => (r.seats || []).map(s => Object.assign({ zone, room: r.name }, s)));
   const vxO2O = () => O2O || (!!H3D.owner && VX.preview);   // бронь и пропуск видны
-  const vxDemo = () => !O2O;                                   // контактов нет: только предпросмотр, ничего не отправляется
+  const vxReal = !!(VENUE.meta.contacts.whatsapp || VENUE.meta.contacts.telegram);
+  const vxDemo = () => !vxReal;                                // контактов нет: только предпросмотр, ничего не отправляется
+  /* пометка над бронью и пропуском: у Hacheden — предпросмотр хозяина, у демо-профиля — пояснение для владельцев баров */
+  function vxTag(kind) {
+    const n = escH(VENUE.meta.name);
+    if (VENUE.meta.demo) return vxReal
+      ? (kind === "pass" ? "Демо: так выглядит пропуск в настоящем баре, этот код нигде не действует" : "Демо для владельцев заведений: заявка уйдёт на тестовый номер, а не в настоящий бар")
+      : "Демо для владельцев заведений: впишите тестовые WhatsApp или Telegram в src/venues/demo-almaty.js, и кнопки заработают";
+    if (!vxReal) return kind === "pass" ? `Предпросмотр: у ${n} нет настоящего зала, код не действует` : `Предпросмотр для хозяина: у ${n} нет настоящего зала, заявка никуда не уйдёт`;
+    return "";
+  }
   function vxSheet(id, title, extra) {
     if (!VX.sheets[id]) VX.sheets[id] = makeSheet(id, title, extra);
     const d = VX.sheets[id];
@@ -167,7 +177,7 @@
     const crafted = d.signature || d.secret || d.custom;
     if (VX.passOpen && VX.passFor === d.id && crafted && vxO2O()) {
       h += `<div class="vx-pass" role="group" aria-label="Барный пропуск">
-        ${vxDemo() ? `<span class="vx-demo-tag">Предпросмотр: у ${escH(VENUE.meta.name)} нет настоящего зала, код не действует</span>` : ""}
+        ${vxTag("pass") ? `<span class="vx-demo-tag">${vxTag("pass")}</span>` : ""}
         <span class="vx-pass-h">Барный пропуск</span><b>${VX.passCode}</b><small>Покажите этот код бармену у стойки</small></div>`;
     }
     const sendable = !d.custom || d.ings || d.need;
@@ -274,8 +284,11 @@
       <div class="acts">${canShare ? `<button class="make" type="button" data-vx-share>Поделиться</button>` : ""}
         <a class="make${canShare ? " ghost" : ""}" href="${url}" download="${file.name}">Скачать картинку</a></div>
       <p class="note">${canShare ? "«Поделиться» откроет Instagram, Telegram и другие приложения." : "Картинка 1080×1920 — ровно в размер сторис."}</p>`;
+    vxStat("story");
     const sb = d.querySelector("[data-vx-share]");
-    if (sb) sb.addEventListener("click", () => navigator.share({ files: [file], title: c.name }).catch(() => {}));
+    if (sb) sb.addEventListener("click", () => { vxStat("story_save"); navigator.share({ files: [file], title: c.name }).catch(() => {}); });
+    const dl = d.querySelector("a[download]");
+    if (dl) dl.addEventListener("click", () => vxStat("story_save"));
     d.addEventListener("close", () => setTimeout(() => URL.revokeObjectURL(url), 1000), { once: true });
   }
 
@@ -345,6 +358,7 @@
     const t = VX.treat;
     if (!t) return null;
     VX.treat = null;
+    vxStat("treat");
     try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
     const c = vxTreatDrink(t);
     const d = vxSheet("vx-gift", "Для вас оставили коктейль");
@@ -383,7 +397,8 @@
     if (!s || !vxO2O()) return;
     const M = VENUE.meta, d = vxSheet("vx-book", s.name);
     const pad = n => String(n).padStart(2, "0"), today = new Date(), iso = x => `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`;
-    d.body.innerHTML = `${vxDemo() ? `<p class="vx-demo-tag">Предпросмотр для хозяина: у ${escH(M.name)} нет настоящего зала, заявка никуда не уйдёт</p>` : ""}
+    vxStat("seat");
+    d.body.innerHTML = `${vxTag("book") ? `<p class="vx-demo-tag">${vxTag("book")}</p>` : ""}
       <p class="vx-room">${escH(s.room)} · ${escH(s.cap)}</p>
       <p>${escH(s.mood)}</p>
       <div class="acts"><button class="make" type="button" data-vx-take>Занять это место</button></div>
@@ -407,13 +422,15 @@
       out.hidden = false;
       if (!inHours) { out.innerHTML = `<p class="vx-err">В это время бар закрыт: мы работаем с ${M.hours.open} до ${M.hours.close}.</p>`; return; }
       const date = new Date(f.get("date") + "T12:00").toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
-      const text = `Привет! Хочу забронировать «${s.name}» в баре ${M.name} на ${date}, ${f.get("time")}, гостей: ${f.get("n")}. Имя: ${vxClean(f.get("name"), 40)}.`;
+      vxStat("book");
+      const text = `${M.demo ? "[Тест с демо-страницы] " : ""}Привет! Хочу забронировать «${s.name}» в баре ${M.name} на ${date}, ${f.get("time")}, гостей: ${f.get("n")}. Имя: ${vxClean(f.get("name"), 40)}.`;
       const wa = M.contacts.whatsapp ? `https://wa.me/${M.contacts.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(text)}` : "";
       const tg = M.contacts.telegram ? `https://t.me/${M.contacts.telegram.replace(/^@/, "")}` : "";
       out.innerHTML = `<p class="vx-msg">${escH(text)}</p>
         <div class="acts">${vxDemo() ? `<button class="make" type="button" disabled>WhatsApp</button><button class="make ghost" type="button" disabled>Telegram</button>`
           : `${wa ? `<a class="make" href="${wa}" target="_blank" rel="noopener">Отправить в WhatsApp</a>` : ""}${tg ? `<a class="make ghost" href="${tg}" target="_blank" rel="noopener" data-vx-tg>Открыть Telegram</a>` : ""}`}</div>
-        <p class="note">${vxDemo() ? "Кнопки заработают, когда в настройках заведения появятся настоящие WhatsApp и Telegram." : tg ? "Telegram не умеет подставлять текст в чат: мы скопируем заявку, останется вставить её." : "Хостес подтвердит бронь в ответном сообщении."}</p>`;
+        <p class="note">${vxDemo() ? (VENUE.meta.demo ? "Так заявка выглядит у гостя: с настоящими контактами кнопки откроют чат заведения." : "Кнопки заработают, когда в настройках заведения появятся настоящие WhatsApp и Telegram.") : tg ? "Telegram не умеет подставлять текст в чат: мы скопируем заявку, останется вставить её." : "Хостес подтвердит бронь в ответном сообщении."}</p>`;
+      out.querySelectorAll("a.make").forEach(a => a.addEventListener("click", () => vxStat("send")));
       const tl = out.querySelector("[data-vx-tg]");
       if (tl) tl.addEventListener("click", () => { try { navigator.clipboard.writeText(text); } catch (er) {} });
     });

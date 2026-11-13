@@ -1,0 +1,34 @@
+/* ================= выбор заведения по адресу (?bar=<id>) и его оформление =================
+   Собирается последним из src/venues: к этому моменту все бары уже в VENUES. */
+  for (const p of VENUE_PATCHES) {
+    if (!VENUE_ID_RE.test(p.id) || !VENUES[p.base]) { console.warn("venue: пропущен", p.id); continue; }
+    VENUES[p.id] = Object.assign({}, VENUES[p.base], p.make(VENUES[p.base]), { id: p.id });
+  }
+  const VENUE_ID = (() => { try { const b = new URLSearchParams(location.search).get("bar"); return b && VENUE_ID_RE.test(b) && VENUES[b] ? b : "hacheden"; } catch (e) { return "hacheden"; } })();
+  const VENUE = VENUES[VENUE_ID];
+  (() => {
+    const r = document.documentElement.style;
+    for (const [k, v] of Object.entries(VENUE.theme.vars)) r.setProperty(k, v);
+    const f = VENUE.theme.fonts;
+    if (f.display) r.setProperty("--font-display", `"${f.display}", "Palatino Linotype", Georgia, serif`);
+    if (f.text) r.setProperty("--font-text", `"${f.text}", Georgia, "Times New Roman", serif`);
+  })();
+  /* бронь и «код бармена» работают у заведения с настоящими контактами; у демо-профиля — для показа владельцам */
+  const O2O = !!(VENUE.meta.contacts.whatsapp || VENUE.meta.contacts.telegram || VENUE.meta.demo);
+
+  /* имя на вывесках: неон, сцена, табличка у двери, подставка, фото и сторис */
+  const BAR_NAME = VENUE.meta.name;
+  const BAR_SIGN = (VENUE.meta.sign || VENUE.meta.name).toUpperCase();
+  /* надпись на холсте, ужатая по ширине: длинное название бара не вылезет за вывеску */
+  function fitFont(g, text, maxW, px, family) {
+    g.font = `${px}px ${family}`;
+    const w = g.measureText(text).width;
+    if (w > maxW) g.font = `${Math.floor(px * maxW / w)}px ${family}`;
+  }
+  if (VENUE_ID !== "hacheden") {
+    document.title = BAR_NAME;
+    const h1 = document.querySelector("#intro h1"); if (h1) h1.textContent = BAR_NAME;
+    const it = document.getElementById("intro-text"); if (it && VENUE.meta.intro) it.textContent = VENUE.meta.intro;
+    if (VENUE.meta.demo && h1) h1.insertAdjacentHTML("afterend", `<p class="demo-badge">Демо платформы · вымышленный бар · цены условные</p>`);
+    const md = document.querySelector('meta[name="description"]'); if (md && VENUE.meta.slogan) md.content = `${BAR_NAME}: ${VENUE.meta.slogan}`;
+  }

@@ -12,7 +12,18 @@
     appId: "1:774316675789:web:9347526f7df621d2d34f84"
   };
   const FB_VER = "10.12.2";
-  const PUBLIC_ROOM = "hacheden";   // один общий бар для всех
+  /* одно подключение к Firebase на страницу: им пользуются и живой бар, и счётчик воронки (95-stats.js) */
+  let FB_CONN = null;
+  function fbOpen() {
+    return FB_CONN || (FB_CONN = (async () => {
+      const base = `https://www.gstatic.com/firebasejs/${FB_VER}/`;
+      const [app, auth, rdb] = await Promise.all([import(base + "firebase-app.js"), import(base + "firebase-auth.js"), import(base + "firebase-database.js")]);
+      const a = app.initializeApp(FIREBASE_CONFIG);
+      const cred = await auth.signInAnonymously(auth.getAuth(a));
+      return { F: rdb, db: rdb.getDatabase(a), uid: cred.user.uid };
+    })().catch(e => { FB_CONN = null; throw e; }));
+  }
+  const PUBLIC_ROOM = VENUE_ID;   // у каждого заведения своя общая комната: гости разных баров не смешиваются
   /* готовые фразы: показываются только они, что бы ни пришло из сети */
   const PHRASES = [
     ["hi", "Добрый вечер!"], ["cheers", "За вас! 🥂"], ["music", "Отличная музыка"], ["advice", "Что посоветуете выпить?"],
@@ -63,14 +74,7 @@
       uid: null,
       on(e, f) { (H[e] = H[e] || []).push(f); },
       async join(me) {
-        if (!F) {
-          const base = `https://www.gstatic.com/firebasejs/${FB_VER}/`;
-          const [app, auth, rdb] = await Promise.all([import(base + "firebase-app.js"), import(base + "firebase-auth.js"), import(base + "firebase-database.js")]);
-          const a = app.initializeApp(FIREBASE_CONFIG);
-          const cred = await auth.signInAnonymously(auth.getAuth(a));
-          api.uid = cred.user.uid;
-          db = rdb.getDatabase(a); F = rdb;
-        }
+        if (!F) { const c = await fbOpen(); api.uid = c.uid; db = c.db; F = c.F; }
         const usersRef = F.ref(db, `rooms/${PUBLIC_ROOM}/users`);
         meRef = F.ref(db, `rooms/${PUBLIC_ROOM}/users/${api.uid}`);
         await F.onDisconnect(meRef).remove();
@@ -93,7 +97,15 @@
   }
 
   /* ---------- присутствие ---------- */
-  function drinkInfo(c) { return c ? { id: c.id, name: String(c.name).slice(0, 32), cup: c.cup, pour: c.pour, garnish: c.garnish || "", ice: !!c.ice } : null; }
+  /* напиток в руке — только в том виде, который пропускают правила базы (docs/firebase-rules.json) */
+  const FR_CUPS = ["coupe", "highball", "martini", "rocks", "shot", "snifter", "wine"];
+  function drinkInfo(c) {
+    if (!c) return null;
+    const id = String(c.id || "").toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 40) || "drink";
+    const name = String(c.name || "").replace(/[<>{}\[\]\\]/g, "").slice(0, 32) || "Коктейль";
+    return { id, name, cup: FR_CUPS.includes(c.cup) ? c.cup : "rocks", pour: /^#[0-9a-f]{6}$/i.test(c.pour) ? c.pour : "#6b1228",
+      garnish: /^[a-z]{1,16}$/.test(c.garnish || "") ? c.garnish : "", ice: !!c.ice };
+  }
   function mySnapshot() { return { name: myName(), look: FR.look, zone: typeof cur === "number" ? cur : 1, drink: drinkInfo(LAST_DRINK) }; }
   FR.look = (() => { try { let v = localStorage.getItem("hacheden-look"); if (v == null) { v = String(Math.floor(Math.random() * 6)); localStorage.setItem("hacheden-look", v); } return +v; } catch (e) { return 0; } })();
   async function goLive() {
@@ -137,7 +149,7 @@
   function sayPhrase(p) {
     if (!FR.on || !PHRASE[p] || Date.now() - FR.lastSay < 1500) return;
     FR.lastSay = Date.now();
-    FR.net.send({ kind: p === "cheers" ? "cheers" : "say", p, text: PHRASE[p] });
+    FR.net.send({ kind: p === "cheers" ? "cheers" : "say", p });   // только код фразы: свободный текст база не принимает
     if (p === "cheers" && H3D.friends) H3D.friends.cheers();
   }
   onProgress(ev => { if (FR.on && (ev === "drink" || ev === "room")) FR.net.update({ drink: drinkInfo(LAST_DRINK), zone: cur }); });

@@ -116,8 +116,8 @@ const LIB = {};
   LIB.glowMat = basic({ map: canvasTex(256, 340, (c, w, h) => {
     c.clearRect(0, 0, w, h); c.strokeStyle = "#bfe8ff"; c.fillStyle = "#bfe8ff"; c.lineWidth = 3;
     c.strokeRect(18, 18, w - 36, h - 36);
-    c.font = "28px Forum, Georgia, serif"; c.textAlign = "center";
-    c.fillText("HACHEDEN", w / 2, 90);
+    c.textAlign = "center"; fitFont(c, BAR_SIGN, w - 60, 28, "Forum, Georgia, serif");
+    c.fillText(BAR_SIGN, w / 2, 90);
     for (let i = 0; i < 7; i++) c.fillRect(48, 140 + i * 24, w - 96 - (i % 3) * 30, 3);
     c.beginPath(); c.arc(w / 2, 300, 12, 0, Math.PI * 2); c.stroke();
   }), transparent: true, opacity: 0, depthWrite: false, toneMapped: false });

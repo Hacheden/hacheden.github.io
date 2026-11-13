@@ -16,7 +16,7 @@ RAID.today = Math.random() < RAID.chance;
     g.strokeStyle = "#c9944a"; g.lineWidth = 6; g.strokeRect(10, 10, w - 20, h - 20);
     g.fillStyle = "#e8c890"; g.textAlign = "center";
     g.font = "40px Forum, Georgia, serif"; g.fillText("КЛУБ ЛЮБИТЕЛЕЙ ЧАЯ", w / 2, 92);
-    g.font = "64px Forum, Georgia, serif"; g.fillText("«Hacheden»", w / 2, 170);
+    g.font = "64px Forum, Georgia, serif"; g.fillText(`«${BAR_NAME}»`, w / 2, 170);
     g.font = "24px Literata, Georgia, serif"; g.globalAlpha = .8; g.fillText("основан в 1921 году · только для членов клуба", w / 2, 232);
   });
   const mat = std({ map: wood, roughness: .6 });

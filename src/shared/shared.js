@@ -1923,7 +1923,7 @@
 
     const c = { id, custom: true, name: spec.name || `${adj} ${noun}`, auto: `${adj} ${noun}`,
       base: by("spirit")[0] || (has("wine") ? "wine" : has("bitter") || has("verm") || has("liq") ? "aperitif" : "none"),
-      origin: "Hacheden, ваш рецепт", method, need: ings, cup, ice: cup === "rocks" && ice !== "none",
+      origin: `${BAR_NAME}, ваш рецепт`, method, need: ings, cup, ice: cup === "rocks" && ice !== "none",
       pour: col.hex, pourOp: h("coconut") ? .95 : Math.min(.95, Math.max(.45, .42 + (1 - col.lum) * .85)),
       pourLevel: { highball: 30, rocks: 62, coupe: 40, martini: 32, wine: 40 }[cup], garnish, spec: { ings, cup: spec.cup || "auto", ice: spec.ice || "auto", method: spec.method || "auto" } };
     Closeup.PROGRAMS[id] = prog;

@@ -2,8 +2,8 @@
    Движок (src/js, src/shared) берёт отсюда название, палитру, залы, места для брони,
    барную карту, тайные рецепты, колоду вопросов и квест. Новый бар — новый файл
    src/venues/<id>.js с тем же устройством; выбирается адресом ?bar=<id>.
-   Бронь и «код бармена» включаются сами, когда в meta.contacts указан WhatsApp или Telegram. */
-  const VENUES = {};
+   Бронь и «код бармена» включаются сами, когда в meta.contacts указан WhatsApp или Telegram.
+   Реестр VENUES — в 00-registry.js, выбор по адресу и палитра — в zz-select.js. */
   VENUES.hacheden = {
     id: "hacheden",
     meta: {
@@ -384,16 +384,3 @@
         steps: "Наполни стакан льдом, налей вино и долей холодную колу. Легко перемешай." }
     ]
   };
-
-  /* ---------- выбор заведения по адресу и применение его палитры ---------- */
-  const VENUE_ID = (() => { try { const b = new URLSearchParams(location.search).get("bar"); return b && VENUES[b] ? b : "hacheden"; } catch (e) { return "hacheden"; } })();
-  const VENUE = VENUES[VENUE_ID];
-  (() => {
-    const r = document.documentElement.style;
-    for (const [k, v] of Object.entries(VENUE.theme.vars)) r.setProperty(k, v);
-    const f = VENUE.theme.fonts;
-    if (f.display) r.setProperty("--font-display", `"${f.display}", "Palatino Linotype", Georgia, serif`);
-    if (f.text) r.setProperty("--font-text", `"${f.text}", Georgia, "Times New Roman", serif`);
-  })();
-  /* бронь и «код бармена» работают только у заведения с настоящими контактами */
-  const O2O = !!(VENUE.meta.contacts.whatsapp || VENUE.meta.contacts.telegram);

@@ -67,7 +67,7 @@ function compose() {
   g.textBaseline = "alphabetic"; g.textAlign = "left";
   g.fillStyle = "#ff8aa0"; g.shadowColor = "#ff2a50"; g.shadowBlur = band * .15;
   g.font = `${Math.round(band * .42)}px Forum, Georgia, serif`;
-  g.fillText("Hacheden", b * 1.4, cy);
+  g.fillText(BAR_NAME, b * 1.4, cy);
   g.shadowBlur = 0;
   const date = M.when.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" }) + ", " + M.when.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
   g.fillStyle = "#e8d8bc"; g.font = `${Math.round(band * .2)}px Literata, Georgia, serif`;
@@ -108,7 +108,7 @@ phDlg.addEventListener("click", async e => {
   else if ("phShare" in b.dataset) {
     PHOTO.canvas.toBlob(async blob => {
       const file = new File([blob], fileName(), { type: "image/jpeg" });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: "Hacheden", text: "Вечер в баре Hacheden" }); } catch (er) {} }
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: BAR_NAME, text: `Вечер в баре ${BAR_NAME}` }); } catch (er) {} }
       else toast("Отправка недоступна", "Скачайте снимок и отправьте его сами");
     }, "image/jpeg", .92);
   } else if ("phAgain" in b.dataset) { phDlg.close(); setTimeout(takePhoto, 300); }
