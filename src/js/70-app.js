@@ -74,7 +74,7 @@ function renderZoneUI(i) {
   }, STILL ? 0 : 280);
   if (!mixDlg.open && !busy) hintEl.textContent = ZONES[i].hint;
   spotsEl.innerHTML = "";
-  HOT.filter(h => h.userData.hot.zone === i && !h.userData.hot.noChip).forEach(h => {
+  HOT.filter(h => h.userData.hot.zone === i && !h.userData.hot.noChip && !h.userData.hot.hidden).forEach(h => {
     const b = document.createElement("button");
     b.type = "button"; b.className = "spot"; b.textContent = h.userData.hot.label;
     b.addEventListener("click", () => activate(h));
@@ -114,7 +114,7 @@ function pick(x, y) {
   ray.setFromCamera(ndc, camera);
   const hits = ray.intersectObjects(hotMeshes, false);
   // на улице кликается только своё, внутри — только бар
-  const hit = hits.find(h => (h.object.userData.hotRoot.userData.hot.zone === "street") === STREET.on);
+  const hit = hits.find(h => (h.object.userData.hotRoot.userData.hot.zone === "street") === STREET.on && h.object.userData.hotRoot.visible);
   return hit ? hit.object.userData.hotRoot : null;
 }
 const modalOpen = () => dlg.open || Book.isOpen || (typeof Closeup !== "undefined" && Closeup.active);
@@ -239,6 +239,7 @@ function bakeEnvironment() {
 /* ---------- главный цикл ---------- */
 let last = performance.now(), frames = 0, slowAcc = 0, slowN = 0, slowHits = 0, startedAt = 0, neonT = 6 + Math.random() * 6, flashT = 6 + Math.random() * 8;
 const _p = V3(), _t = V3(), _d = V3();
+const GYRO = { on: false, x: 0, y: 0 };   // наклон телефона (заполняет 92-venue.js)
 function tick(now) {
   requestAnimationFrame(tick);
   // 30 кадров в секунду в режиме экономии: пропускаем каждый второй кадр
@@ -259,9 +260,14 @@ function tick(now) {
   if (mouseAt && mouseAt.type === "mouse" && !pointer && !STILL) {
     LOOK.py = lerp(LOOK.py, -(mouseAt.x / innerWidth - .5) * .07, .05);
     LOOK.pp = lerp(LOOK.pp, -(mouseAt.y / innerHeight - .5) * .04, .05);
+  } else if (GYRO.on && !pointer && !STILL) {   // на телефоне — от наклона
+    LOOK.py = lerp(LOOK.py, -GYRO.x * .06, .06);
+    LOOK.pp = lerp(LOOK.pp, GYRO.y * .035, .06);
   } else { LOOK.py = lerp(LOOK.py, 0, .03); LOOK.pp = lerp(LOOK.pp, 0, .03); }
   yaw += LOOK.yaw + LOOK.py; pitch += LOOK.pitch + LOOK.pp + SIP.pitch;
   if (!STILL) { _p.y += Math.sin(t * .8) * .006; _p.x += Math.sin(t * .37) * .008; }
+  // параллакс: камера чуть смещается вслед за взглядом — ближние предметы сдвигаются сильнее дальних
+  if (!STILL) { _p.x -= Math.cos(yaw) * LOOK.py * .55; _p.z += Math.sin(yaw) * LOOK.py * .55; _p.y += LOOK.pp * .35; }
   camera.position.copy(_p);
   camera.lookAt(_p.x + Math.sin(yaw) * Math.cos(pitch), _p.y + Math.sin(pitch), _p.z + Math.cos(yaw) * Math.cos(pitch));
   if (Math.abs(camera.fov - CAM.fov) > .01) { camera.fov = CAM.fov; camera.updateProjectionMatrix(); }

@@ -62,7 +62,9 @@
         <p class="note">Посмотреть бар в любое время суток и сезон. Гости этого не видят: для них бар живёт по настоящим часам.</p>
         <div class="row" style="grid-template-columns:1fr"><span class="lbl">Время</span><div class="seg">${tb("", "Сейчас")}${tb("17:30", "17:30 открытие")}${tb("20:30", "20:30")}${tb("23:30", "23:30")}${tb("01:30", "01:30")}${tb("02:58", "02:58 закрытие")}</div></div>
         <div class="row" style="grid-template-columns:1fr"><span class="lbl">Сезон</span><div class="seg">${sb("", "Как сейчас")}${sb("winter", "Зима")}${sb("spring", "Весна")}${sb("summer", "Лето")}${sb("autumn", "Осень")}</div></div>
-        <div class="acts"><button class="make ghost" type="button" data-demo-coach>Показать знакомство с управлением</button></div>`;
+        <div class="acts"><button class="make ghost" type="button" data-demo-coach>Показать знакомство с управлением</button></div>
+        <p class="note">Бронь мест и барный пропуск включатся у всех, когда в настройках заведения (src/venues) появятся настоящие WhatsApp или Telegram. До этого их видите только вы.</p>
+        <div class="acts"><button class="make ghost" type="button" data-demo-o2o aria-pressed="${VX.preview}">${VX.preview ? "Скрыть бронь мест и пропуск" : "Показать бронь мест и пропуск"}</button></div>`;
       })() : ""}
       <div class="acts"><button class="make ghost${resetArm ? " warn" : ""}" type="button" data-reset>${resetArm ? "Точно сбросить? Нажмите ещё раз" : "Сбросить настройки"}</button></div>
       <p class="note">Настройки хранятся только в этом браузере.</p>`;
@@ -106,6 +108,7 @@
       if (v) u.searchParams.set(k, v); else u.searchParams.delete(k);
       location.href = u.toString();
     } else if ("demoCoach" in b.dataset) { setDlg.close(); if (H3D.coach) H3D.coach(); }
+    else if ("demoO2o" in b.dataset) { vxPreview(!VX.preview); b.setAttribute("aria-pressed", String(VX.preview)); b.textContent = VX.preview ? "Скрыть бронь мест и пропуск" : "Показать бронь мест и пропуск"; }
     else if ("reload" in b.dataset) location.reload();
     else if ("openPlayer" in b.dataset) { setDlg.close(); openPlayer(); }
   });
