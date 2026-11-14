@@ -335,6 +335,7 @@
 
   /* ---------- кнопки справа: плеер, журнал, настройки ---------- */
   .tools { position: absolute; top: 76px; right: 18px; z-index: 4; display: grid; gap: 8px; }
+  .tool[hidden] { display: none; }
   .tool { position: relative; appearance: none; width: 46px; height: 46px; display: grid; place-items: center; padding: 0; border-radius: 50%;
     border: 1px solid rgba(214,170,92,.35); background: rgba(20,8,11,.72); color: var(--cream); cursor: pointer;
     backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); transition: border-color .2s, color .2s, transform .2s; }
@@ -635,3 +636,33 @@
   @media (max-width: 420px) { .vx-two { grid-template-columns: 1fr; } .vx-sp-row { grid-template-columns: 30px 1fr; } .vx-sp-row .make { grid-column: 1 / -1; } }
   .sheet .acts[hidden], .vx-form[hidden], .vx-link[hidden], .vx-out[hidden], .vx-deck .acts[hidden] { display: none; }
   .demo-badge { margin: 6px auto 0; padding: 5px 12px; width: fit-content; border-radius: 999px; border: 1px dashed rgba(214,170,92,.6); color: var(--brass); font: italic 400 13px/1.3 var(--font-text); letter-spacing: .02em; }
+
+  /* ---------- барный пропуск: привилегия заведения ---------- */
+  .vx-priv { max-width: 34ch; color: var(--cream); font: italic 400 15px/1.4 var(--font-text); }
+  /* ---------- афиша вечера ---------- */
+  .vx-ev { position: relative; margin: 4px 0 14px; padding: 18px 18px 16px 22px; border-radius: 8px; border: 1px solid rgba(214,170,92,.35);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--ev) 18%, transparent), rgba(14,5,8,.4) 60%); }
+  .vx-ev::before { content: ""; position: absolute; left: 0; top: 12px; bottom: 12px; width: 3px; border-radius: 2px; background: var(--ev); box-shadow: 0 0 12px var(--ev); }
+  .vx-ev-when { margin: 0 0 6px; color: var(--ev); font: 400 15px/1.3 var(--font-text); letter-spacing: .04em; }
+  .sheet .vx-ev-title, .vx-ev-title { margin: 0 0 8px; color: var(--cream); font: 400 30px/1.1 var(--font-display); letter-spacing: .02em; }
+  .vx-ev-line { margin: 0 0 8px; color: var(--brass); font: italic 400 16px/1.4 var(--font-text); }
+  .vx-ev p:last-child { margin-bottom: 0; }
+  /* ---------- бары сети: футляр со спичечными коробками ---------- */
+  .vx-case { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; margin: 14px 0 4px; padding: 16px;
+    border-radius: 10px; background: linear-gradient(#2a1410, #1a0b08); box-shadow: inset 0 0 0 1px rgba(214,170,92,.35), inset 0 10px 30px rgba(0,0,0,.6); }
+  .vx-match { --c1: #7a1622; --c2: #4a0c14; position: relative; display: grid; grid-template-columns: 12px 1fr; min-height: 128px; border-radius: 4px; overflow: hidden;
+    color: var(--cream); text-decoration: none; background: linear-gradient(160deg, var(--c1), var(--c2)); box-shadow: 0 6px 16px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,230,190,.12);
+    transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s; }
+  .vx-match[style*="--m:1"] { --c1: #1d3a2c; --c2: #0f2219; }
+  .vx-match[style*="--m:2"] { --c1: #22304a; --c2: #121b2c; }
+  .vx-match[style*="--m:3"] { --c1: #5a3a12; --c2: #33200a; }
+  .vx-match[style*="--m:4"] { --c1: #3a1a40; --c2: #210d25; }
+  a.vx-match:hover, a.vx-match:focus-visible { transform: translateY(-3px) rotate(-.6deg); box-shadow: 0 12px 24px rgba(0,0,0,.55), inset 0 0 0 1px var(--brass); outline: none; }
+  .vx-strike { background: repeating-linear-gradient(0deg, #3a2a20 0 2px, #6a4a32 2px 3px, #2a1c14 3px 5px); box-shadow: inset -1px 0 0 rgba(0,0,0,.5); }
+  .vx-match-in { display: grid; align-content: center; gap: 4px; padding: 12px 12px 12px 10px; border: 1px solid rgba(214,170,92,.45); margin: 6px; border-radius: 2px; }
+  .vx-match b { font: 400 21px/1.05 var(--font-display); letter-spacing: .04em; color: #fff3dc; }
+  .vx-match i { font: italic 400 13px/1.3 var(--font-text); color: var(--muted); }
+  .vx-match small { font: 400 11.5px/1.2 var(--font-text); color: var(--brass); letter-spacing: .08em; text-transform: uppercase; }
+  .vx-match em { font: italic 400 12px/1 var(--font-text); color: var(--brass); }
+  .vx-match.here { opacity: .82; }
+  @media (prefers-reduced-motion: reduce) { .vx-match { transition: none; } }

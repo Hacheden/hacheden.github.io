@@ -42,6 +42,7 @@
   .nav { display: flex; gap: 4px; padding: 4px; border: 1px solid rgba(214,170,92,.45); border-radius: 999px; background: rgba(14,5,8,.8); }
   .nav button { appearance: none; border: 0; background: none; color: var(--muted); font: 400 17px/1 var(--font-display);
     padding: 11px 18px; border-radius: 999px; cursor: pointer; transition: background .25s, color .25s; }
+  .nav[hidden] { display: none; }
   .nav button[aria-current="true"] { background: rgba(214,170,92,.22); color: var(--cream); }
   .nav button:hover { color: var(--cream); }
   .nav button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
@@ -269,7 +270,10 @@
     document.querySelector(".load").hidden = true;
   }
   setTimeout(noGL, 25000);
-/*@@SHARED@@*/
+/*@@SHARED_A@@*/
+</script>
+<script>
+/*@@SHARED_B@@*/
 </script>
 <script type="module">
 /*@@SCENE@@*/

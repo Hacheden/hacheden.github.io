@@ -10,7 +10,7 @@
     passFor: null, passCode: "", passOpen: false,
     treat: null, sheets: {}
   };
-  const VX_SEATS = VENUE.rooms.flatMap((r, zone) => (r.seats || []).map(s => Object.assign({ zone, room: r.name }, s)));
+  const VX_SEATS = VENUE.rooms.flatMap((r, i) => (r.seats || []).map(s => Object.assign({ zone: ROOM_ZONE[r.id] ?? i, room: r.name }, s)));
   const vxO2O = () => O2O || (!!H3D.owner && VX.preview);   // бронь и пропуск видны
   const vxReal = !!(VENUE.meta.contacts.whatsapp || VENUE.meta.contacts.telegram);
   const vxDemo = () => !vxReal;                                // контактов нет: только предпросмотр, ничего не отправляется
@@ -19,7 +19,7 @@
     const n = escH(VENUE.meta.name);
     if (VENUE.meta.demo) return vxReal
       ? (kind === "pass" ? "Демо: так выглядит пропуск в настоящем баре, этот код нигде не действует" : "Демо для владельцев заведений: заявка уйдёт на тестовый номер, а не в настоящий бар")
-      : "Демо для владельцев заведений: впишите тестовые WhatsApp или Telegram в src/venues/demo-almaty.js, и кнопки заработают";
+      : "Демо для владельцев заведений: впишите тестовые WhatsApp или Telegram в src/venues/demo-almaty/venue.js, и кнопки заработают";
     if (!vxReal) return kind === "pass" ? `Предпросмотр: у ${n} нет настоящего зала, код не действует` : `Предпросмотр для хозяина: у ${n} нет настоящего зала, заявка никуда не уйдёт`;
     return "";
   }
@@ -169,16 +169,14 @@
     const base = vxCardExtras(d, opt);
     if (opt && opt.served) {
       VX.passOpen = true;
-      if (VX.passFor !== d.id) { VX.passFor = d.id; VX.passCode = `${VENUE.meta.codePrefix}-${100 + Math.floor(Math.random() * 900)}`; }
+      if (VX.passFor !== d.id) { VX.passFor = d.id; VX.passCode = vxPassCode(); }
       setTimeout(() => vxSound("ice"), 250);
     }
     let h = "";
     if (d.legend) h += `<p class="vx-legend">Легендарный рецепт · квест через три зала пройден</p>`;
     const crafted = d.signature || d.secret || d.custom;
     if (VX.passOpen && VX.passFor === d.id && crafted && vxO2O()) {
-      h += `<div class="vx-pass" role="group" aria-label="Барный пропуск">
-        ${vxTag("pass") ? `<span class="vx-demo-tag">${vxTag("pass")}</span>` : ""}
-        <span class="vx-pass-h">Барный пропуск</span><b>${VX.passCode}</b><small>Покажите этот код бармену у стойки</small></div>`;
+      h += vxPassHTML(VX.passCode, "Покажите этот код бармену у стойки");
     }
     const sendable = !d.custom || d.ings || d.need;
     h += `<div class="card-acts vx-acts"><button class="make ghost" type="button" data-vx-story="${d.id}">Карточка для сторис</button>${sendable ? `<button class="make ghost" type="button" data-vx-treat="${d.id}">Угостить друга</button>` : ""}</div>`;
@@ -205,33 +203,44 @@
     return lines;
   }
   const vxPlain = s => String(s).replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">");
-  async function vxStoryCanvas(c, code) {
+  /* основа карточки 1080×1920: тёплый полумрак, зерно, двойная латунная рамка, шапка с названием бара */
+  async function vxCanvasBase() {
     const W = 1080, H = 1920, cv = document.createElement("canvas");
     cv.width = W; cv.height = H;
     const g = cv.getContext("2d");
     const F = VENUE.theme.fonts, css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
     const brass = css("--brass") || "#d6aa5c", cream = css("--cream") || "#f1e4cc", muted = css("--muted") || "#c2a784";
     try { await Promise.all([document.fonts.load(`100px "${F.display}"`), document.fonts.load(`36px "${F.text}"`), document.fonts.load(`italic 36px "${F.text}"`)]); } catch (e) {}
-    // фон: тёплый полумрак и зерно плёнки
     const bg = g.createRadialGradient(W / 2, H * .36, 40, W / 2, H * .45, H * .78);
     bg.addColorStop(0, "#43141c"); bg.addColorStop(.42, "#1d070b"); bg.addColorStop(1, "#070304");
     g.fillStyle = bg; g.fillRect(0, 0, W, H);
     const img = g.getImageData(0, 0, W, H), px = img.data;
     for (let i = 0; i < px.length; i += 4) { const n = (Math.random() - .5) * 20; px[i] += n; px[i + 1] += n; px[i + 2] += n; }
     g.putImageData(img, 0, 0);
-    // двойная латунная рамка с ромбами по углам
     g.strokeStyle = brass; g.lineWidth = 4; g.strokeRect(48, 48, W - 96, H - 96);
     g.globalAlpha = .55; g.lineWidth = 1.5; g.strokeRect(66, 66, W - 132, H - 132); g.globalAlpha = 1;
     g.fillStyle = brass;
     for (const [x, y] of [[48, 48], [W - 48, 48], [48, H - 48], [W - 48, H - 48]]) { g.save(); g.translate(x, y); g.rotate(Math.PI / 4); g.fillRect(-9, -9, 18, 18); g.restore(); }
     g.textAlign = "center"; g.textBaseline = "alphabetic";
-    // шапка
     g.fillStyle = brass; g.font = `92px "${F.display}"`;
     if ("letterSpacing" in g) g.letterSpacing = "14px";
     g.fillText(VENUE.meta.name.toUpperCase(), W / 2, 210);
     if ("letterSpacing" in g) g.letterSpacing = "0px";
     g.fillStyle = muted; g.font = `italic 34px "${F.text}"`;
     g.fillText(VENUE.meta.slogan, W / 2, 270);
+    return { cv, g, W, H, F, brass, cream, muted };
+  }
+  /* подвал карточки: адрес бара и возраст */
+  function vxCanvasFoot(B, line = "18+ · виртуальный бар в браузере") {
+    const { g, W, H, F, brass, muted } = B;
+    g.fillStyle = brass; g.font = `38px "${F.display}"`;
+    if ("letterSpacing" in g) g.letterSpacing = "4px";
+    g.fillText(VENUE.meta.site, W / 2, H - 140);
+    if ("letterSpacing" in g) g.letterSpacing = "0px";
+    g.fillStyle = muted; g.font = `24px "${F.text}"`; g.fillText(line, W / 2, H - 96);
+  }
+  async function vxStoryCanvas(c, code) {
+    const B = await vxCanvasBase(), { cv, g, W, H, F, brass, cream, muted } = B;
     // свечение за бокалом и сам бокал
     const glow = g.createRadialGradient(W / 2, 720, 20, W / 2, 720, 420);
     glow.addColorStop(0, "rgba(255,176,96,.38)"); glow.addColorStop(1, "rgba(255,150,80,0)");
@@ -249,24 +258,23 @@
     while (g.measureText(c.name).width > W - 220 && size > 56) { size -= 6; g.font = `${size}px "${F.display}"`; }
     g.fillText(c.name, W / 2, y);
     g.fillStyle = muted; g.font = `italic 36px "${F.text}"`;
-    for (const l of vxWrap(g, vxPlain(c.tagline || ""), W - 260).slice(0, 2)) { y += 54; g.fillText(l, W / 2, y); }
+    const priv = code && VENUE.meta.privilege ? vxWrap((g.font = `italic 28px "${F.text}"`, g), VENUE.meta.privilege, 540).slice(0, 2) : [];
+    g.fillStyle = muted; g.font = `italic 36px "${F.text}"`;
+    for (const l of vxWrap(g, vxPlain(c.tagline || ""), W - 260).slice(0, priv.length ? 1 : 2)) { y += 54; g.fillText(l, W / 2, y); }
     y += 46;
     g.strokeStyle = brass; g.globalAlpha = .6; g.lineWidth = 1.5; g.beginPath(); g.moveTo(W / 2 - 120, y); g.lineTo(W / 2 + 120, y); g.stroke(); g.globalAlpha = 1;
     g.fillStyle = cream; g.font = `34px "${F.text}"`;
-    for (const [a, b] of (c.recipe || []).slice(0, 6)) { y += 52; g.fillText(`${vxPlain(a)} ${vxPlain(b)}`.slice(0, 48), W / 2, y); }
-    // код для бармена
+    for (const [a, b] of (c.recipe || []).slice(0, priv.length ? 4 : 6)) { y += 52; g.fillText(`${vxPlain(a)} ${vxPlain(b)}`.slice(0, 48), W / 2, y); }
+    // код для бармена и привилегия заведения
     if (code) {
-      const by = Math.max(y + 60, 1560);
-      g.strokeStyle = brass; g.lineWidth = 3; g.strokeRect(W / 2 - 300, by, 600, 170);
+      const bh = 170 + priv.length * 38, by = Math.min(Math.max(y + 60, 1560 - priv.length * 38), H - 196 - bh);
+      g.strokeStyle = brass; g.lineWidth = 3; g.strokeRect(W / 2 - 300, by, 600, bh);
       g.fillStyle = muted; g.font = `28px "${F.text}"`; g.fillText("Покажите этот код бармену у стойки", W / 2, by + 50);
       g.fillStyle = brass; g.font = `80px "${F.display}"`; g.fillText(code, W / 2, by + 140);
+      g.fillStyle = cream; g.font = `italic 28px "${F.text}"`;
+      priv.forEach((l, i) => g.fillText(l, W / 2, by + 184 + i * 38));
     }
-    // подвал
-    g.fillStyle = brass; g.font = `38px "${F.display}"`;
-    if ("letterSpacing" in g) g.letterSpacing = "4px";
-    g.fillText(VENUE.meta.site, W / 2, H - 140);
-    if ("letterSpacing" in g) g.letterSpacing = "0px";
-    g.fillStyle = muted; g.font = `24px "${F.text}"`; g.fillText("18+ · виртуальный бар в браузере", W / 2, H - 96);
+    vxCanvasFoot(B);
     return cv;
   }
   async function vxStory(c) {
@@ -284,11 +292,10 @@
       <div class="acts">${canShare ? `<button class="make" type="button" data-vx-share>Поделиться</button>` : ""}
         <a class="make${canShare ? " ghost" : ""}" href="${url}" download="${file.name}">Скачать картинку</a></div>
       <p class="note">${canShare ? "«Поделиться» откроет Instagram, Telegram и другие приложения." : "Картинка 1080×1920 — ровно в размер сторис."}</p>`;
-    vxStat("story");
     const sb = d.querySelector("[data-vx-share]");
-    if (sb) sb.addEventListener("click", () => { vxStat("story_save"); navigator.share({ files: [file], title: c.name }).catch(() => {}); });
+    if (sb) sb.addEventListener("click", () => { vxStat("story_share"); navigator.share({ files: [file], title: c.name }).catch(() => {}); });
     const dl = d.querySelector("a[download]");
-    if (dl) dl.addEventListener("click", () => vxStat("story_save"));
+    if (dl) dl.addEventListener("click", () => vxStat("story_share"));
     d.addEventListener("close", () => setTimeout(() => URL.revokeObjectURL(url), 1000), { once: true });
   }
 
@@ -358,7 +365,7 @@
     const t = VX.treat;
     if (!t) return null;
     VX.treat = null;
-    vxStat("treat");
+    vxStat("treat_open");
     try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
     const c = vxTreatDrink(t);
     const d = vxSheet("vx-gift", "Для вас оставили коктейль");
@@ -391,20 +398,35 @@
   }
 
   /* ---------- бронь места ---------- */
+  /* персональный код пропуска: префикс заведения + номер; один на этот браузер, чтобы бар узнавал гостя и при брони, и у стойки */
+  function vxPassCode() {
+    const k = `hacheden-pass-${VENUE_ID}`;
+    try { let c = localStorage.getItem(k); if (!c || !c.startsWith(VENUE.meta.codePrefix + "-")) { c = `${VENUE.meta.codePrefix}-${1000 + Math.floor(Math.random() * 9000)}`; localStorage.setItem(k, c); } return c; }
+    catch (e) { return VX.passCode || (VX.passCode = `${VENUE.meta.codePrefix}-${1000 + Math.floor(Math.random() * 9000)}`); }
+  }
+  /* блок пропуска: код и привилегия заведения (meta.privilege) */
+  function vxPassHTML(code, hint) {
+    const P = VENUE.meta.privilege;
+    return `<div class="vx-pass" role="group" aria-label="Барный пропуск">
+        ${vxTag("pass") ? `<span class="vx-demo-tag">${vxTag("pass")}</span>` : ""}
+        <span class="vx-pass-h">Барный пропуск</span><b>${escH(code)}</b>${P ? `<span class="vx-priv">${escH(P)}</span>` : ""}<small>${escH(hint)}</small></div>`;
+  }
   function vxSeatMax(s) { const n = String(s.cap).match(/\d+/g); return n ? +n[n.length - 1] : 2; }
-  function vxBook(id) {
-    const s = VX_SEATS.find(x => x.id === id);
+  /* id — место из VENUE.rooms; или opt.seat — «стол на вечер» из афиши, тогда форма открыта сразу, дата и время подставлены */
+  function vxBook(id, opt = {}) {
+    const s = opt.seat || VX_SEATS.find(x => x.id === id);
     if (!s || !vxO2O()) return;
     const M = VENUE.meta, d = vxSheet("vx-book", s.name);
     const pad = n => String(n).padStart(2, "0"), today = new Date(), iso = x => `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`;
-    vxStat("seat");
+    const code = vxPassCode();
+    vxStat("booking_click");
     d.body.innerHTML = `${vxTag("book") ? `<p class="vx-demo-tag">${vxTag("book")}</p>` : ""}
       <p class="vx-room">${escH(s.room)} · ${escH(s.cap)}</p>
       <p>${escH(s.mood)}</p>
-      <div class="acts"><button class="make" type="button" data-vx-take>Занять это место</button></div>
-      <form class="vx-form" id="vx-book-form" hidden>
-        <div class="vx-two"><label>Дата<input type="date" name="date" required min="${iso(today)}" value="${iso(today)}"></label>
-        <label>Время<input type="time" name="time" required value="20:00" step="900"></label></div>
+      <div class="acts"${opt.seat ? " hidden" : ""}><button class="make" type="button" data-vx-take>Занять это место</button></div>
+      <form class="vx-form" id="vx-book-form"${opt.seat ? "" : " hidden"}>
+        <div class="vx-two"><label>Дата<input type="date" name="date" required min="${iso(today)}" value="${opt.date || iso(today)}"></label>
+        <label>Время<input type="time" name="time" required value="${opt.time || "20:00"}" step="900"></label></div>
         <div class="vx-two"><label>Гостей<select name="n">${Array.from({ length: vxSeatMax(s) }, (_, i) => `<option>${i + 1}</option>`).join("")}</select></label>
         <label>Имя<input name="name" maxlength="40" required autocomplete="name" value="${escH(vxName())}"></label></div>
         <p class="note">Открыто с ${M.hours.open} до ${M.hours.close}${M.address ? ` · ${escH(M.address)}` : ""}.</p>
@@ -422,15 +444,16 @@
       out.hidden = false;
       if (!inHours) { out.innerHTML = `<p class="vx-err">В это время бар закрыт: мы работаем с ${M.hours.open} до ${M.hours.close}.</p>`; return; }
       const date = new Date(f.get("date") + "T12:00").toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
-      vxStat("book");
-      const text = `${M.demo ? "[Тест с демо-страницы] " : ""}Привет! Хочу забронировать «${s.name}» в баре ${M.name} на ${date}, ${f.get("time")}, гостей: ${f.get("n")}. Имя: ${vxClean(f.get("name"), 40)}.`;
+      // код пропуска едет в самой заявке: хостес отмечает гостя, пришедшего с платформы
+      const text = `${M.demo ? "[Тест с демо-страницы] " : ""}Привет! Хочу забронировать ${s.id === "event" ? s.name.charAt(0).toLowerCase() + s.name.slice(1) : `«${s.name}»`} в баре ${M.name} на ${date}, ${f.get("time")}, гостей: ${f.get("n")}. Имя: ${vxClean(f.get("name"), 40)}. Код пропуска: ${code}.`;
       const wa = M.contacts.whatsapp ? `https://wa.me/${M.contacts.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(text)}` : "";
       const tg = M.contacts.telegram ? `https://t.me/${M.contacts.telegram.replace(/^@/, "")}` : "";
       out.innerHTML = `<p class="vx-msg">${escH(text)}</p>
+        ${vxPassHTML(code, "Покажите код хостес при входе")}
         <div class="acts">${vxDemo() ? `<button class="make" type="button" disabled>WhatsApp</button><button class="make ghost" type="button" disabled>Telegram</button>`
           : `${wa ? `<a class="make" href="${wa}" target="_blank" rel="noopener">Отправить в WhatsApp</a>` : ""}${tg ? `<a class="make ghost" href="${tg}" target="_blank" rel="noopener" data-vx-tg>Открыть Telegram</a>` : ""}`}</div>
         <p class="note">${vxDemo() ? (VENUE.meta.demo ? "Так заявка выглядит у гостя: с настоящими контактами кнопки откроют чат заведения." : "Кнопки заработают, когда в настройках заведения появятся настоящие WhatsApp и Telegram.") : tg ? "Telegram не умеет подставлять текст в чат: мы скопируем заявку, останется вставить её." : "Хостес подтвердит бронь в ответном сообщении."}</p>`;
-      out.querySelectorAll("a.make").forEach(a => a.addEventListener("click", () => vxStat("send")));
+      out.querySelectorAll("a.make").forEach(a => a.addEventListener("click", () => vxStat("booking_send")));
       const tl = out.querySelector("[data-vx-tg]");
       if (tl) tl.addEventListener("click", () => { try { navigator.clipboard.writeText(text); } catch (er) {} });
     });

@@ -31,6 +31,61 @@ H3D.seats = () => {
 };
 H3D.seats();
 
+/* ---------- афиша вечера: латунный стенд с ближайшим событием (VENUE.events) ----------
+   Место задаёт заведение: VENUE.eventStand = { pos: [x, z], rot, zone, kind }; kind: "counter" — рама на стойке (по умолчанию,
+   видна и на телефоне), "floor" — напольный мольберт для зала, где у входа есть место. */
+const EVENT_STAND = (() => {
+  const ev = vxNextEvent();
+  if (!ev) return null;
+  const S = Object.assign({ pos: [-.85, -2.25], rot: .14, zone: 1, kind: "counter" }, VENUE.eventStand || {});
+  const ac = vxAccent(ev), F = VENUE.theme.fonts;
+  const poster = canvasTex(512, 720, (g, w, h) => {
+    const bg = g.createLinearGradient(0, 0, 0, h);
+    bg.addColorStop(0, "#2a0c12"); bg.addColorStop(1, "#0e0406");
+    g.fillStyle = bg; g.fillRect(0, 0, w, h);
+    g.strokeStyle = ac; g.lineWidth = 6; g.strokeRect(16, 16, w - 32, h - 32);
+    g.globalAlpha = .5; g.lineWidth = 2; g.strokeRect(30, 30, w - 60, h - 60); g.globalAlpha = 1;
+    g.textAlign = "center";
+    g.fillStyle = "#c2a784"; g.font = `italic 26px ${F.text}, Georgia, serif`; g.fillText("АФИША ВЕЧЕРА", w / 2, 96);
+    g.fillStyle = ac; g.font = `34px ${F.display}, Georgia, serif`; g.fillText(vxEventDay(ev), w / 2, 168);
+    g.font = `96px ${F.display}, Georgia, serif`; g.fillText(ev.time, w / 2, 280);
+    g.fillStyle = "#f1e4cc";
+    let size = 64; g.font = `${size}px ${F.display}, Georgia, serif`;
+    let lines = vxWrap(g, ev.title, w - 80);
+    while (lines.length > 3 && size > 36) { size -= 6; g.font = `${size}px ${F.display}, Georgia, serif`; lines = vxWrap(g, ev.title, w - 80); }
+    let y = 380;
+    lines.slice(0, 3).forEach(l => { g.fillText(l, w / 2, y); y += size * 1.1; });
+    if (ev.lineup) { g.fillStyle = "#d6aa5c"; g.font = `italic 26px ${F.text}, Georgia, serif`; vxWrap(g, ev.lineup, w - 90).slice(0, 3).forEach(l => { y += 36; g.fillText(l, w / 2, y); }); }
+    g.fillStyle = "#c2a784"; g.font = `22px ${F.text}, Georgia, serif`; g.fillText("нажмите, чтобы занять стол", w / 2, h - 58);
+  });
+  const onBar = S.kind !== "floor";
+  const g = group(S.pos[0], onBar ? CT.top : 0, S.pos[1]);
+  g.rotation.y = S.rot;
+  if (onBar) {
+    // настольная рама на стойке: латунь, наклон назад, опора сзади
+    const frame = group(0, .235, 0, g);
+    frame.rotation.x = -.16;
+    box(-.175, .175, -.235, .235, -.01, 0, M.brass, frame, 0);
+    mesh(new THREE.PlaneGeometry(.32, .45), basic({ map: poster }), 0, 0, .002, frame);
+    const leg = mesh(new THREE.BoxGeometry(.02, .42, .008), M.brass, 0, .2, -.07, g);
+    leg.rotation.x = .3;
+    box(-.18, .18, 0, .012, -.03, .03, M.brass, g, 0);
+    glowSprite(0xffc890, .55, 0, .26, .08, g, .1);
+  } else {
+    // напольный мольберт: три латунные ножки, полка и рама с афишей
+    const leg = (x, z, rx, rz) => { const m = mesh(new THREE.CylinderGeometry(.011, .014, 1.72, 8), M.brass, x, .84, z, g); m.rotation.set(rx, 0, rz); };
+    leg(-.3, .02, -.1, -.1); leg(.3, .02, -.1, .1); leg(0, -.3, .32, 0);
+    box(-.36, .36, .9, .93, -.02, .07, M.brass, g, 0);
+    const frame = group(0, 1.29, .02, g);
+    frame.rotation.x = -.1;
+    box(-.3, .3, -.4, .4, -.012, 0, M.brass, frame, 0);
+    mesh(new THREE.PlaneGeometry(.54, .76), basic({ map: poster }), 0, 0, .002, frame);
+    glowSprite(0xffc890, .9, 0, 1.34, .14, g, .12);
+  }
+  hot(g, S.zone, `Афиша: ${ev.title}`, () => vxEvent(ev), { grow: .04 });
+  return { g, ev };
+})();
+
 /* ---------- колода вопросов на столике у камина ---------- */
 (() => {
   if (!VENUE.deck) return;
@@ -42,15 +97,15 @@ H3D.seats();
     g.fillStyle = "#d6aa5c"; g.font = "86px Forum, Georgia, serif"; g.textAlign = "center"; g.textBaseline = "middle";
     g.fillText(VENUE.meta.name.charAt(0), w / 2, h / 2 + 4);
   });
-  const x = FP.x - 1.93 - .17, z = FP.z + .06;   // столик курилки: центр в 6.05, край у кресел
-  const deck = group(x, .481, z);
-  deck.rotation.y = .5;
+  // столик курилки (центр в 6.05, край у кресел); нет курилки — колода лежит на стойке
+  const deck = FEAT.smoke ? group(FP.x - 1.93 - .17, .481, FP.z + .06) : group(1.82, CT.top, -2.22);
+  deck.rotation.y = FEAT.smoke ? .5 : -.35;
   const edge = std({ color: 0xe9dfcb, roughness: .8 });
   mesh(new THREE.BoxGeometry(.066, .024, .092), [edge, edge, std({ map: back, roughness: .55 }), edge, edge, edge], 0, .012, 0, deck);
   // верхняя карта чуть сдвинута — видно, что это колода
   const top = mesh(new THREE.PlaneGeometry(.066, .092), std({ map: back, roughness: .55 }), .006, .0255, -.004, deck);
   top.rotation.set(-Math.PI / 2, 0, .08);
-  hot(deck, 2, "Колода вопросов", () => vxDeck(), { grow: .12 });
+  hot(deck, FEAT.smoke ? 2 : 1, "Колода вопросов", () => vxDeck(), { grow: .12 });
 })();
 
 /* ---------- спешл недели: табличка-домик на стойке ---------- */
@@ -70,7 +125,8 @@ H3D.seats();
     g.fillStyle = "#d6aa5c"; g.fillRect(w / 2 - 40, 156, 80, 2);
     g.fillStyle = "#c2a784"; g.font = "20px Literata, Georgia, serif"; g.fillText("спросите у бармена", w / 2, 188);
   });
-  const tent = group(-.82, CT.top, -2.17);
+  // если на этом месте стоит рама с афишей (по умолчанию так), табличка спешла отходит левее
+  const tent = group(vxNextEvent() && !(VENUE.eventStand && VENUE.eventStand.kind === "floor") ? -1.55 : -.82, CT.top, -2.17);
   tent.rotation.y = .22;
   const face = std({ map: tex, roughness: .6 }), backMat = std({ color: 0x1c070b, roughness: .7 });
   for (const s of [1, -1]) {
@@ -104,7 +160,7 @@ onTick((t, dt) => {
   if (E.t > 7) { E.t = -1; E.s.visible = false; }
 });
 (() => {
-  const fp = HOT.find(h => h.userData.hot.zone === 2 && (h.userData.hot.label === "Подбросить дров" || h.userData.hot.label === "Свечи в камине"));
+  const fp = FEAT.smoke && HOT.find(h => h.userData.hot.zone === 2 && (h.userData.hot.label === "Подбросить дров" || h.userData.hot.label === "Свечи в камине"));
   if (!fp) return;
   const act = fp.userData.hot.act;
   fp.userData.hot.act = () => {

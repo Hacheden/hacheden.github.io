@@ -113,23 +113,6 @@ function stoke() {
   for (let i = 0; i < e.N; i++) e.life[i] = rng() * .3;
   crackle();
 }
-let fxCtx = null;
-const fx = () => {
-  const AC = window.AudioContext || window.webkitAudioContext;
-  if (!AC) return null;
-  fxCtx = fxCtx || AUDIO.route(new AC(), "ambient");
-  fxCtx.resume();
-  return fxCtx;
-};
-function crackle() {
-  const c = fx(); if (!c) return;
-  const len = c.sampleRate * 1.2, b = c.createBuffer(1, len, c.sampleRate), d = b.getChannelData(0);
-  let env = 0;
-  for (let i = 0; i < len; i++) { if (Math.random() < .002) env = .5 + Math.random() * .5; env *= .99; d[i] = (Math.random() * 2 - 1) * env * (1 - i / len); }
-  const s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
-  s.buffer = b; f.type = "highpass"; f.frequency.value = 700; g.gain.value = .35;
-  s.connect(f).connect(g).connect(c.destination); s.start();
-}
 
 /* ---------- ковёр, кресла и столик ---------- */
 const rug = mesh(new THREE.PlaneGeometry(2.5, 3.5), std({ map: TEX.rugRed, roughness: .95 }), 6.2, .004, FP.z);
@@ -246,16 +229,6 @@ const DOOR = { busy: false };
   glowSprite(0xffa860, .7, 0, 2.5, .2, g, .4);
   hot(g, 2, "Постучать в дверь", () => knockDoor(), { grow: 0 });
 })();
-function knock() {
-  const c = fx(); if (!c) return;
-  const t0 = c.currentTime + .05;
-  for (let i = 0; i < 3; i++) {
-    const t = t0 + i * .3, o = c.createOscillator(), g = c.createGain();
-    o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(55, t + .12);
-    g.gain.setValueAtTime(.6, t); g.gain.exponentialRampToValueAtTime(.0001, t + .18);
-    o.connect(g).connect(c.destination); o.start(t); o.stop(t + .2);
-  }
-}
 async function knockDoor() {
   if (DOOR.busy || busy) return;
   DOOR.busy = true;
@@ -305,3 +278,51 @@ function petCat() {
   mesh(new THREE.CylinderGeometry(.16, .25, .26, 24, 1, true), std({ color: 0xe8c890, emissive: 0xffa050, emissiveIntensity: .7, side: THREE.DoubleSide }), x, 1.6, z);
   glowSprite(0xffb060, 1.2, x, 1.55, z, world, .45);
 })();
+
+/* ---------- курилка живёт сама: огонь, угольки, часы, дым сигары, дымка, пластинка, кот ---------- */
+onTick((t, dt) => {
+  // камин
+  FIRE.boost += (1 - FIRE.boost) * dt * .5;
+  const fl = .78 + .14 * Math.sin(t * 7.3) + .1 * Math.sin(t * 13.1 + 1) + .06 * Math.sin(t * 23.7);
+  FIRE.lvl += ((FIRE.on ? 1 : .1) - FIRE.lvl) * Math.min(1, dt * 1.2);
+  LIGHTS.fire.intensity = LIGHTS.fire.userData.base * fl * FIRE.boost * FIRE.lvl;
+  for (const f of FIRE.flames) { f.visible = FIRE.lvl > .25; f.scale.y = Math.max(.05, Math.min(1, (FIRE.lvl - .2) * 1.3)); }
+  for (const m of flameMats) { m.uniforms.uTime.value = t; m.uniforms.uBoost.value = Math.min(1.35, FIRE.boost); }
+  FIRE.logMat.emissiveIntensity = .3 + .12 * Math.sin(t * 2.1) * fl;
+  FIRE.glow.material.opacity = .38 * fl * FIRE.boost * (.25 + .75 * FIRE.lvl);
+  FIRE.embers.pts.visible = FIRE.lvl > .4 && SET.effects && !SET.saver;
+  {
+    const e = FIRE.embers;
+    for (let i = 0; i < e.N; i++) {
+      e.life[i] += dt * (.35 + (i % 5) * .06) * (FIRE.boost > 1.1 ? 1.8 : 1);
+      if (e.life[i] > 1) e.life[i] -= 1;
+      const k = e.life[i];
+      e.pos[i * 3] = 7.82 - k * .25 + Math.sin(i * 7 + t * 2) * .04;
+      e.pos[i * 3 + 1] = .18 + k * 1.1;
+      e.pos[i * 3 + 2] = FP.z + Math.sin(i * 3.1 + t * 1.3) * (.1 + k * .15);
+    }
+    e.eg.attributes.position.needsUpdate = true;
+  }
+  for (const c of FIRE.candles) c.material.opacity = .62 + .12 * Math.sin(t * 9 + c.position.z * 3);
+  // часы
+  {
+    const d = new Date(), h = d.getHours() % 12, m = d.getMinutes() + d.getSeconds() / 60;
+    FIRE.hour.rotation.x = -(h + m / 60) / 12 * Math.PI * 2;
+    FIRE.min.rotation.x = -m / 60 * Math.PI * 2;
+  }
+  // дым сигары
+  for (const s of smoke) {
+    s.userData.t += dt * .09;
+    if (s.userData.t > 1) s.userData.t -= 1;
+    const k = s.userData.t;
+    s.position.set(FIRE.smokeFrom.x + Math.sin(k * 9 + s.id) * .05 * k, FIRE.smokeFrom.y + k * 1.5, FIRE.smokeFrom.z + Math.cos(k * 7 + s.id) * .05 * k);
+    const sc = .06 + k * .5;
+    s.scale.set(sc, sc, 1);
+    s.material.opacity = Math.sin(Math.PI * Math.min(1, k * 1.4)) * .32 * (1 - k);
+    s.material.rotation = k * 2 + s.id;
+  }
+  FIRE.cigarTip.material.color.setHSL(.05, 1, .45 + .1 * Math.sin(t * 1.3));
+  for (const s of haze) { s.position.x += Math.sin(t * .1 + s.userData.ph) * .0015; s.material.opacity = .1 + .05 * Math.sin(t * .2 + s.userData.ph); }
+  if (Music.on) GR.disc.rotation.y -= dt * 3.4;
+  CAT.body.scale.y = .5 + .025 * Math.sin(t * 1.9);
+});

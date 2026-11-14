@@ -343,3 +343,22 @@ rug2.rotation.set(-Math.PI / 2, 0, .1);
 /* мотылёк вокруг лампы */
 const moth = mesh(new THREE.PlaneGeometry(.025, .015), basic({ color: 0xc8b8a0, side: THREE.DoubleSide, transparent: true, opacity: .85 }), 0, 0, 0);
 moth.userData.noHit = true;
+
+/* ---------- читальня живёт сама: дождь в окне, молнии, лампа, глобус, свеча, мотылёк ---------- */
+let flashT = 6 + Math.random() * 8;
+onTick((t, dt) => {
+  // читальня
+  rainMat.uniforms.uTime.value = t;
+  NOOK.flash = Math.max(0, NOOK.flash - dt * 2.2);
+  rainMat.uniforms.uFlash.value = NOOK.flash;
+  const sky = rainMat.uniforms.uSky.value;
+  if (!STREET.on) LIGHTS.window.intensity = LIGHTS.window.userData.base * (1 + sky * 2.5) + NOOK.flash * 30;
+  LIGHTS.lamp.intensity = LIGHTS.lamp.userData.base * LIGHTS.lamp.userData.mul * (NOOK.lampMode || 1) * (NOOK.candleOn ? 1 + .04 * Math.sin(t * 11) : 1);
+  NOOK.globeSpeed += (.25 - NOOK.globeSpeed) * dt * .45;
+  NOOK.globe.rotation.y += NOOK.globeSpeed * dt;
+  if (NOOK.candleOn) { NOOK.flame.scale.set(1, 1 + .15 * Math.sin(t * 13), 1); NOOK.flameGlow.material.opacity = .7 + .1 * Math.sin(t * 9); }
+  moth.position.set(-6.5 + Math.cos(t * 2.4) * .16, 1.13 + Math.sin(t * 3.1) * .05, -4.3 + Math.sin(t * 2.4) * .16);
+  moth.rotation.y = -t * 2.4; moth.scale.x = .6 + .4 * Math.abs(Math.sin(t * 30));
+  flashT -= dt;
+  if (flashT < 0) { flashT = 9 + Math.random() * 12; if (curZone === 0 && WEATHER.storm) lightning(); }
+});

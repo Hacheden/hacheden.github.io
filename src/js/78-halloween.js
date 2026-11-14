@@ -51,20 +51,26 @@ if (HALLOWEEN) {
   lantern(2.35, CT.top, -2.25, 1.5, -.2);
   lantern(-2.35, CT.top, -2.3, 1.0, .4);
   // курилка: у камина
-  lantern(7.45, .04, FP.z + 1.15, 1.5, -Math.PI / 2);
-  lantern(7.7, 1.32, FP.z + .05, .7, -Math.PI / 2);
+  if (FEAT.smoke) {
+    lantern(7.45, .04, FP.z + 1.15, 1.5, -Math.PI / 2);
+    lantern(7.7, 1.32, FP.z + .05, .7, -Math.PI / 2);
+  }
   // читальня: на подоконнике
-  lantern(WIN.x - .55, WIN.sill + .005, -4.82, .9, 0);
-  lantern(WIN.x + .58, WIN.sill + .005, -4.82, .7, -.15);
+  if (FEAT.nook) {
+    lantern(WIN.x - .55, WIN.sill + .005, -4.82, .9, 0);
+    lantern(WIN.x + .58, WIN.sill + .005, -4.82, .7, -.15);
+  }
   // сцена: по краям рампы
   if (FEAT.stage) {
     lantern(STG.x0 + .45, STG.h, STG.z0 + .18, 1.1, Math.PI);
     lantern(STG.x1 - .45, STG.h, STG.z0 + .18, 1.1, Math.PI);
   }
   // улица: у двери
-  lantern(-1.45, 0, FZ + .6, 3.2, .1, street);
-  lantern(.3, 0, FZ + .6, 2.6, -.15, street);
-  lantern(-1.0, 0, FZ + .75, 1.7, .3, street);
+  if (FEAT.street) {
+    lantern(-1.45, 0, FZ + .6, 3.2, .1, street);
+    lantern(.3, 0, FZ + .6, 2.6, -.15, street);
+    lantern(-1.0, 0, FZ + .75, 1.7, .3, street);
+  }
 
   /* летучие мыши: за окном читальни и над входом с улицы */
   const batMat = basic({ color: 0x050304, side: THREE.DoubleSide });
@@ -81,8 +87,8 @@ if (HALLOWEEN) {
     g.userData.w = [L, R2];
     return g;
   }
-  for (let i = 0; i < 4; i++) HW.bats.push({ g: bat(world, .11), kind: "win", ph: i * 1.7, sp: .35 + i * .07, fl: 9 + i });
-  for (let i = 0; i < 5; i++) HW.bats.push({ g: bat(street, .16), kind: "street", ph: i * 1.25, sp: .45 + i * .05, fl: 8 + i * .7 });
+  if (FEAT.nook) for (let i = 0; i < 4; i++) HW.bats.push({ g: bat(world, .11), kind: "win", ph: i * 1.7, sp: .35 + i * .07, fl: 9 + i });
+  if (FEAT.street) for (let i = 0; i < 5; i++) HW.bats.push({ g: bat(street, .16), kind: "street", ph: i * 1.25, sp: .45 + i * .05, fl: 8 + i * .7 });
   onTick((t) => {
     for (const L of HW.lanterns) {
       const k = .78 + .12 * Math.sin(t * 9 + L.ph) + .08 * Math.sin(t * 23 + L.ph * 2);

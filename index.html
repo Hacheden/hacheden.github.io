@@ -344,6 +344,7 @@
 
   /* ---------- кнопки справа: плеер, журнал, настройки ---------- */
   .tools { position: absolute; top: 76px; right: 18px; z-index: 4; display: grid; gap: 8px; }
+  .tool[hidden] { display: none; }
   .tool { position: relative; appearance: none; width: 46px; height: 46px; display: grid; place-items: center; padding: 0; border-radius: 50%;
     border: 1px solid rgba(214,170,92,.35); background: rgba(20,8,11,.72); color: var(--cream); cursor: pointer;
     backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); transition: border-color .2s, color .2s, transform .2s; }
@@ -645,6 +646,36 @@
   .sheet .acts[hidden], .vx-form[hidden], .vx-link[hidden], .vx-out[hidden], .vx-deck .acts[hidden] { display: none; }
   .demo-badge { margin: 6px auto 0; padding: 5px 12px; width: fit-content; border-radius: 999px; border: 1px dashed rgba(214,170,92,.6); color: var(--brass); font: italic 400 13px/1.3 var(--font-text); letter-spacing: .02em; }
 
+  /* ---------- барный пропуск: привилегия заведения ---------- */
+  .vx-priv { max-width: 34ch; color: var(--cream); font: italic 400 15px/1.4 var(--font-text); }
+  /* ---------- афиша вечера ---------- */
+  .vx-ev { position: relative; margin: 4px 0 14px; padding: 18px 18px 16px 22px; border-radius: 8px; border: 1px solid rgba(214,170,92,.35);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--ev) 18%, transparent), rgba(14,5,8,.4) 60%); }
+  .vx-ev::before { content: ""; position: absolute; left: 0; top: 12px; bottom: 12px; width: 3px; border-radius: 2px; background: var(--ev); box-shadow: 0 0 12px var(--ev); }
+  .vx-ev-when { margin: 0 0 6px; color: var(--ev); font: 400 15px/1.3 var(--font-text); letter-spacing: .04em; }
+  .sheet .vx-ev-title, .vx-ev-title { margin: 0 0 8px; color: var(--cream); font: 400 30px/1.1 var(--font-display); letter-spacing: .02em; }
+  .vx-ev-line { margin: 0 0 8px; color: var(--brass); font: italic 400 16px/1.4 var(--font-text); }
+  .vx-ev p:last-child { margin-bottom: 0; }
+  /* ---------- бары сети: футляр со спичечными коробками ---------- */
+  .vx-case { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; margin: 14px 0 4px; padding: 16px;
+    border-radius: 10px; background: linear-gradient(#2a1410, #1a0b08); box-shadow: inset 0 0 0 1px rgba(214,170,92,.35), inset 0 10px 30px rgba(0,0,0,.6); }
+  .vx-match { --c1: #7a1622; --c2: #4a0c14; position: relative; display: grid; grid-template-columns: 12px 1fr; min-height: 128px; border-radius: 4px; overflow: hidden;
+    color: var(--cream); text-decoration: none; background: linear-gradient(160deg, var(--c1), var(--c2)); box-shadow: 0 6px 16px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,230,190,.12);
+    transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s; }
+  .vx-match[style*="--m:1"] { --c1: #1d3a2c; --c2: #0f2219; }
+  .vx-match[style*="--m:2"] { --c1: #22304a; --c2: #121b2c; }
+  .vx-match[style*="--m:3"] { --c1: #5a3a12; --c2: #33200a; }
+  .vx-match[style*="--m:4"] { --c1: #3a1a40; --c2: #210d25; }
+  a.vx-match:hover, a.vx-match:focus-visible { transform: translateY(-3px) rotate(-.6deg); box-shadow: 0 12px 24px rgba(0,0,0,.55), inset 0 0 0 1px var(--brass); outline: none; }
+  .vx-strike { background: repeating-linear-gradient(0deg, #3a2a20 0 2px, #6a4a32 2px 3px, #2a1c14 3px 5px); box-shadow: inset -1px 0 0 rgba(0,0,0,.5); }
+  .vx-match-in { display: grid; align-content: center; gap: 4px; padding: 12px 12px 12px 10px; border: 1px solid rgba(214,170,92,.45); margin: 6px; border-radius: 2px; }
+  .vx-match b { font: 400 21px/1.05 var(--font-display); letter-spacing: .04em; color: #fff3dc; }
+  .vx-match i { font: italic 400 13px/1.3 var(--font-text); color: var(--muted); }
+  .vx-match small { font: 400 11.5px/1.2 var(--font-text); color: var(--brass); letter-spacing: .08em; text-transform: uppercase; }
+  .vx-match em { font: italic 400 12px/1 var(--font-text); color: var(--brass); }
+  .vx-match.here { opacity: .82; }
+  @media (prefers-reduced-motion: reduce) { .vx-match { transition: none; } }
+
 
   /* ================= 3D ================= */
   html, body { overflow: hidden; overscroll-behavior: none; }
@@ -679,6 +710,7 @@
   .nav { display: flex; gap: 4px; padding: 4px; border: 1px solid rgba(214,170,92,.45); border-radius: 999px; background: rgba(14,5,8,.8); }
   .nav button { appearance: none; border: 0; background: none; color: var(--muted); font: 400 17px/1 var(--font-display);
     padding: 11px 18px; border-radius: 999px; cursor: pointer; transition: background .25s, color .25s; }
+  .nav[hidden] { display: none; }
   .nav button[aria-current="true"] { background: rgba(214,170,92,.22); color: var(--cream); }
   .nav button:hover { color: var(--cream); }
   .nav button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
@@ -911,6 +943,9 @@
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 3.5h10.5a1.5 1.5 0 0 1 1.5 1.5v15H7.5A1.5 1.5 0 0 1 6 18.5z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6 18.5A1.5 1.5 0 0 1 7.5 17H18" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 7.2l.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.3z" fill="currentColor"/></svg>
       <i class="tool-dot" id="t-journal-dot" hidden></i>
     </button>
+    <button class="tool" id="t-hop" type="button" aria-label="Бары сети" aria-haspopup="dialog" title="Бары сети" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3.5" y="8" width="17" height="10" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 11h17" stroke="currentColor" stroke-width="1.2" stroke-dasharray="1.4 1.2"/><path d="M8 8V5.6M8 5.6c0-1 1.4-1.4 1.4-.2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="4.6" r="1.2" fill="currentColor"/></svg>
+    </button>
     <button class="tool" id="t-settings" type="button" aria-label="Настройки" aria-haspopup="dialog" title="Настройки">
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h9M17 7h3M4 17h3M11 17h9M4 12h4M12 12h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="15" cy="7" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="9" cy="17" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="10" cy="12" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
     </button>
@@ -1040,122 +1075,6 @@
     document.querySelector(".load").hidden = true;
   }
   setTimeout(noGL, 25000);
-/* ================= настройки гостя, звуковые каналы, уведомления, прогресс =================
-   Всё хранится только в этом браузере (localStorage), без регистрации и без сервера. */
-  const SET_DEFAULT = { master: .8, music: .7, ambient: .6, ui: .45, mute: false, quality: "auto", fps: "60", effects: true, motion: "auto", saver: false, mood: "auto" };
-  const SET = Object.assign({}, SET_DEFAULT, (() => { try { return JSON.parse(localStorage.getItem("hacheden-settings")) || {}; } catch (e) { return {}; } })());
-  const SET_LISTEN = [];
-  function saveSettings() { try { localStorage.setItem("hacheden-settings", JSON.stringify(SET)); } catch (e) {} }
-  function setSetting(k, v) { SET[k] = v; saveSettings(); SET_LISTEN.forEach(f => { try { f(k, v); } catch (e) { console.warn(e); } }); }
-  const onSetting = f => SET_LISTEN.push(f);
-  /* «меньше движения»: по системе или вручную */
-  const reduceMotionMQ = matchMedia("(prefers-reduced-motion: reduce)");
-  const reduceMotion = { get matches() { return SET.motion === "reduce" || (SET.motion === "auto" && reduceMotionMQ.matches); } };
-
-  /* каналы звука: музыка, окружение (дождь, камин, звуки бара), интерфейс */
-  const AUDIO = {
-    routes: [],
-    level(ch) { return SET.mute ? 0 : SET.master * (ch === "music" ? SET.music : ch === "ambient" ? SET.ambient : SET.ui); },
-    // любой звуковой контекст подключаем через свой регулятор громкости
-    route(ctx, ch) {
-      if (!ctx || ctx._hRoute) return ctx;
-      const real = ctx.destination, g = ctx.createGain();
-      g.gain.value = AUDIO.level(ch);
-      g.connect(real);
-      try { Object.defineProperty(ctx, "destination", { value: g, configurable: true }); } catch (e) { return ctx; }
-      ctx._hRoute = true;
-      AUDIO.routes.push([ctx, g, ch]);
-      return ctx;
-    },
-    apply() {
-      for (const [ctx, g, ch] of AUDIO.routes) g.gain.setTargetAtTime(AUDIO.level(ch), ctx.currentTime, .12);
-      if (typeof Music !== "undefined") Music.levels();
-    }
-  };
-  onSetting(k => { if (["master", "music", "ambient", "ui", "mute"].includes(k)) AUDIO.apply(); });
-
-  /* звуки интерфейса: тихий щелчок кнопки, мягкий звонок для находок */
-  let uiCtx = null;
-  function uiAudio() {
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return null;
-    if (!uiCtx) { try { uiCtx = AUDIO.route(new AC(), "ui"); } catch (e) { return null; } }
-    if (uiCtx.state === "suspended") uiCtx.resume();
-    return uiCtx;
-  }
-  function uiSound(kind = "tick") {
-    if (AUDIO.level("ui") <= .001) return;
-    const c = uiAudio(); if (!c) return;
-    const t = c.currentTime + .01;
-    const tone = (f, at, dur, v, type = "sine") => {
-      const o = c.createOscillator(), g = c.createGain();
-      o.type = type; o.frequency.setValueAtTime(f, t + at);
-      g.gain.setValueAtTime(0, t + at); g.gain.linearRampToValueAtTime(v, t + at + .006); g.gain.exponentialRampToValueAtTime(.0001, t + at + dur);
-      o.connect(g).connect(c.destination); o.start(t + at); o.stop(t + at + dur + .02);
-    };
-    if (kind === "tick") tone(2100, 0, .045, .035, "triangle");
-    else if (kind === "soft") tone(1300, 0, .07, .03);
-    else if (kind === "open") { tone(660, 0, .16, .03); tone(990, .05, .2, .022); }
-    else if (kind === "chime") { tone(1318.5, 0, .9, .045); tone(1760, .11, 1.1, .04); tone(2637, .22, .9, .015); }
-  }
-  document.addEventListener("pointerdown", e => {
-    const b = e.target.closest && e.target.closest("button, [role=tab], select, summary");
-    if (b && !b.disabled) uiSound(b.classList.contains("make") || b.classList.contains("enter") ? "soft" : "tick");
-  }, true);
-
-  /* аккуратные уведомления в углу: секреты, достижения, сохранения */
-  let toastBox = null;
-  function toast(title, text = "", kind = "") {
-    if (!toastBox) {
-      toastBox = document.createElement("div");
-      toastBox.className = "toasts"; toastBox.setAttribute("role", "status"); toastBox.setAttribute("aria-live", "polite");
-      document.body.appendChild(toastBox);
-    }
-    const el = document.createElement("div");
-    el.className = "toast" + (kind ? " " + kind : "");
-    const icon = kind === "secret" ? "✦" : kind === "ach" ? "★" : "•";
-    el.innerHTML = `<span class="t-ic" aria-hidden="true">${icon}</span><span class="t-tx"><b></b><span></span></span>`;
-    el.querySelector("b").textContent = title;
-    el.querySelector(".t-tx span").textContent = text;
-    toastBox.appendChild(el);
-    while (toastBox.children.length > 3) toastBox.firstChild.remove();
-    const bye = () => { el.classList.add("out"); setTimeout(() => el.remove(), 400); };
-    el.addEventListener("click", bye);
-    setTimeout(bye, kind ? 6000 : 4200);
-  }
-
-  /* прогресс гостя: где был, что пил, что нашёл */
-  const PROG = Object.assign({ rooms: [], secrets: {}, ach: {}, drinks: {}, tracks: [], favTracks: [], stories: [], visits: 0, first: 0, counters: {} },
-    (() => { try { return JSON.parse(localStorage.getItem("hacheden-progress")) || {}; } catch (e) { return {}; } })());
-  function saveProgress() { try { localStorage.setItem("hacheden-progress", JSON.stringify(PROG)); } catch (e) {} }
-  const PROG_LISTEN = [];
-  /* событие: track("room", 2), track("drink", "c-mojito"), track("secret", "cellar") … */
-  function track(ev, v) {
-    let changed = false;
-    const addTo = (arr, x) => { if (!arr.includes(x)) { arr.push(x); changed = true; } };
-    if (ev === "room") addTo(PROG.rooms, v);
-    else if (ev === "drink") { PROG.drinks[v] = (PROG.drinks[v] || 0) + 1; changed = true; }
-    else if (ev === "track") addTo(PROG.tracks, v);
-    else if (ev === "story") addTo(PROG.stories, v);
-    else if (ev === "count") { PROG.counters[v] = (PROG.counters[v] || 0) + 1; changed = true; }
-    else if (ev === "secret") {
-      if (!PROG.secrets[v]) {
-        PROG.secrets[v] = Date.now(); changed = true;
-        const s = typeof SECRET_INFO !== "undefined" && SECRET_INFO[v];
-        setTimeout(() => { uiSound("chime"); toast("Найден секрет", s ? s.name : "", "secret"); }, 400);
-      }
-    }
-    if (!changed) return;
-    saveProgress();
-    PROG_LISTEN.forEach(f => { try { f(ev, v); } catch (e) { console.warn(e); } });
-  }
-  const onProgress = f => PROG_LISTEN.push(f);
-  if (!PROG.first) PROG.first = Date.now();
-  PROG.visits++;
-  saveProgress();
-
-  const SCENE_BUNDLES = [];   /* заведения со своими залами (tools/build.py) */
-
 /* ================= реестр заведений =================
    Каждый файл src/venues/<id>.js кладёт сюда свой бар: VENUES[id] = { meta, theme, rooms, menu, … }.
    Бар на основе другого (тот же 3D-зал, свои название, цены и контакты) — VENUE_PATCHES.push({ id, base, make }).
@@ -1164,50 +1083,6 @@
   const VENUES = {};
   const VENUE_PATCHES = [];
   const VENUE_ID_RE = /^[a-z0-9-]{3,32}$/;
-
-/* ================= демо-профиль для владельцев баров: ?bar=demo-almaty =================
-   Вымышленный коктейльный бар в Алматы на той же 3D-сцене, что и Hacheden: своё название на вывесках,
-   цены в тенге, бронь мест и барный пропуск включены для всех гостей.
-   Цены условные — ориентир для коктейльного бара в Алматы, не предложение и не прайс настоящего заведения.
-   Для теста брони впишите в contacts свои WhatsApp (номер в международном виде без «+», например 77011234567)
-   и Telegram (имя без «@»): заявки придут вам, в начале текста будет пометка «[Тест с демо-страницы]». */
-  VENUE_PATCHES.push({
-    id: "demo-almaty",
-    base: "hacheden",
-    make: base => {
-      /* ₸ за порцию: классика, фирменный, безалкогольные и горячие */
-      const PRICE = {
-        "c-hacheden": 6500, "c-mojito": 4200, "c-daiquiri": 4200, "c-cubalibre": 3500, "c-pinacolada": 4500,
-        "c-junglebird": 4800, "c-margarita": 4500, "c-sunrise": 3900, "c-gintonic": 3800, "c-negroni": 4800,
-        "c-martini": 4900, "c-collins": 4200, "c-oldfashioned": 5200, "c-manhattan": 5200, "c-sour": 4800,
-        "c-pisco": 5500, "c-sidecar": 5200, "c-sangria": 3500, "c-nojito": 2500, "c-irish": 3800,
-        "c-toddy": 3500, "c-coffee": 1500, "c-tea": 1800
-      };
-      const menu = base.menu.map(c => {
-        const d = Object.assign({}, c, PRICE[c.id] ? { price: PRICE[c.id].toLocaleString("ru-RU") } : {});
-        if (c.id === "c-hacheden") Object.assign(d, { name: "Алатау", origin: "Наш бар",
-          history: "Фирменный коктейль бара. Огненная подача — дань «Блю Блейзеру» Джерри Томаса: в его книге 1862 года, первом пособии для барменов, горящий виски переливают между двумя кружками высокой огненной струёй." });
-        return d;
-      });
-      return {
-        meta: {
-          name: "Алатау",
-          sign: "Алатау",
-          slogan: "Коктейльный бар у подножия гор",
-          intro: "Демо-версия платформы: вымышленный коктейльный бар в Алматы. Цены условные; бронь места и барный пропуск показывают, как всё работает в настоящем заведении.",
-          city: "Алматы",
-          address: "Алматы · адрес укажет заведение",
-          hours: { open: "17:00", close: "03:00", last: "02:30" },
-          site: "hacheden.github.io/?bar=demo-almaty",
-          contacts: { whatsapp: "", telegram: "" },   // ← тестовые контакты для показа брони
-          currency: "₸",
-          codePrefix: "ALT",
-          demo: true
-        },
-        menu
-      };
-    }
-  });
 
 /* ================= ЗАВЕДЕНИЕ: всё, что отличает один бар от другого =================
    Движок (src/js, src/shared) берёт отсюда название, палитру, залы, места для брони,
@@ -1229,10 +1104,11 @@
       codePrefix: "HCH"
     },
     /* возможности заведения: выключенное движок не показывает и не запускает.
+       street — улица и стук в дверь перед входом, nook — читальня, smoke — курилка с камином,
        cellar — тайный погреб, stage — сцена с джаз-бэндом, bartenderShow — 3D-шоу приготовления,
        booking — бронь мест и барный пропуск (ещё нужны контакты в meta), quests — сквозной квест,
        liveBar — живой общий бар через Firebase */
-    features: { cellar: true, stage: true, bartenderShow: true, booking: true, quests: true, liveBar: true },
+    features: { street: true, nook: true, smoke: true, cellar: true, stage: true, bartenderShow: true, booking: true, quests: true, liveBar: true },
     theme: {
       vars: { "--brass": "#d6aa5c", "--cream": "#f1e4cc", "--muted": "#c2a784", "--walnut": "#4a2c1a", "--bg": "#070304" },
       fonts: { display: "Forum", text: "Literata" }
@@ -1601,6 +1477,133 @@
     ]
   };
 
+  /* данные выбранного бара (?bar=<id>) — отдельным файлом venues/<id>.js, до общего кода */
+  const VENUE_FILES = ["demo-almaty"];
+  (() => {
+    try {
+      const b = new URLSearchParams(location.search).get("bar");
+      if (b && VENUE_ID_RE.test(b) && VENUE_FILES.includes(b)) document.write(`<script src="./venues/${b}.js"><\/script>`);
+    } catch (e) {}
+  })();
+
+</script>
+<script>
+/* ================= настройки гостя, звуковые каналы, уведомления, прогресс =================
+   Всё хранится только в этом браузере (localStorage), без регистрации и без сервера. */
+  const SET_DEFAULT = { master: .8, music: .7, ambient: .6, ui: .45, mute: false, quality: "auto", fps: "60", effects: true, motion: "auto", saver: false, mood: "auto" };
+  const SET = Object.assign({}, SET_DEFAULT, (() => { try { return JSON.parse(localStorage.getItem("hacheden-settings")) || {}; } catch (e) { return {}; } })());
+  const SET_LISTEN = [];
+  function saveSettings() { try { localStorage.setItem("hacheden-settings", JSON.stringify(SET)); } catch (e) {} }
+  function setSetting(k, v) { SET[k] = v; saveSettings(); SET_LISTEN.forEach(f => { try { f(k, v); } catch (e) { console.warn(e); } }); }
+  const onSetting = f => SET_LISTEN.push(f);
+  /* «меньше движения»: по системе или вручную */
+  const reduceMotionMQ = matchMedia("(prefers-reduced-motion: reduce)");
+  const reduceMotion = { get matches() { return SET.motion === "reduce" || (SET.motion === "auto" && reduceMotionMQ.matches); } };
+
+  /* каналы звука: музыка, окружение (дождь, камин, звуки бара), интерфейс */
+  const AUDIO = {
+    routes: [],
+    level(ch) { return SET.mute ? 0 : SET.master * (ch === "music" ? SET.music : ch === "ambient" ? SET.ambient : SET.ui); },
+    // любой звуковой контекст подключаем через свой регулятор громкости
+    route(ctx, ch) {
+      if (!ctx || ctx._hRoute) return ctx;
+      const real = ctx.destination, g = ctx.createGain();
+      g.gain.value = AUDIO.level(ch);
+      g.connect(real);
+      try { Object.defineProperty(ctx, "destination", { value: g, configurable: true }); } catch (e) { return ctx; }
+      ctx._hRoute = true;
+      AUDIO.routes.push([ctx, g, ch]);
+      return ctx;
+    },
+    apply() {
+      for (const [ctx, g, ch] of AUDIO.routes) g.gain.setTargetAtTime(AUDIO.level(ch), ctx.currentTime, .12);
+      if (typeof Music !== "undefined") Music.levels();
+    }
+  };
+  onSetting(k => { if (["master", "music", "ambient", "ui", "mute"].includes(k)) AUDIO.apply(); });
+
+  /* звуки интерфейса: тихий щелчок кнопки, мягкий звонок для находок */
+  let uiCtx = null;
+  function uiAudio() {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    if (!uiCtx) { try { uiCtx = AUDIO.route(new AC(), "ui"); } catch (e) { return null; } }
+    if (uiCtx.state === "suspended") uiCtx.resume();
+    return uiCtx;
+  }
+  function uiSound(kind = "tick") {
+    if (AUDIO.level("ui") <= .001) return;
+    const c = uiAudio(); if (!c) return;
+    const t = c.currentTime + .01;
+    const tone = (f, at, dur, v, type = "sine") => {
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = type; o.frequency.setValueAtTime(f, t + at);
+      g.gain.setValueAtTime(0, t + at); g.gain.linearRampToValueAtTime(v, t + at + .006); g.gain.exponentialRampToValueAtTime(.0001, t + at + dur);
+      o.connect(g).connect(c.destination); o.start(t + at); o.stop(t + at + dur + .02);
+    };
+    if (kind === "tick") tone(2100, 0, .045, .035, "triangle");
+    else if (kind === "soft") tone(1300, 0, .07, .03);
+    else if (kind === "open") { tone(660, 0, .16, .03); tone(990, .05, .2, .022); }
+    else if (kind === "chime") { tone(1318.5, 0, .9, .045); tone(1760, .11, 1.1, .04); tone(2637, .22, .9, .015); }
+  }
+  document.addEventListener("pointerdown", e => {
+    const b = e.target.closest && e.target.closest("button, [role=tab], select, summary");
+    if (b && !b.disabled) uiSound(b.classList.contains("make") || b.classList.contains("enter") ? "soft" : "tick");
+  }, true);
+
+  /* аккуратные уведомления в углу: секреты, достижения, сохранения */
+  let toastBox = null;
+  function toast(title, text = "", kind = "") {
+    if (!toastBox) {
+      toastBox = document.createElement("div");
+      toastBox.className = "toasts"; toastBox.setAttribute("role", "status"); toastBox.setAttribute("aria-live", "polite");
+      document.body.appendChild(toastBox);
+    }
+    const el = document.createElement("div");
+    el.className = "toast" + (kind ? " " + kind : "");
+    const icon = kind === "secret" ? "✦" : kind === "ach" ? "★" : "•";
+    el.innerHTML = `<span class="t-ic" aria-hidden="true">${icon}</span><span class="t-tx"><b></b><span></span></span>`;
+    el.querySelector("b").textContent = title;
+    el.querySelector(".t-tx span").textContent = text;
+    toastBox.appendChild(el);
+    while (toastBox.children.length > 3) toastBox.firstChild.remove();
+    const bye = () => { el.classList.add("out"); setTimeout(() => el.remove(), 400); };
+    el.addEventListener("click", bye);
+    setTimeout(bye, kind ? 6000 : 4200);
+  }
+
+  /* прогресс гостя: где был, что пил, что нашёл */
+  const PROG = Object.assign({ rooms: [], secrets: {}, ach: {}, drinks: {}, tracks: [], favTracks: [], stories: [], visits: 0, first: 0, counters: {} },
+    (() => { try { return JSON.parse(localStorage.getItem("hacheden-progress")) || {}; } catch (e) { return {}; } })());
+  function saveProgress() { try { localStorage.setItem("hacheden-progress", JSON.stringify(PROG)); } catch (e) {} }
+  const PROG_LISTEN = [];
+  /* событие: track("room", 2), track("drink", "c-mojito"), track("secret", "cellar") … */
+  function track(ev, v) {
+    let changed = false;
+    const addTo = (arr, x) => { if (!arr.includes(x)) { arr.push(x); changed = true; } };
+    if (ev === "room") addTo(PROG.rooms, v);
+    else if (ev === "drink") { PROG.drinks[v] = (PROG.drinks[v] || 0) + 1; changed = true; }
+    else if (ev === "track") addTo(PROG.tracks, v);
+    else if (ev === "story") addTo(PROG.stories, v);
+    else if (ev === "count") { PROG.counters[v] = (PROG.counters[v] || 0) + 1; changed = true; }
+    else if (ev === "secret") {
+      if (!PROG.secrets[v]) {
+        PROG.secrets[v] = Date.now(); changed = true;
+        const s = typeof SECRET_INFO !== "undefined" && SECRET_INFO[v];
+        setTimeout(() => { uiSound("chime"); toast("Найден секрет", s ? s.name : "", "secret"); }, 400);
+      }
+    }
+    if (!changed) return;
+    saveProgress();
+    PROG_LISTEN.forEach(f => { try { f(ev, v); } catch (e) { console.warn(e); } });
+  }
+  const onProgress = f => PROG_LISTEN.push(f);
+  if (!PROG.first) PROG.first = Date.now();
+  PROG.visits++;
+  saveProgress();
+
+  const SCENE_BUNDLES = ["demo-almaty"];   /* заведения со своими залами (tools/build.py) */
+
 /* ================= выбор заведения по адресу (?bar=<id>) и его оформление =================
    Собирается последним из src/venues: к этому моменту все бары уже в VENUES. */
   for (const p of VENUE_PATCHES) {
@@ -1611,7 +1614,7 @@
   const VENUE = VENUES[VENUE_ID];
   /* 3D-сцена: у флагмана встроена в страницу, у бара со своими залами — отдельный бандл (tools/build.py) */
   const VENUE_SCENE = SCENE_BUNDLES.includes(VENUE_ID) ? VENUE_ID : (VENUE.scene || VENUE_ID);   // свои залы важнее залов базового бара
-  const SCENE_EXT = SCENE_BUNDLES.includes(VENUE_SCENE) ? `./venues/${VENUE_SCENE}/scene.js` : "";
+  const SCENE_EXT = SCENE_BUNDLES.includes(VENUE_SCENE) ? `./venues/${VENUE_SCENE}.scene.js` : "";
   (() => {
     const r = document.documentElement.style;
     for (const [k, v] of Object.entries(VENUE.theme.vars)) r.setProperty(k, v);
@@ -1619,10 +1622,15 @@
     if (f.display) r.setProperty("--font-display", `"${f.display}", "Palatino Linotype", Georgia, serif`);
     if (f.text) r.setProperty("--font-text", `"${f.text}", Georgia, "Times New Roman", serif`);
   })();
-  /* возможности заведения (features в его файле); чего нет в файле — включено. Заглушка зала (src/stubs) выключает свой флаг сама */
-  const FEAT = Object.assign({ cellar: true, stage: true, bartenderShow: true, booking: true, quests: true, liveBar: true }, VENUE.features || {});
+  /* возможности заведения (features в его файле); чего нет в файле — включено. Заглушка зала (src/stubs) выключает свой флаг сама:
+     street — улица перед входом, nook — читальня, smoke — курилка, stage — сцена, cellar — погреб */
+  const FEAT = Object.assign({ street: true, nook: true, smoke: true, cellar: true, stage: true, bartenderShow: true, booking: true, quests: true, liveBar: true }, VENUE.features || {});
   /* бронь и «код бармена» работают у заведения с настоящими контактами; у демо-профиля — для показа владельцам */
   const O2O = FEAT.booking && !!(VENUE.meta.contacts.whatsapp || VENUE.meta.contacts.telegram || VENUE.meta.demo);
+
+  /* залы заведения → номера зон 3D-сцены (порядок кнопок: читальня, бар, курилка, сцена); у камерного бара может быть один «bar» */
+  const ROOM_ZONE = { reading: 0, bar: 1, smoking: 2, stage: 3 };
+  const venueRoom = z => VENUE.rooms.find((r, i) => (ROOM_ZONE[r.id] ?? i) === z);
 
   /* имя на вывесках: неон, сцена, табличка у двери, подставка, фото и сторис */
   const BAR_NAME = VENUE.meta.name;
@@ -1807,7 +1815,7 @@
   /* Композиции нашего домашнего ансамбля. Всё звучит из синтезатора браузера, записей нет.
      Аккорды записаны в до мажоре, tr — сдвиг тональности в полутонах. Легко добавить свою. */
   /* звук зала из настроек заведения; номер у музыки: 0–2 залы, 3 улица, 4 сцена, 5 погреб */
-  const roomAudio = i => Object.assign({ rain: 1, fire: 0, clinks: 0 }, ((VENUE.rooms[i === 4 ? 3 : i === 3 ? -1 : i] || {}).audio) || {});
+  const roomAudio = i => Object.assign({ rain: 1, fire: 0, clinks: 0 }, ((venueRoom(i === 4 ? 3 : i === 3 ? -1 : i) || {}).audio) || {});
   const C_ = (root, ...notes) => ({ root, notes });
   const TRACKS = [
     { id: "quiet", title: "Тихий час у стойки", artist: "Hacheden House Quartet", mood: "calm", bpm: 68, per: 16, sax: "alt", drums: 1, mel: .09, walk: false, tr: 0,
@@ -4569,10 +4577,11 @@
    stats/<бар>/<гггг-мм-дд>/<событие>: n — счётчик, u/<анонимный id> — отметка, что этот браузер уже посчитан.
    Правила базы пропускают только «+1» вместе с новой отметкой: один браузер — один раз в день на событие.
    Личных данных нет: только анонимный id Firebase. Не считаются: хозяин, проверки (?time=, #test…), локальный запуск.
-   События: menu — открыл барную карту, seat — нажал место для брони в 3D, book — подготовил заявку,
-   send — нажал WhatsApp или Telegram, story — получил карточку для сторис, story_save — поделился или скачал её,
-   treat — открыл ссылку «угостить». Смотреть цифры: консоль Firebase → Realtime Database → stats. */
-  const STAT_EVENTS = ["menu", "seat", "book", "send", "story", "story_save", "treat"];
+   События: menu_open — открыл барную карту, event_open — открыл афишу вечера, booking_click — начал бронь
+   (место в 3D или «Занять стол на этот вечер»), booking_send — нажал WhatsApp или Telegram с готовой заявкой,
+   story_share — поделился или скачал карточку для сторис, treat_open — открыл ссылку «угостить».
+   Смотреть цифры: консоль Firebase → Realtime Database → stats. */
+  const STAT_EVENTS = ["menu_open", "event_open", "booking_click", "booking_send", "story_share", "treat_open"];
   const STAT_OFF = (() => {
     try {
       const q = new URLSearchParams(location.search);
@@ -4594,7 +4603,7 @@
   /* барная карта открылась — откуда бы её ни открыли */
   (() => {
     const mix = document.getElementById("mix");
-    if (mix) new MutationObserver(() => { if (mix.open) vxStat("menu"); }).observe(mix, { attributes: true, attributeFilter: ["open"] });
+    if (mix) new MutationObserver(() => { if (mix.open) vxStat("menu_open"); }).observe(mix, { attributes: true, attributeFilter: ["open"] });
   })();
 
 /* ================= интерфейс: «сейчас играет» и компактное меню на телефоне ================= */
@@ -4649,7 +4658,7 @@
     passFor: null, passCode: "", passOpen: false,
     treat: null, sheets: {}
   };
-  const VX_SEATS = VENUE.rooms.flatMap((r, zone) => (r.seats || []).map(s => Object.assign({ zone, room: r.name }, s)));
+  const VX_SEATS = VENUE.rooms.flatMap((r, i) => (r.seats || []).map(s => Object.assign({ zone: ROOM_ZONE[r.id] ?? i, room: r.name }, s)));
   const vxO2O = () => O2O || (!!H3D.owner && VX.preview);   // бронь и пропуск видны
   const vxReal = !!(VENUE.meta.contacts.whatsapp || VENUE.meta.contacts.telegram);
   const vxDemo = () => !vxReal;                                // контактов нет: только предпросмотр, ничего не отправляется
@@ -4658,7 +4667,7 @@
     const n = escH(VENUE.meta.name);
     if (VENUE.meta.demo) return vxReal
       ? (kind === "pass" ? "Демо: так выглядит пропуск в настоящем баре, этот код нигде не действует" : "Демо для владельцев заведений: заявка уйдёт на тестовый номер, а не в настоящий бар")
-      : "Демо для владельцев заведений: впишите тестовые WhatsApp или Telegram в src/venues/demo-almaty.js, и кнопки заработают";
+      : "Демо для владельцев заведений: впишите тестовые WhatsApp или Telegram в src/venues/demo-almaty/venue.js, и кнопки заработают";
     if (!vxReal) return kind === "pass" ? `Предпросмотр: у ${n} нет настоящего зала, код не действует` : `Предпросмотр для хозяина: у ${n} нет настоящего зала, заявка никуда не уйдёт`;
     return "";
   }
@@ -4808,16 +4817,14 @@
     const base = vxCardExtras(d, opt);
     if (opt && opt.served) {
       VX.passOpen = true;
-      if (VX.passFor !== d.id) { VX.passFor = d.id; VX.passCode = `${VENUE.meta.codePrefix}-${100 + Math.floor(Math.random() * 900)}`; }
+      if (VX.passFor !== d.id) { VX.passFor = d.id; VX.passCode = vxPassCode(); }
       setTimeout(() => vxSound("ice"), 250);
     }
     let h = "";
     if (d.legend) h += `<p class="vx-legend">Легендарный рецепт · квест через три зала пройден</p>`;
     const crafted = d.signature || d.secret || d.custom;
     if (VX.passOpen && VX.passFor === d.id && crafted && vxO2O()) {
-      h += `<div class="vx-pass" role="group" aria-label="Барный пропуск">
-        ${vxTag("pass") ? `<span class="vx-demo-tag">${vxTag("pass")}</span>` : ""}
-        <span class="vx-pass-h">Барный пропуск</span><b>${VX.passCode}</b><small>Покажите этот код бармену у стойки</small></div>`;
+      h += vxPassHTML(VX.passCode, "Покажите этот код бармену у стойки");
     }
     const sendable = !d.custom || d.ings || d.need;
     h += `<div class="card-acts vx-acts"><button class="make ghost" type="button" data-vx-story="${d.id}">Карточка для сторис</button>${sendable ? `<button class="make ghost" type="button" data-vx-treat="${d.id}">Угостить друга</button>` : ""}</div>`;
@@ -4844,33 +4851,44 @@
     return lines;
   }
   const vxPlain = s => String(s).replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">");
-  async function vxStoryCanvas(c, code) {
+  /* основа карточки 1080×1920: тёплый полумрак, зерно, двойная латунная рамка, шапка с названием бара */
+  async function vxCanvasBase() {
     const W = 1080, H = 1920, cv = document.createElement("canvas");
     cv.width = W; cv.height = H;
     const g = cv.getContext("2d");
     const F = VENUE.theme.fonts, css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
     const brass = css("--brass") || "#d6aa5c", cream = css("--cream") || "#f1e4cc", muted = css("--muted") || "#c2a784";
     try { await Promise.all([document.fonts.load(`100px "${F.display}"`), document.fonts.load(`36px "${F.text}"`), document.fonts.load(`italic 36px "${F.text}"`)]); } catch (e) {}
-    // фон: тёплый полумрак и зерно плёнки
     const bg = g.createRadialGradient(W / 2, H * .36, 40, W / 2, H * .45, H * .78);
     bg.addColorStop(0, "#43141c"); bg.addColorStop(.42, "#1d070b"); bg.addColorStop(1, "#070304");
     g.fillStyle = bg; g.fillRect(0, 0, W, H);
     const img = g.getImageData(0, 0, W, H), px = img.data;
     for (let i = 0; i < px.length; i += 4) { const n = (Math.random() - .5) * 20; px[i] += n; px[i + 1] += n; px[i + 2] += n; }
     g.putImageData(img, 0, 0);
-    // двойная латунная рамка с ромбами по углам
     g.strokeStyle = brass; g.lineWidth = 4; g.strokeRect(48, 48, W - 96, H - 96);
     g.globalAlpha = .55; g.lineWidth = 1.5; g.strokeRect(66, 66, W - 132, H - 132); g.globalAlpha = 1;
     g.fillStyle = brass;
     for (const [x, y] of [[48, 48], [W - 48, 48], [48, H - 48], [W - 48, H - 48]]) { g.save(); g.translate(x, y); g.rotate(Math.PI / 4); g.fillRect(-9, -9, 18, 18); g.restore(); }
     g.textAlign = "center"; g.textBaseline = "alphabetic";
-    // шапка
     g.fillStyle = brass; g.font = `92px "${F.display}"`;
     if ("letterSpacing" in g) g.letterSpacing = "14px";
     g.fillText(VENUE.meta.name.toUpperCase(), W / 2, 210);
     if ("letterSpacing" in g) g.letterSpacing = "0px";
     g.fillStyle = muted; g.font = `italic 34px "${F.text}"`;
     g.fillText(VENUE.meta.slogan, W / 2, 270);
+    return { cv, g, W, H, F, brass, cream, muted };
+  }
+  /* подвал карточки: адрес бара и возраст */
+  function vxCanvasFoot(B, line = "18+ · виртуальный бар в браузере") {
+    const { g, W, H, F, brass, muted } = B;
+    g.fillStyle = brass; g.font = `38px "${F.display}"`;
+    if ("letterSpacing" in g) g.letterSpacing = "4px";
+    g.fillText(VENUE.meta.site, W / 2, H - 140);
+    if ("letterSpacing" in g) g.letterSpacing = "0px";
+    g.fillStyle = muted; g.font = `24px "${F.text}"`; g.fillText(line, W / 2, H - 96);
+  }
+  async function vxStoryCanvas(c, code) {
+    const B = await vxCanvasBase(), { cv, g, W, H, F, brass, cream, muted } = B;
     // свечение за бокалом и сам бокал
     const glow = g.createRadialGradient(W / 2, 720, 20, W / 2, 720, 420);
     glow.addColorStop(0, "rgba(255,176,96,.38)"); glow.addColorStop(1, "rgba(255,150,80,0)");
@@ -4888,24 +4906,23 @@
     while (g.measureText(c.name).width > W - 220 && size > 56) { size -= 6; g.font = `${size}px "${F.display}"`; }
     g.fillText(c.name, W / 2, y);
     g.fillStyle = muted; g.font = `italic 36px "${F.text}"`;
-    for (const l of vxWrap(g, vxPlain(c.tagline || ""), W - 260).slice(0, 2)) { y += 54; g.fillText(l, W / 2, y); }
+    const priv = code && VENUE.meta.privilege ? vxWrap((g.font = `italic 28px "${F.text}"`, g), VENUE.meta.privilege, 540).slice(0, 2) : [];
+    g.fillStyle = muted; g.font = `italic 36px "${F.text}"`;
+    for (const l of vxWrap(g, vxPlain(c.tagline || ""), W - 260).slice(0, priv.length ? 1 : 2)) { y += 54; g.fillText(l, W / 2, y); }
     y += 46;
     g.strokeStyle = brass; g.globalAlpha = .6; g.lineWidth = 1.5; g.beginPath(); g.moveTo(W / 2 - 120, y); g.lineTo(W / 2 + 120, y); g.stroke(); g.globalAlpha = 1;
     g.fillStyle = cream; g.font = `34px "${F.text}"`;
-    for (const [a, b] of (c.recipe || []).slice(0, 6)) { y += 52; g.fillText(`${vxPlain(a)} ${vxPlain(b)}`.slice(0, 48), W / 2, y); }
-    // код для бармена
+    for (const [a, b] of (c.recipe || []).slice(0, priv.length ? 4 : 6)) { y += 52; g.fillText(`${vxPlain(a)} ${vxPlain(b)}`.slice(0, 48), W / 2, y); }
+    // код для бармена и привилегия заведения
     if (code) {
-      const by = Math.max(y + 60, 1560);
-      g.strokeStyle = brass; g.lineWidth = 3; g.strokeRect(W / 2 - 300, by, 600, 170);
+      const bh = 170 + priv.length * 38, by = Math.min(Math.max(y + 60, 1560 - priv.length * 38), H - 196 - bh);
+      g.strokeStyle = brass; g.lineWidth = 3; g.strokeRect(W / 2 - 300, by, 600, bh);
       g.fillStyle = muted; g.font = `28px "${F.text}"`; g.fillText("Покажите этот код бармену у стойки", W / 2, by + 50);
       g.fillStyle = brass; g.font = `80px "${F.display}"`; g.fillText(code, W / 2, by + 140);
+      g.fillStyle = cream; g.font = `italic 28px "${F.text}"`;
+      priv.forEach((l, i) => g.fillText(l, W / 2, by + 184 + i * 38));
     }
-    // подвал
-    g.fillStyle = brass; g.font = `38px "${F.display}"`;
-    if ("letterSpacing" in g) g.letterSpacing = "4px";
-    g.fillText(VENUE.meta.site, W / 2, H - 140);
-    if ("letterSpacing" in g) g.letterSpacing = "0px";
-    g.fillStyle = muted; g.font = `24px "${F.text}"`; g.fillText("18+ · виртуальный бар в браузере", W / 2, H - 96);
+    vxCanvasFoot(B);
     return cv;
   }
   async function vxStory(c) {
@@ -4923,11 +4940,10 @@
       <div class="acts">${canShare ? `<button class="make" type="button" data-vx-share>Поделиться</button>` : ""}
         <a class="make${canShare ? " ghost" : ""}" href="${url}" download="${file.name}">Скачать картинку</a></div>
       <p class="note">${canShare ? "«Поделиться» откроет Instagram, Telegram и другие приложения." : "Картинка 1080×1920 — ровно в размер сторис."}</p>`;
-    vxStat("story");
     const sb = d.querySelector("[data-vx-share]");
-    if (sb) sb.addEventListener("click", () => { vxStat("story_save"); navigator.share({ files: [file], title: c.name }).catch(() => {}); });
+    if (sb) sb.addEventListener("click", () => { vxStat("story_share"); navigator.share({ files: [file], title: c.name }).catch(() => {}); });
     const dl = d.querySelector("a[download]");
-    if (dl) dl.addEventListener("click", () => vxStat("story_save"));
+    if (dl) dl.addEventListener("click", () => vxStat("story_share"));
     d.addEventListener("close", () => setTimeout(() => URL.revokeObjectURL(url), 1000), { once: true });
   }
 
@@ -4997,7 +5013,7 @@
     const t = VX.treat;
     if (!t) return null;
     VX.treat = null;
-    vxStat("treat");
+    vxStat("treat_open");
     try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
     const c = vxTreatDrink(t);
     const d = vxSheet("vx-gift", "Для вас оставили коктейль");
@@ -5030,20 +5046,35 @@
   }
 
   /* ---------- бронь места ---------- */
+  /* персональный код пропуска: префикс заведения + номер; один на этот браузер, чтобы бар узнавал гостя и при брони, и у стойки */
+  function vxPassCode() {
+    const k = `hacheden-pass-${VENUE_ID}`;
+    try { let c = localStorage.getItem(k); if (!c || !c.startsWith(VENUE.meta.codePrefix + "-")) { c = `${VENUE.meta.codePrefix}-${1000 + Math.floor(Math.random() * 9000)}`; localStorage.setItem(k, c); } return c; }
+    catch (e) { return VX.passCode || (VX.passCode = `${VENUE.meta.codePrefix}-${1000 + Math.floor(Math.random() * 9000)}`); }
+  }
+  /* блок пропуска: код и привилегия заведения (meta.privilege) */
+  function vxPassHTML(code, hint) {
+    const P = VENUE.meta.privilege;
+    return `<div class="vx-pass" role="group" aria-label="Барный пропуск">
+        ${vxTag("pass") ? `<span class="vx-demo-tag">${vxTag("pass")}</span>` : ""}
+        <span class="vx-pass-h">Барный пропуск</span><b>${escH(code)}</b>${P ? `<span class="vx-priv">${escH(P)}</span>` : ""}<small>${escH(hint)}</small></div>`;
+  }
   function vxSeatMax(s) { const n = String(s.cap).match(/\d+/g); return n ? +n[n.length - 1] : 2; }
-  function vxBook(id) {
-    const s = VX_SEATS.find(x => x.id === id);
+  /* id — место из VENUE.rooms; или opt.seat — «стол на вечер» из афиши, тогда форма открыта сразу, дата и время подставлены */
+  function vxBook(id, opt = {}) {
+    const s = opt.seat || VX_SEATS.find(x => x.id === id);
     if (!s || !vxO2O()) return;
     const M = VENUE.meta, d = vxSheet("vx-book", s.name);
     const pad = n => String(n).padStart(2, "0"), today = new Date(), iso = x => `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`;
-    vxStat("seat");
+    const code = vxPassCode();
+    vxStat("booking_click");
     d.body.innerHTML = `${vxTag("book") ? `<p class="vx-demo-tag">${vxTag("book")}</p>` : ""}
       <p class="vx-room">${escH(s.room)} · ${escH(s.cap)}</p>
       <p>${escH(s.mood)}</p>
-      <div class="acts"><button class="make" type="button" data-vx-take>Занять это место</button></div>
-      <form class="vx-form" id="vx-book-form" hidden>
-        <div class="vx-two"><label>Дата<input type="date" name="date" required min="${iso(today)}" value="${iso(today)}"></label>
-        <label>Время<input type="time" name="time" required value="20:00" step="900"></label></div>
+      <div class="acts"${opt.seat ? " hidden" : ""}><button class="make" type="button" data-vx-take>Занять это место</button></div>
+      <form class="vx-form" id="vx-book-form"${opt.seat ? "" : " hidden"}>
+        <div class="vx-two"><label>Дата<input type="date" name="date" required min="${iso(today)}" value="${opt.date || iso(today)}"></label>
+        <label>Время<input type="time" name="time" required value="${opt.time || "20:00"}" step="900"></label></div>
         <div class="vx-two"><label>Гостей<select name="n">${Array.from({ length: vxSeatMax(s) }, (_, i) => `<option>${i + 1}</option>`).join("")}</select></label>
         <label>Имя<input name="name" maxlength="40" required autocomplete="name" value="${escH(vxName())}"></label></div>
         <p class="note">Открыто с ${M.hours.open} до ${M.hours.close}${M.address ? ` · ${escH(M.address)}` : ""}.</p>
@@ -5061,15 +5092,16 @@
       out.hidden = false;
       if (!inHours) { out.innerHTML = `<p class="vx-err">В это время бар закрыт: мы работаем с ${M.hours.open} до ${M.hours.close}.</p>`; return; }
       const date = new Date(f.get("date") + "T12:00").toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
-      vxStat("book");
-      const text = `${M.demo ? "[Тест с демо-страницы] " : ""}Привет! Хочу забронировать «${s.name}» в баре ${M.name} на ${date}, ${f.get("time")}, гостей: ${f.get("n")}. Имя: ${vxClean(f.get("name"), 40)}.`;
+      // код пропуска едет в самой заявке: хостес отмечает гостя, пришедшего с платформы
+      const text = `${M.demo ? "[Тест с демо-страницы] " : ""}Привет! Хочу забронировать ${s.id === "event" ? s.name.charAt(0).toLowerCase() + s.name.slice(1) : `«${s.name}»`} в баре ${M.name} на ${date}, ${f.get("time")}, гостей: ${f.get("n")}. Имя: ${vxClean(f.get("name"), 40)}. Код пропуска: ${code}.`;
       const wa = M.contacts.whatsapp ? `https://wa.me/${M.contacts.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(text)}` : "";
       const tg = M.contacts.telegram ? `https://t.me/${M.contacts.telegram.replace(/^@/, "")}` : "";
       out.innerHTML = `<p class="vx-msg">${escH(text)}</p>
+        ${vxPassHTML(code, "Покажите код хостес при входе")}
         <div class="acts">${vxDemo() ? `<button class="make" type="button" disabled>WhatsApp</button><button class="make ghost" type="button" disabled>Telegram</button>`
           : `${wa ? `<a class="make" href="${wa}" target="_blank" rel="noopener">Отправить в WhatsApp</a>` : ""}${tg ? `<a class="make ghost" href="${tg}" target="_blank" rel="noopener" data-vx-tg>Открыть Telegram</a>` : ""}`}</div>
         <p class="note">${vxDemo() ? (VENUE.meta.demo ? "Так заявка выглядит у гостя: с настоящими контактами кнопки откроют чат заведения." : "Кнопки заработают, когда в настройках заведения появятся настоящие WhatsApp и Telegram.") : tg ? "Telegram не умеет подставлять текст в чат: мы скопируем заявку, останется вставить её." : "Хостес подтвердит бронь в ответном сообщении."}</p>`;
-      out.querySelectorAll("a.make").forEach(a => a.addEventListener("click", () => vxStat("send")));
+      out.querySelectorAll("a.make").forEach(a => a.addEventListener("click", () => vxStat("booking_send")));
       const tl = out.querySelector("[data-vx-tg]");
       if (tl) tl.addEventListener("click", () => { try { navigator.clipboard.writeText(text); } catch (er) {} });
     });
@@ -5145,6 +5177,132 @@
     try { on ? localStorage.setItem("hacheden-o2o-preview", "1") : localStorage.removeItem("hacheden-o2o-preview"); } catch (e) {}
     if (H3D.seats) H3D.seats();
   }
+
+/* ================= платформа: афиша вечера и бары сети =================
+   Афиша — VENUE.events: [{ title, date: "гггг-мм-дд", time: "чч:мм", lineup, desc, accent: "#rrggbb" }].
+   В 3D-зале стоит латунный стенд с ближайшим событием (src/js/92-venue.js); по нажатию — карточка события:
+   «Занять стол на этот вечер» (бронь с датой и временем события) и «Карточка в сторис» (1080×1920 со ссылкой на бар).
+   Бары сети — VENUE.network: [{ id, name, tagline, district }]: футляр со спичечными коробками, переход в один клик
+   (?bar=<id>); имя гостя живёт в этом браузере и переходит вместе с ним. Нет сети — нет и кнопки. */
+  const VX_EVENTS = (VENUE.events || []).filter(e => e && e.title && /^\d{4}-\d{2}-\d{2}$/.test(e.date) && /^\d{2}:\d{2}$/.test(e.time || ""));
+  const vxISO = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  /* ближайшее событие: сегодняшнее остаётся в афише до закрытия бара */
+  function vxNextEvent(now = new Date()) {
+    const today = vxISO(now.getHours() < 5 ? new Date(now - 864e5) : now);
+    return VX_EVENTS.filter(e => e.date >= today).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))[0] || null;
+  }
+  const vxAccent = e => /^#[0-9a-f]{6}$/i.test(e.accent || "") ? e.accent : (getComputedStyle(document.documentElement).getPropertyValue("--brass").trim() || "#d6aa5c");
+  const vxEventDay = e => {
+    const d = new Date(e.date + "T12:00"), s = d.toLocaleDateString("ru-RU", { weekday: "long", day: "numeric", month: "long" });
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  };
+  function vxEvent(e = vxNextEvent()) {
+    if (!e) return;
+    const d = vxSheet("vx-event", "Афиша вечера");
+    vxStat("event_open");
+    d.body.innerHTML = `<article class="vx-ev" style="--ev:${vxAccent(e)}">
+        <p class="vx-ev-when">${escH(vxEventDay(e))} · ${escH(e.time)}</p>
+        <h3 class="vx-ev-title">${escH(e.title)}</h3>
+        ${e.lineup ? `<p class="vx-ev-line">${escH(e.lineup)}</p>` : ""}
+        ${e.desc ? `<p>${escH(e.desc)}</p>` : ""}
+      </article>
+      <div class="acts">${vxO2O() ? `<button class="make" type="button" data-ev-book>Занять стол на этот вечер</button>` : ""}
+        <button class="make${vxO2O() ? " ghost" : ""}" type="button" data-ev-story>Карточка в сторис</button></div>
+      ${VENUE.meta.privilege && vxO2O() ? `<p class="note">По барному пропуску: ${escH(VENUE.meta.privilege)}</p>` : ""}`;
+    openSheet(d);
+    const bb = d.querySelector("[data-ev-book]");
+    if (bb) bb.addEventListener("click", () => {
+      d.close();
+      vxBook(null, { date: e.date, time: e.time, seat: { id: "event", name: `Стол на вечер «${e.title}»`, room: `${vxEventDay(e)}, ${e.time}`, cap: "1–6 гостей", mood: e.lineup || e.desc || "" } });
+    });
+    d.querySelector("[data-ev-story]").addEventListener("click", () => vxEventStory(e));
+  }
+  /* анонс события для сторис: дата, название, состав, ссылка на бар */
+  async function vxEventStoryCanvas(e) {
+    const B = await vxCanvasBase(), { cv, g, W, H, F, cream, muted } = B, ac = vxAccent(e);
+    const glow = g.createRadialGradient(W / 2, 860, 20, W / 2, 860, 560);
+    glow.addColorStop(0, ac + "55"); glow.addColorStop(1, ac + "00");
+    g.fillStyle = glow; g.fillRect(0, 320, W, 1100);
+    g.fillStyle = muted; g.font = `italic 40px "${F.text}"`;
+    if ("letterSpacing" in g) g.letterSpacing = "10px";
+    g.fillText("АФИША ВЕЧЕРА", W / 2, 560);
+    if ("letterSpacing" in g) g.letterSpacing = "0px";
+    g.fillStyle = ac; g.font = `56px "${F.display}"`;
+    g.fillText(vxEventDay(e), W / 2, 690);
+    g.font = `150px "${F.display}"`; g.fillText(e.time, W / 2, 860);
+    let y = 1060, size = 104;
+    g.fillStyle = cream; g.font = `${size}px "${F.display}"`;
+    let lines = vxWrap(g, e.title, W - 220);
+    while (lines.length > 2 && size > 64) { size -= 8; g.font = `${size}px "${F.display}"`; lines = vxWrap(g, e.title, W - 220); }
+    lines.slice(0, 3).forEach(l => { g.fillText(l, W / 2, y); y += size * 1.08; });
+    y += 10;
+    g.strokeStyle = ac; g.globalAlpha = .7; g.lineWidth = 2; g.beginPath(); g.moveTo(W / 2 - 140, y); g.lineTo(W / 2 + 140, y); g.stroke(); g.globalAlpha = 1;
+    if (e.lineup) { g.fillStyle = cream; g.font = `40px "${F.text}"`; vxWrap(g, e.lineup, W - 240).slice(0, 2).forEach(l => { y += 64; g.fillText(l, W / 2, y); }); }
+    if (e.desc) { g.fillStyle = muted; g.font = `italic 34px "${F.text}"`; y += 20; vxWrap(g, e.desc, W - 260).slice(0, 3).forEach(l => { y += 50; g.fillText(l, W / 2, y); }); }
+    g.fillStyle = cream; g.font = `32px "${F.text}"`;
+    g.fillText(O2O ? "Стол на этот вечер — по ссылке" : "Заглядывайте", W / 2, H - 220);
+    vxCanvasFoot(B, `18+ · ${VENUE.meta.city || ""}`.replace(/ · $/, ""));
+    return cv;
+  }
+  async function vxEventStory(e) {
+    const d = vxSheet("vx-story", "Карточка в сторис", "wide");
+    d.body.innerHTML = `<p class="note">Рисую анонс…</p>`;
+    const ev = document.getElementById("vx-event");
+    if (ev && ev.open) ev.close();
+    openSheet(d);
+    const cv = await vxEventStoryCanvas(e);
+    const blob = await new Promise(r => cv.toBlob(r, "image/png"));
+    if (!blob) { d.body.innerHTML = `<p class="note">Не получилось нарисовать карточку в этом браузере.</p>`; return; }
+    const file = new File([blob], `${VENUE.id}-${e.date}.png`, { type: "image/png" }), url = URL.createObjectURL(blob);
+    const canShare = !!(navigator.canShare && navigator.canShare({ files: [file] }));
+    d.body.innerHTML = `<img class="vx-story-img" src="${url}" alt="Анонс «${escH(e.title)}» для сторис">
+      <div class="acts">${canShare ? `<button class="make" type="button" data-vx-share>Поделиться</button>` : ""}
+        <a class="make${canShare ? " ghost" : ""}" href="${url}" download="${file.name}">Скачать картинку</a></div>
+      <p class="note">${canShare ? "«Поделиться» откроет Instagram, Telegram и другие приложения." : "Картинка 1080×1920 — ровно в размер сторис."} Ссылка на бар — внизу карточки.</p>`;
+    const sb = d.querySelector("[data-vx-share]");
+    if (sb) sb.addEventListener("click", () => { vxStat("story_share"); navigator.share({ files: [file], title: e.title, url: `https://${VENUE.meta.site}` }).catch(() => {}); });
+    const dl = d.querySelector("a[download]");
+    if (dl) dl.addEventListener("click", () => vxStat("story_share"));
+    d.addEventListener("close", () => setTimeout(() => URL.revokeObjectURL(url), 1000), { once: true });
+  }
+
+  /* ---------- бары сети: футляр со спичечными коробками ---------- */
+  const VX_NET = (VENUE.network || []).filter(n => n && VENUE_ID_RE.test(n.id) && n.id !== VENUE_ID && n.name);
+  const vxHopURL = id => {
+    const u = new URL(location.href), q = new URLSearchParams();
+    if (id !== "hacheden") q.set("bar", id);
+    q.set("via", VENUE_ID);
+    u.search = q.toString(); u.hash = "";
+    return u.pathname + u.search;
+  };
+  function vxNetwork() {
+    if (!VX_NET.length) return;
+    const d = vxSheet("vx-net", "Бары сети", "wide");
+    const name = vxName();
+    const box = (n, i, here) => `<${here ? "div" : "a"} class="vx-match${here ? " here" : ""}" ${here ? "" : `href="${escH(vxHopURL(n.id))}" data-hop="${escH(n.id)}"`} style="--m:${i % 5}">
+        <span class="vx-strike" aria-hidden="true"></span>
+        <span class="vx-match-in"><b>${escH(n.name)}</b>${n.tagline ? `<i>${escH(n.tagline)}</i>` : ""}${n.district ? `<small>${escH(n.district)}</small>` : ""}
+        ${here ? `<em>Вы здесь</em>` : ""}</span></${here ? "div" : "a"}>`;
+    d.body.innerHTML = `<p class="note">Спичечный коробок — пропуск в соседний бар сети: один клик, и вы там${name ? `, ${escH(name)}. Имя пойдёт с вами` : ". Имя, которое вы назвали бармену, пойдёт с вами"}.</p>
+      <div class="vx-case" role="list">${box({ name: VENUE.meta.name, tagline: VENUE.meta.slogan, district: VENUE.meta.district || VENUE.meta.city }, 0, true)}${VX_NET.map((n, i) => box(n, i + 1, false)).join("")}</div>`;
+    openSheet(d);
+    d.querySelectorAll("[data-hop]").forEach(a => a.addEventListener("click", () => vxSound && vxSound("card")));
+  }
+  (() => {
+    const b = document.getElementById("t-hop");
+    if (!b) return;
+    b.hidden = !VX_NET.length;
+    b.addEventListener("click", vxNetwork);
+  })();
+  /* гость пришёл из другого бара сети: короткое приветствие после входа */
+  (() => {
+    let via = "";
+    try { via = new URLSearchParams(location.search).get("via") || ""; } catch (e) {}
+    if (!VENUE_ID_RE.test(via) || via === VENUE_ID) return;
+    const from = (VENUE.network || []).find(n => n.id === via);
+    const greet = () => { const n = vxName(); toast(`${n ? n + ", д" : "Д"}обро пожаловать в ${VENUE.meta.name}`, from ? `Вас прислали из «${from.name}»` : "Вы пришли из бара сети"); };
+    document.getElementById("enter").addEventListener("click", () => setTimeout(greet, 4500), { once: true });
+  })();
 
 </script>
 <script type="module">
@@ -6756,6 +6914,36 @@ function release(F, obj) { F.held = F.held.filter(h => h.obj !== obj); }
 /* пальцы смотрят вперёд, ладонь внутрь — обычный хват стакана */
 const DIR = { fwd: V3(0, 0, 1), down: V3(0, -1, 0), up: V3(0, 1, 0), in: s => V3(-s, 0, 0), out: s => V3(s, 0, 0), back: V3(0, 0, -1) };
 
+/* ================= звуки движка: общий аудиоконтекст эффектов, треск дров, стук в дверь =================
+   Нужны любому бару (улица, облава, шоу бармена), поэтому не в зале курилки. */
+let fxCtx = null;
+const fx = () => {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return null;
+  fxCtx = fxCtx || AUDIO.route(new AC(), "ambient");
+  fxCtx.resume();
+  return fxCtx;
+};
+function crackle() {
+  const c = fx(); if (!c) return;
+  const len = c.sampleRate * 1.2, b = c.createBuffer(1, len, c.sampleRate), d = b.getChannelData(0);
+  let env = 0;
+  for (let i = 0; i < len; i++) { if (Math.random() < .002) env = .5 + Math.random() * .5; env *= .99; d[i] = (Math.random() * 2 - 1) * env * (1 - i / len); }
+  const s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+  s.buffer = b; f.type = "highpass"; f.frequency.value = 700; g.gain.value = .35;
+  s.connect(f).connect(g).connect(c.destination); s.start();
+}
+function knock() {
+  const c = fx(); if (!c) return;
+  const t0 = c.currentTime + .05;
+  for (let i = 0; i < 3; i++) {
+    const t = t0 + i * .3, o = c.createOscillator(), g = c.createGain();
+    o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(55, t + .12);
+    g.gain.setValueAtTime(.6, t); g.gain.exponentialRampToValueAtTime(.0001, t + .18);
+    o.connect(g).connect(c.destination); o.start(t); o.stop(t + .2);
+  }
+}
+
 /* ================= КУРИЛКА: камин, кресла, граммофон, дверь с глазком ================= */
 const NOISE_GLSL = `
 float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
@@ -6870,23 +7058,6 @@ function stoke() {
   const e = FIRE.embers;
   for (let i = 0; i < e.N; i++) e.life[i] = rng() * .3;
   crackle();
-}
-let fxCtx = null;
-const fx = () => {
-  const AC = window.AudioContext || window.webkitAudioContext;
-  if (!AC) return null;
-  fxCtx = fxCtx || AUDIO.route(new AC(), "ambient");
-  fxCtx.resume();
-  return fxCtx;
-};
-function crackle() {
-  const c = fx(); if (!c) return;
-  const len = c.sampleRate * 1.2, b = c.createBuffer(1, len, c.sampleRate), d = b.getChannelData(0);
-  let env = 0;
-  for (let i = 0; i < len; i++) { if (Math.random() < .002) env = .5 + Math.random() * .5; env *= .99; d[i] = (Math.random() * 2 - 1) * env * (1 - i / len); }
-  const s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
-  s.buffer = b; f.type = "highpass"; f.frequency.value = 700; g.gain.value = .35;
-  s.connect(f).connect(g).connect(c.destination); s.start();
 }
 
 /* ---------- ковёр, кресла и столик ---------- */
@@ -7004,16 +7175,6 @@ const DOOR = { busy: false };
   glowSprite(0xffa860, .7, 0, 2.5, .2, g, .4);
   hot(g, 2, "Постучать в дверь", () => knockDoor(), { grow: 0 });
 })();
-function knock() {
-  const c = fx(); if (!c) return;
-  const t0 = c.currentTime + .05;
-  for (let i = 0; i < 3; i++) {
-    const t = t0 + i * .3, o = c.createOscillator(), g = c.createGain();
-    o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(55, t + .12);
-    g.gain.setValueAtTime(.6, t); g.gain.exponentialRampToValueAtTime(.0001, t + .18);
-    o.connect(g).connect(c.destination); o.start(t); o.stop(t + .2);
-  }
-}
 async function knockDoor() {
   if (DOOR.busy || busy) return;
   DOOR.busy = true;
@@ -7063,6 +7224,54 @@ function petCat() {
   mesh(new THREE.CylinderGeometry(.16, .25, .26, 24, 1, true), std({ color: 0xe8c890, emissive: 0xffa050, emissiveIntensity: .7, side: THREE.DoubleSide }), x, 1.6, z);
   glowSprite(0xffb060, 1.2, x, 1.55, z, world, .45);
 })();
+
+/* ---------- курилка живёт сама: огонь, угольки, часы, дым сигары, дымка, пластинка, кот ---------- */
+onTick((t, dt) => {
+  // камин
+  FIRE.boost += (1 - FIRE.boost) * dt * .5;
+  const fl = .78 + .14 * Math.sin(t * 7.3) + .1 * Math.sin(t * 13.1 + 1) + .06 * Math.sin(t * 23.7);
+  FIRE.lvl += ((FIRE.on ? 1 : .1) - FIRE.lvl) * Math.min(1, dt * 1.2);
+  LIGHTS.fire.intensity = LIGHTS.fire.userData.base * fl * FIRE.boost * FIRE.lvl;
+  for (const f of FIRE.flames) { f.visible = FIRE.lvl > .25; f.scale.y = Math.max(.05, Math.min(1, (FIRE.lvl - .2) * 1.3)); }
+  for (const m of flameMats) { m.uniforms.uTime.value = t; m.uniforms.uBoost.value = Math.min(1.35, FIRE.boost); }
+  FIRE.logMat.emissiveIntensity = .3 + .12 * Math.sin(t * 2.1) * fl;
+  FIRE.glow.material.opacity = .38 * fl * FIRE.boost * (.25 + .75 * FIRE.lvl);
+  FIRE.embers.pts.visible = FIRE.lvl > .4 && SET.effects && !SET.saver;
+  {
+    const e = FIRE.embers;
+    for (let i = 0; i < e.N; i++) {
+      e.life[i] += dt * (.35 + (i % 5) * .06) * (FIRE.boost > 1.1 ? 1.8 : 1);
+      if (e.life[i] > 1) e.life[i] -= 1;
+      const k = e.life[i];
+      e.pos[i * 3] = 7.82 - k * .25 + Math.sin(i * 7 + t * 2) * .04;
+      e.pos[i * 3 + 1] = .18 + k * 1.1;
+      e.pos[i * 3 + 2] = FP.z + Math.sin(i * 3.1 + t * 1.3) * (.1 + k * .15);
+    }
+    e.eg.attributes.position.needsUpdate = true;
+  }
+  for (const c of FIRE.candles) c.material.opacity = .62 + .12 * Math.sin(t * 9 + c.position.z * 3);
+  // часы
+  {
+    const d = new Date(), h = d.getHours() % 12, m = d.getMinutes() + d.getSeconds() / 60;
+    FIRE.hour.rotation.x = -(h + m / 60) / 12 * Math.PI * 2;
+    FIRE.min.rotation.x = -m / 60 * Math.PI * 2;
+  }
+  // дым сигары
+  for (const s of smoke) {
+    s.userData.t += dt * .09;
+    if (s.userData.t > 1) s.userData.t -= 1;
+    const k = s.userData.t;
+    s.position.set(FIRE.smokeFrom.x + Math.sin(k * 9 + s.id) * .05 * k, FIRE.smokeFrom.y + k * 1.5, FIRE.smokeFrom.z + Math.cos(k * 7 + s.id) * .05 * k);
+    const sc = .06 + k * .5;
+    s.scale.set(sc, sc, 1);
+    s.material.opacity = Math.sin(Math.PI * Math.min(1, k * 1.4)) * .32 * (1 - k);
+    s.material.rotation = k * 2 + s.id;
+  }
+  FIRE.cigarTip.material.color.setHSL(.05, 1, .45 + .1 * Math.sin(t * 1.3));
+  for (const s of haze) { s.position.x += Math.sin(t * .1 + s.userData.ph) * .0015; s.material.opacity = .1 + .05 * Math.sin(t * .2 + s.userData.ph); }
+  if (Music.on) GR.disc.rotation.y -= dt * 3.4;
+  CAT.body.scale.y = .5 + .025 * Math.sin(t * 1.9);
+});
 
 /* ================= ЧИТАЛЬНЯ: книжные шкафы, окно с дождём, стол писателя ================= */
 const NOOK = { flash: 0, candleOn: true, globeSpeed: .25 };
@@ -7410,6 +7619,25 @@ rug2.rotation.set(-Math.PI / 2, 0, .1);
 const moth = mesh(new THREE.PlaneGeometry(.025, .015), basic({ color: 0xc8b8a0, side: THREE.DoubleSide, transparent: true, opacity: .85 }), 0, 0, 0);
 moth.userData.noHit = true;
 
+/* ---------- читальня живёт сама: дождь в окне, молнии, лампа, глобус, свеча, мотылёк ---------- */
+let flashT = 6 + Math.random() * 8;
+onTick((t, dt) => {
+  // читальня
+  rainMat.uniforms.uTime.value = t;
+  NOOK.flash = Math.max(0, NOOK.flash - dt * 2.2);
+  rainMat.uniforms.uFlash.value = NOOK.flash;
+  const sky = rainMat.uniforms.uSky.value;
+  if (!STREET.on) LIGHTS.window.intensity = LIGHTS.window.userData.base * (1 + sky * 2.5) + NOOK.flash * 30;
+  LIGHTS.lamp.intensity = LIGHTS.lamp.userData.base * LIGHTS.lamp.userData.mul * (NOOK.lampMode || 1) * (NOOK.candleOn ? 1 + .04 * Math.sin(t * 11) : 1);
+  NOOK.globeSpeed += (.25 - NOOK.globeSpeed) * dt * .45;
+  NOOK.globe.rotation.y += NOOK.globeSpeed * dt;
+  if (NOOK.candleOn) { NOOK.flame.scale.set(1, 1 + .15 * Math.sin(t * 13), 1); NOOK.flameGlow.material.opacity = .7 + .1 * Math.sin(t * 9); }
+  moth.position.set(-6.5 + Math.cos(t * 2.4) * .16, 1.13 + Math.sin(t * 3.1) * .05, -4.3 + Math.sin(t * 2.4) * .16);
+  moth.rotation.y = -t * 2.4; moth.scale.x = .6 + .4 * Math.abs(Math.sin(t * 30));
+  flashT -= dt;
+  if (flashT < 0) { flashT = 9 + Math.random() * 12; if (curZone === 0 && WEATHER.storm) lightning(); }
+});
+
 /* ================= сезоны: погода за окном, звук и убранство бара ================= */
 const WEATHER = {
   winter: { rain: 0, snow: 1, stars: .3, leaves: 0, frost: 1, storm: false, sound: { rain: 0, wind: .5, crickets: 0, fire: .6 } },
@@ -7425,7 +7653,7 @@ rainMat.uniforms.uFrost.value = WEATHER.frost;
 Music.weather(WEATHER.sound);
 
 /* летом камин не топят: в нём стоят свечи */
-const SUMMER_FIRE = SEASON === "summer";
+const SUMMER_FIRE = SEASON === "summer" && FEAT.smoke;
 if (SUMMER_FIRE) {
   FIRE.flames.forEach(f => { f.visible = false; });
   FIRE.glow.visible = false;
@@ -7467,9 +7695,11 @@ if (FESTIVE) {
   const pts = [];
   for (let x = -3.3; x <= 3.31; x += .66) pts.push(V3(x, 2.97, BB.z0 + .46));
   garland(pts, .08);
-  const mp = [];
-  for (let z = FP.z - 1.1; z <= FP.z + 1.11; z += .55) mp.push(V3(7.5, 1.3, z));
-  garland(mp, .06);
+  if (FEAT.smoke) {
+    const mp = [];
+    for (let z = FP.z - 1.1; z <= FP.z + 1.11; z += .55) mp.push(V3(7.5, 1.3, z));
+    garland(mp, .06);
+  }
   // ёлка в углу курилки
   const t = group(4.45, 0, -3.55);
   mesh(new THREE.CylinderGeometry(.05, .06, .3, 8), M.darkwood, 0, .15, 0, t);
@@ -7526,7 +7756,7 @@ if (SEASON === "spring") {
     }
   };
   vase(2.35, CT.top, -2.35, 1.1);
-  vase(WIN.x - .65, .785, -4.2, .8);
+  if (FEAT.nook) vase(WIN.x - .65, .785, -4.2, .8);
 }
 if (SEASON === "summer") {
   // ведёрко со льдом и шампанским, фрукты
@@ -7547,12 +7777,14 @@ if (SEASON === "autumn") {
     for (let i = 0; i < 8; i++) { const a = i / 8 * 6.28; const p = mesh(new THREE.SphereGeometry(.06, 14, 10), m, Math.cos(a) * .045, .055, Math.sin(a) * .045, g); p.scale.set(.75, .9, .75); }
     mesh(new THREE.CylinderGeometry(.008, .012, .04, 6), std({ color: 0x4a3a1a }), 0, .12, 0, g).rotation.z = .3;
   };
+  if (FEAT.smoke) {
   pumpkin(7.72, 1.32, FP.z - .6, 1);
   pumpkin(7.72, 1.32, FP.z + .55, .75, 0xb8851e);
   pumpkin(7.4, .04, FP.z - 1.25, 1.6);
   pumpkin(7.55, .04, FP.z - 1.0, 1.1, 0xc06018);
+  }
   // кленовые листья на подоконнике
-  for (let i = 0; i < 5; i++) { const l = mesh(new THREE.CircleGeometry(.03, 5), std({ color: [0xc04a10, 0x9a2a0a, 0xd08a1a][i % 3], side: THREE.DoubleSide }), WIN.x + R(-.7, .7), WIN.sill + .003, -4.88 + R(-.05, .05)); l.rotation.set(-Math.PI / 2, 0, R(0, 6)); }
+  if (FEAT.nook) for (let i = 0; i < 5; i++) { const l = mesh(new THREE.CircleGeometry(.03, 5), std({ color: [0xc04a10, 0x9a2a0a, 0xd08a1a][i % 3], side: THREE.DoubleSide }), WIN.x + R(-.7, .7), WIN.sill + .003, -4.88 + R(-.05, .05)); l.rotation.set(-Math.PI / 2, 0, R(0, 6)); }
 }
 
 /* ---------- меловая доска с сезонным напитком ---------- */
@@ -9861,6 +10093,8 @@ async function ladyLife() {
     if (rng() < .35) { lady.look = camera.position; await sleep(1.6); lady.look = fromFig(lady, V3(0, .92, .36)); }
   }
 }
+/* у заведения без курилки или читальни (заглушки залов) их гостей нет */
+for (const [on, F] of [[FEAT.smoke, reader], [FEAT.smoke, smoker], [FEAT.nook, writer], [FEAT.nook, lady]]) if (!on && F) { F.off = true; F.root.visible = false; }
 function companyLife() { guestLife(); readerLife(); smokerLife(); writerLife(); ladyLife(); }
 Object.assign(H3D, { toast: () => pair.length === 2 && clinkToast(pair[0], pair[1]), sip: i => GUESTS[i] && sip(GUESTS[i]), guests: GUESTS });
 
@@ -12136,7 +12370,10 @@ function runFlight() {
 
 /* ---------- интерфейс ---------- */
 const navBtns = [...document.querySelectorAll("#nav button")];
-if (!FEAT.stage && navBtns[3]) navBtns[3].hidden = true;   // у заведения нет сцены
+/* залы, которых у заведения нет (заглушки), не показываются; остался один бар — нет и переключателя */
+const ZONE_ON = [FEAT.nook, true, FEAT.smoke, FEAT.stage, FEAT.cellar && FEAT.nook];
+navBtns.forEach(b => { if (!ZONE_ON[+b.dataset.zone]) b.hidden = true; });
+if (navBtns.filter(b => !b.hidden).length < 2) document.getElementById("nav").hidden = true;
 const titleEl = document.getElementById("zone-title"), subEl = document.getElementById("zone-sub");
 const spotsEl = document.getElementById("spots"), tip = document.getElementById("tip");
 function renderZoneUI(i) {
@@ -12164,8 +12401,7 @@ function renderZoneUI(i) {
 }
 function goZone(i, dur = 1.9) {
   i = clamp(i, 0, ZONES.length - 1);
-  if (i === 3 && !FEAT.stage) i = 1;        // выключенные залы: вместо сцены — бар, вместо погреба — читальня
-  if (i === 4 && !FEAT.cellar) i = 0;
+  if (!ZONE_ON[i]) i = 1;                    // зала нет — остаёмся в баре
   if (typeof CEL !== "undefined" && CEL.busy) return Promise.resolve();
   const cross = (curZone === 4) !== (i === 4);
   leaveSeat();
@@ -12315,7 +12551,7 @@ function bakeEnvironment() {
 }
 
 /* ---------- главный цикл ---------- */
-let last = performance.now(), frames = 0, slowAcc = 0, slowN = 0, slowHits = 0, startedAt = 0, neonT = 6 + Math.random() * 6, flashT = 6 + Math.random() * 8;
+let last = performance.now(), frames = 0, slowAcc = 0, slowN = 0, slowHits = 0, startedAt = 0, neonT = 6 + Math.random() * 6;
 const _p = V3(), _t = V3(), _d = V3();
 const GYRO = { on: false, x: 0, y: 0 };   // наклон телефона (заполняет 92-venue.js)
 function tick(now) {
@@ -12379,64 +12615,6 @@ function tick(now) {
   }
 
   updateFigures(t, dt);
-  // камин
-  FIRE.boost += (1 - FIRE.boost) * dt * .5;
-  const fl = .78 + .14 * Math.sin(t * 7.3) + .1 * Math.sin(t * 13.1 + 1) + .06 * Math.sin(t * 23.7);
-  FIRE.lvl += ((FIRE.on ? 1 : .1) - FIRE.lvl) * Math.min(1, dt * 1.2);
-  LIGHTS.fire.intensity = LIGHTS.fire.userData.base * fl * FIRE.boost * FIRE.lvl;
-  for (const f of FIRE.flames) { f.visible = FIRE.lvl > .25; f.scale.y = Math.max(.05, Math.min(1, (FIRE.lvl - .2) * 1.3)); }
-  for (const m of flameMats) { m.uniforms.uTime.value = t; m.uniforms.uBoost.value = Math.min(1.35, FIRE.boost); }
-  FIRE.logMat.emissiveIntensity = .3 + .12 * Math.sin(t * 2.1) * fl;
-  FIRE.glow.material.opacity = .38 * fl * FIRE.boost * (.25 + .75 * FIRE.lvl);
-  FIRE.embers.pts.visible = FIRE.lvl > .4 && SET.effects && !SET.saver;
-  {
-    const e = FIRE.embers;
-    for (let i = 0; i < e.N; i++) {
-      e.life[i] += dt * (.35 + (i % 5) * .06) * (FIRE.boost > 1.1 ? 1.8 : 1);
-      if (e.life[i] > 1) e.life[i] -= 1;
-      const k = e.life[i];
-      e.pos[i * 3] = 7.82 - k * .25 + Math.sin(i * 7 + t * 2) * .04;
-      e.pos[i * 3 + 1] = .18 + k * 1.1;
-      e.pos[i * 3 + 2] = FP.z + Math.sin(i * 3.1 + t * 1.3) * (.1 + k * .15);
-    }
-    e.eg.attributes.position.needsUpdate = true;
-  }
-  for (const c of FIRE.candles) c.material.opacity = .62 + .12 * Math.sin(t * 9 + c.position.z * 3);
-  // часы
-  {
-    const d = new Date(), h = d.getHours() % 12, m = d.getMinutes() + d.getSeconds() / 60;
-    FIRE.hour.rotation.x = -(h + m / 60) / 12 * Math.PI * 2;
-    FIRE.min.rotation.x = -m / 60 * Math.PI * 2;
-  }
-  // дым сигары
-  for (const s of smoke) {
-    s.userData.t += dt * .09;
-    if (s.userData.t > 1) s.userData.t -= 1;
-    const k = s.userData.t;
-    s.position.set(FIRE.smokeFrom.x + Math.sin(k * 9 + s.id) * .05 * k, FIRE.smokeFrom.y + k * 1.5, FIRE.smokeFrom.z + Math.cos(k * 7 + s.id) * .05 * k);
-    const sc = .06 + k * .5;
-    s.scale.set(sc, sc, 1);
-    s.material.opacity = Math.sin(Math.PI * Math.min(1, k * 1.4)) * .32 * (1 - k);
-    s.material.rotation = k * 2 + s.id;
-  }
-  FIRE.cigarTip.material.color.setHSL(.05, 1, .45 + .1 * Math.sin(t * 1.3));
-  for (const s of haze) { s.position.x += Math.sin(t * .1 + s.userData.ph) * .0015; s.material.opacity = .1 + .05 * Math.sin(t * .2 + s.userData.ph); }
-  if (Music.on) GR.disc.rotation.y -= dt * 3.4;
-  CAT.body.scale.y = .5 + .025 * Math.sin(t * 1.9);
-  // читальня
-  rainMat.uniforms.uTime.value = t;
-  NOOK.flash = Math.max(0, NOOK.flash - dt * 2.2);
-  rainMat.uniforms.uFlash.value = NOOK.flash;
-  const sky = rainMat.uniforms.uSky.value;
-  if (!STREET.on) LIGHTS.window.intensity = LIGHTS.window.userData.base * (1 + sky * 2.5) + NOOK.flash * 30;
-  LIGHTS.lamp.intensity = LIGHTS.lamp.userData.base * LIGHTS.lamp.userData.mul * (NOOK.lampMode || 1) * (NOOK.candleOn ? 1 + .04 * Math.sin(t * 11) : 1);
-  NOOK.globeSpeed += (.25 - NOOK.globeSpeed) * dt * .45;
-  NOOK.globe.rotation.y += NOOK.globeSpeed * dt;
-  if (NOOK.candleOn) { NOOK.flame.scale.set(1, 1 + .15 * Math.sin(t * 13), 1); NOOK.flameGlow.material.opacity = .7 + .1 * Math.sin(t * 9); }
-  moth.position.set(-6.5 + Math.cos(t * 2.4) * .16, 1.13 + Math.sin(t * 3.1) * .05, -4.3 + Math.sin(t * 2.4) * .16);
-  moth.rotation.y = -t * 2.4; moth.scale.x = .6 + .4 * Math.abs(Math.sin(t * 30));
-  flashT -= dt;
-  if (flashT < 0) { flashT = 9 + Math.random() * 12; if (curZone === 0 && WEATHER.storm) lightning(); }
   // неон иногда мигает
   neonT -= dt;
   let nb = 1;
@@ -12545,7 +12723,8 @@ function showOpen() {
   intro.classList.remove("closed");
   introTitle.classList.remove("off");
   const left = minutesUntil(CLOSE_H);
-  introText.textContent = `${SEASON_INFO[SEASON].line} Стойка, курилка у камина и читальня ждут.`;
+  // у другого бара — его собственный текст (meta.intro): про камин и читальню Hacheden там ни слова
+  introText.textContent = VENUE_ID !== "hacheden" && VENUE.meta.intro ? VENUE.meta.intro : `${SEASON_INFO[SEASON].line} Стойка, курилка у камина и читальня ждут.`;
   statusEl.textContent = OWNER
     ? (openByClock() ? "Режим хозяина. Для гостей открыто до 3:00" : "Режим хозяина: для тебя открыто. Гостей ждём с 17:00")
     : left <= 30 ? `Последний заказ: закрываемся через ${spell(left)}` : "Открыто до 3:00";
@@ -12887,7 +13066,7 @@ onSetting(k => {
 
 /* ---------- свет и звук комнат ---------- */
 function applyRooms() {
-  NOOK.lampMode = LAMP_MUL[ROOMS.lamp] || 1;
+  NOOK.lampMode = LAMP_MUL[ROOMS.lamp] || 1;   // без читальни и курилки (заглушки) — просто числа в пустых объектах
   if (NOOK.lampGlow) NOOK.lampGlow.material.opacity = .5 * Math.min(1.3, NOOK.lampMode);
   ZONE_LIGHT[0] = FILL_MUL[ROOMS.lib] || 1;
   ZONE_LIGHT[2] = ROOMS.smoke === "dim" ? .5 : 1;
@@ -12964,7 +13143,7 @@ chipOnly(2, "Атмосфера", openAtmo);
 
 /* ---------- читальня: стопка рассказов и книга, что светится без свечи ---------- */
 const LIB = {};
-{
+if (FEAT.nook) {
   const dx = NOOK.lampGlow.position.x + .5, top = .785;   // стол писателя у окна
   const stack = group(dx - .64, top, -4.1);
   const covers = [0x5a1420, 0x1f3a2c, 0x2a2440];
@@ -13044,7 +13223,7 @@ const LIB = {};
 
 /* ---------- редкое событие: кот приходит на стойку ---------- */
 const CATV = { chance: QS.get("rare") === "cat" ? 1 : .2, done: false, on: false, since: 0 };
-CATV.today = Math.random() < CATV.chance;
+CATV.today = FEAT.smoke && Math.random() < CATV.chance;   // кот живёт в курилке: нет курилки — нет и кота
 setInterval(() => {
   if (!CATV.today || CATV.done || CATV.on || !started || curZone !== 1 || busy || SEAT.on || modalOpen() || mixDlg.open || STREET.on) { CATV.since = 0; return; }
   CATV.since += 5;
@@ -13319,20 +13498,26 @@ if (HALLOWEEN) {
   lantern(2.35, CT.top, -2.25, 1.5, -.2);
   lantern(-2.35, CT.top, -2.3, 1.0, .4);
   // курилка: у камина
-  lantern(7.45, .04, FP.z + 1.15, 1.5, -Math.PI / 2);
-  lantern(7.7, 1.32, FP.z + .05, .7, -Math.PI / 2);
+  if (FEAT.smoke) {
+    lantern(7.45, .04, FP.z + 1.15, 1.5, -Math.PI / 2);
+    lantern(7.7, 1.32, FP.z + .05, .7, -Math.PI / 2);
+  }
   // читальня: на подоконнике
-  lantern(WIN.x - .55, WIN.sill + .005, -4.82, .9, 0);
-  lantern(WIN.x + .58, WIN.sill + .005, -4.82, .7, -.15);
+  if (FEAT.nook) {
+    lantern(WIN.x - .55, WIN.sill + .005, -4.82, .9, 0);
+    lantern(WIN.x + .58, WIN.sill + .005, -4.82, .7, -.15);
+  }
   // сцена: по краям рампы
   if (FEAT.stage) {
     lantern(STG.x0 + .45, STG.h, STG.z0 + .18, 1.1, Math.PI);
     lantern(STG.x1 - .45, STG.h, STG.z0 + .18, 1.1, Math.PI);
   }
   // улица: у двери
-  lantern(-1.45, 0, FZ + .6, 3.2, .1, street);
-  lantern(.3, 0, FZ + .6, 2.6, -.15, street);
-  lantern(-1.0, 0, FZ + .75, 1.7, .3, street);
+  if (FEAT.street) {
+    lantern(-1.45, 0, FZ + .6, 3.2, .1, street);
+    lantern(.3, 0, FZ + .6, 2.6, -.15, street);
+    lantern(-1.0, 0, FZ + .75, 1.7, .3, street);
+  }
 
   /* летучие мыши: за окном читальни и над входом с улицы */
   const batMat = basic({ color: 0x050304, side: THREE.DoubleSide });
@@ -13349,8 +13534,8 @@ if (HALLOWEEN) {
     g.userData.w = [L, R2];
     return g;
   }
-  for (let i = 0; i < 4; i++) HW.bats.push({ g: bat(world, .11), kind: "win", ph: i * 1.7, sp: .35 + i * .07, fl: 9 + i });
-  for (let i = 0; i < 5; i++) HW.bats.push({ g: bat(street, .16), kind: "street", ph: i * 1.25, sp: .45 + i * .05, fl: 8 + i * .7 });
+  if (FEAT.nook) for (let i = 0; i < 4; i++) HW.bats.push({ g: bat(world, .11), kind: "win", ph: i * 1.7, sp: .35 + i * .07, fl: 9 + i });
+  if (FEAT.street) for (let i = 0; i < 5; i++) HW.bats.push({ g: bat(street, .16), kind: "street", ph: i * 1.25, sp: .45 + i * .05, fl: 8 + i * .7 });
   onTick((t) => {
     for (const L of HW.lanterns) {
       const k = .78 + .12 * Math.sin(t * 9 + L.ph) + .08 * Math.sin(t * 23 + L.ph * 2);
@@ -14751,6 +14936,61 @@ H3D.seats = () => {
 };
 H3D.seats();
 
+/* ---------- афиша вечера: латунный стенд с ближайшим событием (VENUE.events) ----------
+   Место задаёт заведение: VENUE.eventStand = { pos: [x, z], rot, zone, kind }; kind: "counter" — рама на стойке (по умолчанию,
+   видна и на телефоне), "floor" — напольный мольберт для зала, где у входа есть место. */
+const EVENT_STAND = (() => {
+  const ev = vxNextEvent();
+  if (!ev) return null;
+  const S = Object.assign({ pos: [-.85, -2.25], rot: .14, zone: 1, kind: "counter" }, VENUE.eventStand || {});
+  const ac = vxAccent(ev), F = VENUE.theme.fonts;
+  const poster = canvasTex(512, 720, (g, w, h) => {
+    const bg = g.createLinearGradient(0, 0, 0, h);
+    bg.addColorStop(0, "#2a0c12"); bg.addColorStop(1, "#0e0406");
+    g.fillStyle = bg; g.fillRect(0, 0, w, h);
+    g.strokeStyle = ac; g.lineWidth = 6; g.strokeRect(16, 16, w - 32, h - 32);
+    g.globalAlpha = .5; g.lineWidth = 2; g.strokeRect(30, 30, w - 60, h - 60); g.globalAlpha = 1;
+    g.textAlign = "center";
+    g.fillStyle = "#c2a784"; g.font = `italic 26px ${F.text}, Georgia, serif`; g.fillText("АФИША ВЕЧЕРА", w / 2, 96);
+    g.fillStyle = ac; g.font = `34px ${F.display}, Georgia, serif`; g.fillText(vxEventDay(ev), w / 2, 168);
+    g.font = `96px ${F.display}, Georgia, serif`; g.fillText(ev.time, w / 2, 280);
+    g.fillStyle = "#f1e4cc";
+    let size = 64; g.font = `${size}px ${F.display}, Georgia, serif`;
+    let lines = vxWrap(g, ev.title, w - 80);
+    while (lines.length > 3 && size > 36) { size -= 6; g.font = `${size}px ${F.display}, Georgia, serif`; lines = vxWrap(g, ev.title, w - 80); }
+    let y = 380;
+    lines.slice(0, 3).forEach(l => { g.fillText(l, w / 2, y); y += size * 1.1; });
+    if (ev.lineup) { g.fillStyle = "#d6aa5c"; g.font = `italic 26px ${F.text}, Georgia, serif`; vxWrap(g, ev.lineup, w - 90).slice(0, 3).forEach(l => { y += 36; g.fillText(l, w / 2, y); }); }
+    g.fillStyle = "#c2a784"; g.font = `22px ${F.text}, Georgia, serif`; g.fillText("нажмите, чтобы занять стол", w / 2, h - 58);
+  });
+  const onBar = S.kind !== "floor";
+  const g = group(S.pos[0], onBar ? CT.top : 0, S.pos[1]);
+  g.rotation.y = S.rot;
+  if (onBar) {
+    // настольная рама на стойке: латунь, наклон назад, опора сзади
+    const frame = group(0, .235, 0, g);
+    frame.rotation.x = -.16;
+    box(-.175, .175, -.235, .235, -.01, 0, M.brass, frame, 0);
+    mesh(new THREE.PlaneGeometry(.32, .45), basic({ map: poster }), 0, 0, .002, frame);
+    const leg = mesh(new THREE.BoxGeometry(.02, .42, .008), M.brass, 0, .2, -.07, g);
+    leg.rotation.x = .3;
+    box(-.18, .18, 0, .012, -.03, .03, M.brass, g, 0);
+    glowSprite(0xffc890, .55, 0, .26, .08, g, .1);
+  } else {
+    // напольный мольберт: три латунные ножки, полка и рама с афишей
+    const leg = (x, z, rx, rz) => { const m = mesh(new THREE.CylinderGeometry(.011, .014, 1.72, 8), M.brass, x, .84, z, g); m.rotation.set(rx, 0, rz); };
+    leg(-.3, .02, -.1, -.1); leg(.3, .02, -.1, .1); leg(0, -.3, .32, 0);
+    box(-.36, .36, .9, .93, -.02, .07, M.brass, g, 0);
+    const frame = group(0, 1.29, .02, g);
+    frame.rotation.x = -.1;
+    box(-.3, .3, -.4, .4, -.012, 0, M.brass, frame, 0);
+    mesh(new THREE.PlaneGeometry(.54, .76), basic({ map: poster }), 0, 0, .002, frame);
+    glowSprite(0xffc890, .9, 0, 1.34, .14, g, .12);
+  }
+  hot(g, S.zone, `Афиша: ${ev.title}`, () => vxEvent(ev), { grow: .04 });
+  return { g, ev };
+})();
+
 /* ---------- колода вопросов на столике у камина ---------- */
 (() => {
   if (!VENUE.deck) return;
@@ -14762,15 +15002,15 @@ H3D.seats();
     g.fillStyle = "#d6aa5c"; g.font = "86px Forum, Georgia, serif"; g.textAlign = "center"; g.textBaseline = "middle";
     g.fillText(VENUE.meta.name.charAt(0), w / 2, h / 2 + 4);
   });
-  const x = FP.x - 1.93 - .17, z = FP.z + .06;   // столик курилки: центр в 6.05, край у кресел
-  const deck = group(x, .481, z);
-  deck.rotation.y = .5;
+  // столик курилки (центр в 6.05, край у кресел); нет курилки — колода лежит на стойке
+  const deck = FEAT.smoke ? group(FP.x - 1.93 - .17, .481, FP.z + .06) : group(1.82, CT.top, -2.22);
+  deck.rotation.y = FEAT.smoke ? .5 : -.35;
   const edge = std({ color: 0xe9dfcb, roughness: .8 });
   mesh(new THREE.BoxGeometry(.066, .024, .092), [edge, edge, std({ map: back, roughness: .55 }), edge, edge, edge], 0, .012, 0, deck);
   // верхняя карта чуть сдвинута — видно, что это колода
   const top = mesh(new THREE.PlaneGeometry(.066, .092), std({ map: back, roughness: .55 }), .006, .0255, -.004, deck);
   top.rotation.set(-Math.PI / 2, 0, .08);
-  hot(deck, 2, "Колода вопросов", () => vxDeck(), { grow: .12 });
+  hot(deck, FEAT.smoke ? 2 : 1, "Колода вопросов", () => vxDeck(), { grow: .12 });
 })();
 
 /* ---------- спешл недели: табличка-домик на стойке ---------- */
@@ -14790,7 +15030,8 @@ H3D.seats();
     g.fillStyle = "#d6aa5c"; g.fillRect(w / 2 - 40, 156, 80, 2);
     g.fillStyle = "#c2a784"; g.font = "20px Literata, Georgia, serif"; g.fillText("спросите у бармена", w / 2, 188);
   });
-  const tent = group(-.82, CT.top, -2.17);
+  // если на этом месте стоит рама с афишей (по умолчанию так), табличка спешла отходит левее
+  const tent = group(vxNextEvent() && !(VENUE.eventStand && VENUE.eventStand.kind === "floor") ? -1.55 : -.82, CT.top, -2.17);
   tent.rotation.y = .22;
   const face = std({ map: tex, roughness: .6 }), backMat = std({ color: 0x1c070b, roughness: .7 });
   for (const s of [1, -1]) {
@@ -14824,7 +15065,7 @@ onTick((t, dt) => {
   if (E.t > 7) { E.t = -1; E.s.visible = false; }
 });
 (() => {
-  const fp = HOT.find(h => h.userData.hot.zone === 2 && (h.userData.hot.label === "Подбросить дров" || h.userData.hot.label === "Свечи в камине"));
+  const fp = FEAT.smoke && HOT.find(h => h.userData.hot.zone === 2 && (h.userData.hot.label === "Подбросить дров" || h.userData.hot.label === "Свечи в камине"));
   if (!fp) return;
   const act = fp.userData.hot.act;
   fp.userData.hot.act = () => {

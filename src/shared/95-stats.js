@@ -2,10 +2,11 @@
    stats/<бар>/<гггг-мм-дд>/<событие>: n — счётчик, u/<анонимный id> — отметка, что этот браузер уже посчитан.
    Правила базы пропускают только «+1» вместе с новой отметкой: один браузер — один раз в день на событие.
    Личных данных нет: только анонимный id Firebase. Не считаются: хозяин, проверки (?time=, #test…), локальный запуск.
-   События: menu — открыл барную карту, seat — нажал место для брони в 3D, book — подготовил заявку,
-   send — нажал WhatsApp или Telegram, story — получил карточку для сторис, story_save — поделился или скачал её,
-   treat — открыл ссылку «угостить». Смотреть цифры: консоль Firebase → Realtime Database → stats. */
-  const STAT_EVENTS = ["menu", "seat", "book", "send", "story", "story_save", "treat"];
+   События: menu_open — открыл барную карту, event_open — открыл афишу вечера, booking_click — начал бронь
+   (место в 3D или «Занять стол на этот вечер»), booking_send — нажал WhatsApp или Telegram с готовой заявкой,
+   story_share — поделился или скачал карточку для сторис, treat_open — открыл ссылку «угостить».
+   Смотреть цифры: консоль Firebase → Realtime Database → stats. */
+  const STAT_EVENTS = ["menu_open", "event_open", "booking_click", "booking_send", "story_share", "treat_open"];
   const STAT_OFF = (() => {
     try {
       const q = new URLSearchParams(location.search);
@@ -27,5 +28,5 @@
   /* барная карта открылась — откуда бы её ни открыли */
   (() => {
     const mix = document.getElementById("mix");
-    if (mix) new MutationObserver(() => { if (mix.open) vxStat("menu"); }).observe(mix, { attributes: true, attributeFilter: ["open"] });
+    if (mix) new MutationObserver(() => { if (mix.open) vxStat("menu_open"); }).observe(mix, { attributes: true, attributeFilter: ["open"] });
   })();

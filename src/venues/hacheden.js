@@ -18,10 +18,11 @@
       codePrefix: "HCH"
     },
     /* возможности заведения: выключенное движок не показывает и не запускает.
+       street — улица и стук в дверь перед входом, nook — читальня, smoke — курилка с камином,
        cellar — тайный погреб, stage — сцена с джаз-бэндом, bartenderShow — 3D-шоу приготовления,
        booking — бронь мест и барный пропуск (ещё нужны контакты в meta), quests — сквозной квест,
        liveBar — живой общий бар через Firebase */
-    features: { cellar: true, stage: true, bartenderShow: true, booking: true, quests: true, liveBar: true },
+    features: { street: true, nook: true, smoke: true, cellar: true, stage: true, bartenderShow: true, booking: true, quests: true, liveBar: true },
     theme: {
       vars: { "--brass": "#d6aa5c", "--cream": "#f1e4cc", "--muted": "#c2a784", "--walnut": "#4a2c1a", "--bg": "#070304" },
       fonts: { display: "Forum", text: "Literata" }

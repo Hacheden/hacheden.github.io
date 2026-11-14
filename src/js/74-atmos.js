@@ -21,7 +21,7 @@ onSetting(k => {
 
 /* ---------- свет и звук комнат ---------- */
 function applyRooms() {
-  NOOK.lampMode = LAMP_MUL[ROOMS.lamp] || 1;
+  NOOK.lampMode = LAMP_MUL[ROOMS.lamp] || 1;   // без читальни и курилки (заглушки) — просто числа в пустых объектах
   if (NOOK.lampGlow) NOOK.lampGlow.material.opacity = .5 * Math.min(1.3, NOOK.lampMode);
   ZONE_LIGHT[0] = FILL_MUL[ROOMS.lib] || 1;
   ZONE_LIGHT[2] = ROOMS.smoke === "dim" ? .5 : 1;
@@ -98,7 +98,7 @@ chipOnly(2, "Атмосфера", openAtmo);
 
 /* ---------- читальня: стопка рассказов и книга, что светится без свечи ---------- */
 const LIB = {};
-{
+if (FEAT.nook) {
   const dx = NOOK.lampGlow.position.x + .5, top = .785;   // стол писателя у окна
   const stack = group(dx - .64, top, -4.1);
   const covers = [0x5a1420, 0x1f3a2c, 0x2a2440];
@@ -178,7 +178,7 @@ const LIB = {};
 
 /* ---------- редкое событие: кот приходит на стойку ---------- */
 const CATV = { chance: QS.get("rare") === "cat" ? 1 : .2, done: false, on: false, since: 0 };
-CATV.today = Math.random() < CATV.chance;
+CATV.today = FEAT.smoke && Math.random() < CATV.chance;   // кот живёт в курилке: нет курилки — нет и кота
 setInterval(() => {
   if (!CATV.today || CATV.done || CATV.on || !started || curZone !== 1 || busy || SEAT.on || modalOpen() || mixDlg.open || STREET.on) { CATV.since = 0; return; }
   CATV.since += 5;

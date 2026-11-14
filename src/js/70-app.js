@@ -62,7 +62,10 @@ function runFlight() {
 
 /* ---------- интерфейс ---------- */
 const navBtns = [...document.querySelectorAll("#nav button")];
-if (!FEAT.stage && navBtns[3]) navBtns[3].hidden = true;   // у заведения нет сцены
+/* залы, которых у заведения нет (заглушки), не показываются; остался один бар — нет и переключателя */
+const ZONE_ON = [FEAT.nook, true, FEAT.smoke, FEAT.stage, FEAT.cellar && FEAT.nook];
+navBtns.forEach(b => { if (!ZONE_ON[+b.dataset.zone]) b.hidden = true; });
+if (navBtns.filter(b => !b.hidden).length < 2) document.getElementById("nav").hidden = true;
 const titleEl = document.getElementById("zone-title"), subEl = document.getElementById("zone-sub");
 const spotsEl = document.getElementById("spots"), tip = document.getElementById("tip");
 function renderZoneUI(i) {
@@ -90,8 +93,7 @@ function renderZoneUI(i) {
 }
 function goZone(i, dur = 1.9) {
   i = clamp(i, 0, ZONES.length - 1);
-  if (i === 3 && !FEAT.stage) i = 1;        // выключенные залы: вместо сцены — бар, вместо погреба — читальня
-  if (i === 4 && !FEAT.cellar) i = 0;
+  if (!ZONE_ON[i]) i = 1;                    // зала нет — остаёмся в баре
   if (typeof CEL !== "undefined" && CEL.busy) return Promise.resolve();
   const cross = (curZone === 4) !== (i === 4);
   leaveSeat();
@@ -241,7 +243,7 @@ function bakeEnvironment() {
 }
 
 /* ---------- главный цикл ---------- */
-let last = performance.now(), frames = 0, slowAcc = 0, slowN = 0, slowHits = 0, startedAt = 0, neonT = 6 + Math.random() * 6, flashT = 6 + Math.random() * 8;
+let last = performance.now(), frames = 0, slowAcc = 0, slowN = 0, slowHits = 0, startedAt = 0, neonT = 6 + Math.random() * 6;
 const _p = V3(), _t = V3(), _d = V3();
 const GYRO = { on: false, x: 0, y: 0 };   // наклон телефона (заполняет 92-venue.js)
 function tick(now) {
@@ -305,64 +307,6 @@ function tick(now) {
   }
 
   updateFigures(t, dt);
-  // камин
-  FIRE.boost += (1 - FIRE.boost) * dt * .5;
-  const fl = .78 + .14 * Math.sin(t * 7.3) + .1 * Math.sin(t * 13.1 + 1) + .06 * Math.sin(t * 23.7);
-  FIRE.lvl += ((FIRE.on ? 1 : .1) - FIRE.lvl) * Math.min(1, dt * 1.2);
-  LIGHTS.fire.intensity = LIGHTS.fire.userData.base * fl * FIRE.boost * FIRE.lvl;
-  for (const f of FIRE.flames) { f.visible = FIRE.lvl > .25; f.scale.y = Math.max(.05, Math.min(1, (FIRE.lvl - .2) * 1.3)); }
-  for (const m of flameMats) { m.uniforms.uTime.value = t; m.uniforms.uBoost.value = Math.min(1.35, FIRE.boost); }
-  FIRE.logMat.emissiveIntensity = .3 + .12 * Math.sin(t * 2.1) * fl;
-  FIRE.glow.material.opacity = .38 * fl * FIRE.boost * (.25 + .75 * FIRE.lvl);
-  FIRE.embers.pts.visible = FIRE.lvl > .4 && SET.effects && !SET.saver;
-  {
-    const e = FIRE.embers;
-    for (let i = 0; i < e.N; i++) {
-      e.life[i] += dt * (.35 + (i % 5) * .06) * (FIRE.boost > 1.1 ? 1.8 : 1);
-      if (e.life[i] > 1) e.life[i] -= 1;
-      const k = e.life[i];
-      e.pos[i * 3] = 7.82 - k * .25 + Math.sin(i * 7 + t * 2) * .04;
-      e.pos[i * 3 + 1] = .18 + k * 1.1;
-      e.pos[i * 3 + 2] = FP.z + Math.sin(i * 3.1 + t * 1.3) * (.1 + k * .15);
-    }
-    e.eg.attributes.position.needsUpdate = true;
-  }
-  for (const c of FIRE.candles) c.material.opacity = .62 + .12 * Math.sin(t * 9 + c.position.z * 3);
-  // часы
-  {
-    const d = new Date(), h = d.getHours() % 12, m = d.getMinutes() + d.getSeconds() / 60;
-    FIRE.hour.rotation.x = -(h + m / 60) / 12 * Math.PI * 2;
-    FIRE.min.rotation.x = -m / 60 * Math.PI * 2;
-  }
-  // дым сигары
-  for (const s of smoke) {
-    s.userData.t += dt * .09;
-    if (s.userData.t > 1) s.userData.t -= 1;
-    const k = s.userData.t;
-    s.position.set(FIRE.smokeFrom.x + Math.sin(k * 9 + s.id) * .05 * k, FIRE.smokeFrom.y + k * 1.5, FIRE.smokeFrom.z + Math.cos(k * 7 + s.id) * .05 * k);
-    const sc = .06 + k * .5;
-    s.scale.set(sc, sc, 1);
-    s.material.opacity = Math.sin(Math.PI * Math.min(1, k * 1.4)) * .32 * (1 - k);
-    s.material.rotation = k * 2 + s.id;
-  }
-  FIRE.cigarTip.material.color.setHSL(.05, 1, .45 + .1 * Math.sin(t * 1.3));
-  for (const s of haze) { s.position.x += Math.sin(t * .1 + s.userData.ph) * .0015; s.material.opacity = .1 + .05 * Math.sin(t * .2 + s.userData.ph); }
-  if (Music.on) GR.disc.rotation.y -= dt * 3.4;
-  CAT.body.scale.y = .5 + .025 * Math.sin(t * 1.9);
-  // читальня
-  rainMat.uniforms.uTime.value = t;
-  NOOK.flash = Math.max(0, NOOK.flash - dt * 2.2);
-  rainMat.uniforms.uFlash.value = NOOK.flash;
-  const sky = rainMat.uniforms.uSky.value;
-  if (!STREET.on) LIGHTS.window.intensity = LIGHTS.window.userData.base * (1 + sky * 2.5) + NOOK.flash * 30;
-  LIGHTS.lamp.intensity = LIGHTS.lamp.userData.base * LIGHTS.lamp.userData.mul * (NOOK.lampMode || 1) * (NOOK.candleOn ? 1 + .04 * Math.sin(t * 11) : 1);
-  NOOK.globeSpeed += (.25 - NOOK.globeSpeed) * dt * .45;
-  NOOK.globe.rotation.y += NOOK.globeSpeed * dt;
-  if (NOOK.candleOn) { NOOK.flame.scale.set(1, 1 + .15 * Math.sin(t * 13), 1); NOOK.flameGlow.material.opacity = .7 + .1 * Math.sin(t * 9); }
-  moth.position.set(-6.5 + Math.cos(t * 2.4) * .16, 1.13 + Math.sin(t * 3.1) * .05, -4.3 + Math.sin(t * 2.4) * .16);
-  moth.rotation.y = -t * 2.4; moth.scale.x = .6 + .4 * Math.abs(Math.sin(t * 30));
-  flashT -= dt;
-  if (flashT < 0) { flashT = 9 + Math.random() * 12; if (curZone === 0 && WEATHER.storm) lightning(); }
   // неон иногда мигает
   neonT -= dt;
   let nb = 1;
@@ -471,7 +415,8 @@ function showOpen() {
   intro.classList.remove("closed");
   introTitle.classList.remove("off");
   const left = minutesUntil(CLOSE_H);
-  introText.textContent = `${SEASON_INFO[SEASON].line} Стойка, курилка у камина и читальня ждут.`;
+  // у другого бара — его собственный текст (meta.intro): про камин и читальню Hacheden там ни слова
+  introText.textContent = VENUE_ID !== "hacheden" && VENUE.meta.intro ? VENUE.meta.intro : `${SEASON_INFO[SEASON].line} Стойка, курилка у камина и читальня ждут.`;
   statusEl.textContent = OWNER
     ? (openByClock() ? "Режим хозяина. Для гостей открыто до 3:00" : "Режим хозяина: для тебя открыто. Гостей ждём с 17:00")
     : left <= 30 ? `Последний заказ: закрываемся через ${spell(left)}` : "Открыто до 3:00";

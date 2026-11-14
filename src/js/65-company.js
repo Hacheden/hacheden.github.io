@@ -344,5 +344,7 @@ async function ladyLife() {
     if (rng() < .35) { lady.look = camera.position; await sleep(1.6); lady.look = fromFig(lady, V3(0, .92, .36)); }
   }
 }
+/* у заведения без курилки или читальни (заглушки залов) их гостей нет */
+for (const [on, F] of [[FEAT.smoke, reader], [FEAT.smoke, smoker], [FEAT.nook, writer], [FEAT.nook, lady]]) if (!on && F) { F.off = true; F.root.visible = false; }
 function companyLife() { guestLife(); readerLife(); smokerLife(); writerLife(); ladyLife(); }
 Object.assign(H3D, { toast: () => pair.length === 2 && clinkToast(pair[0], pair[1]), sip: i => GUESTS[i] && sip(GUESTS[i]), guests: GUESTS });

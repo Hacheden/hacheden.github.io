@@ -13,7 +13,7 @@ rainMat.uniforms.uFrost.value = WEATHER.frost;
 Music.weather(WEATHER.sound);
 
 /* летом камин не топят: в нём стоят свечи */
-const SUMMER_FIRE = SEASON === "summer";
+const SUMMER_FIRE = SEASON === "summer" && FEAT.smoke;
 if (SUMMER_FIRE) {
   FIRE.flames.forEach(f => { f.visible = false; });
   FIRE.glow.visible = false;
@@ -55,9 +55,11 @@ if (FESTIVE) {
   const pts = [];
   for (let x = -3.3; x <= 3.31; x += .66) pts.push(V3(x, 2.97, BB.z0 + .46));
   garland(pts, .08);
-  const mp = [];
-  for (let z = FP.z - 1.1; z <= FP.z + 1.11; z += .55) mp.push(V3(7.5, 1.3, z));
-  garland(mp, .06);
+  if (FEAT.smoke) {
+    const mp = [];
+    for (let z = FP.z - 1.1; z <= FP.z + 1.11; z += .55) mp.push(V3(7.5, 1.3, z));
+    garland(mp, .06);
+  }
   // ёлка в углу курилки
   const t = group(4.45, 0, -3.55);
   mesh(new THREE.CylinderGeometry(.05, .06, .3, 8), M.darkwood, 0, .15, 0, t);
@@ -114,7 +116,7 @@ if (SEASON === "spring") {
     }
   };
   vase(2.35, CT.top, -2.35, 1.1);
-  vase(WIN.x - .65, .785, -4.2, .8);
+  if (FEAT.nook) vase(WIN.x - .65, .785, -4.2, .8);
 }
 if (SEASON === "summer") {
   // ведёрко со льдом и шампанским, фрукты
@@ -135,12 +137,14 @@ if (SEASON === "autumn") {
     for (let i = 0; i < 8; i++) { const a = i / 8 * 6.28; const p = mesh(new THREE.SphereGeometry(.06, 14, 10), m, Math.cos(a) * .045, .055, Math.sin(a) * .045, g); p.scale.set(.75, .9, .75); }
     mesh(new THREE.CylinderGeometry(.008, .012, .04, 6), std({ color: 0x4a3a1a }), 0, .12, 0, g).rotation.z = .3;
   };
+  if (FEAT.smoke) {
   pumpkin(7.72, 1.32, FP.z - .6, 1);
   pumpkin(7.72, 1.32, FP.z + .55, .75, 0xb8851e);
   pumpkin(7.4, .04, FP.z - 1.25, 1.6);
   pumpkin(7.55, .04, FP.z - 1.0, 1.1, 0xc06018);
+  }
   // кленовые листья на подоконнике
-  for (let i = 0; i < 5; i++) { const l = mesh(new THREE.CircleGeometry(.03, 5), std({ color: [0xc04a10, 0x9a2a0a, 0xd08a1a][i % 3], side: THREE.DoubleSide }), WIN.x + R(-.7, .7), WIN.sill + .003, -4.88 + R(-.05, .05)); l.rotation.set(-Math.PI / 2, 0, R(0, 6)); }
+  if (FEAT.nook) for (let i = 0; i < 5; i++) { const l = mesh(new THREE.CircleGeometry(.03, 5), std({ color: [0xc04a10, 0x9a2a0a, 0xd08a1a][i % 3], side: THREE.DoubleSide }), WIN.x + R(-.7, .7), WIN.sill + .003, -4.88 + R(-.05, .05)); l.rotation.set(-Math.PI / 2, 0, R(0, 6)); }
 }
 
 /* ---------- меловая доска с сезонным напитком ---------- */

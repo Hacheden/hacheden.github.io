@@ -164,7 +164,7 @@
   /* Композиции нашего домашнего ансамбля. Всё звучит из синтезатора браузера, записей нет.
      Аккорды записаны в до мажоре, tr — сдвиг тональности в полутонах. Легко добавить свою. */
   /* звук зала из настроек заведения; номер у музыки: 0–2 залы, 3 улица, 4 сцена, 5 погреб */
-  const roomAudio = i => Object.assign({ rain: 1, fire: 0, clinks: 0 }, ((VENUE.rooms[i === 4 ? 3 : i === 3 ? -1 : i] || {}).audio) || {});
+  const roomAudio = i => Object.assign({ rain: 1, fire: 0, clinks: 0 }, ((venueRoom(i === 4 ? 3 : i === 3 ? -1 : i) || {}).audio) || {});
   const C_ = (root, ...notes) => ({ root, notes });
   const TRACKS = [
     { id: "quiet", title: "Тихий час у стойки", artist: "Hacheden House Quartet", mood: "calm", bpm: 68, per: 16, sax: "alt", drums: 1, mel: .09, walk: false, tr: 0,

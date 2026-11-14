@@ -43,7 +43,7 @@
       "$bar": {
         "$day": {
           "$ev": {
-            ".write": "auth != null && $bar.matches(/^[a-z0-9-]{3,32}$/) && $day.matches(/^20[0-9]{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/) && $ev.matches(/^(menu|seat|book|send|story|story_save|treat)$/)",
+            ".write": "auth != null && $bar.matches(/^[a-z0-9-]{3,32}$/) && $day.matches(/^20[0-9]{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/) && $ev.matches(/^(menu_open|event_open|booking_click|booking_send|story_share|treat_open)$/)",
             "n": { ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() : 0) + 1 && newData.parent().child('u').child(auth.uid).val() === true && !data.parent().child('u').child(auth.uid).exists()" },
             "u": {
               "$uid": { ".validate": "$uid === auth.uid && !data.exists() && newData.val() === true && newData.parent().parent().child('n').val() === (data.parent().parent().child('n').exists() ? data.parent().parent().child('n').val() : 0) + 1" }
