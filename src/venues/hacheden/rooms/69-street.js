@@ -342,16 +342,17 @@ async function knockStreet() {
   STREET.step = "knock";
   streetTalk([]);
   hintEl.textContent = "";
-  await flyTo(framed(SHOT.door), STILL ? 0 : 1.8, 0);
+  // ритм входа ~8 с вместо 10: подойти, постучать, глаза в окошке, приветствие (время прочитать), дверь, внутрь
+  await flyTo(framed(SHOT.door), STILL ? 0 : 1.3, 0);
   knock();
-  await sleep(1.2);
+  await sleep(.9);
   SDOOR.eyes.visible = true;
   tween(SDOOR.flap.position, { y: SDOOR.flapY + .11 }, .35, ease.out);
-  await sleep(.6);
+  await sleep(.45);
   await doormanSays(GREET(), 4);
   try { localStorage.setItem("hacheden-visited", "1"); } catch (e) {}
   greeted = true;
-  await sleep(1.5);
+  await sleep(1.7);
   return openDoor();
 }
 async function openDoor() {
@@ -381,9 +382,9 @@ async function openDoor() {
   tween(LIGHTS.window, { intensity: 9 }, 1.2);
   Music.room(1);
   bubbleEl.classList.remove("show");
-  await sleep(.9);
+  await sleep(.55);
   hintEl.textContent = ZONES[1].hint;
-  await flyTo(framed(1), STILL ? 0 : 3.8, 0);
+  await flyTo(framed(1), STILL ? 0 : 3.1, 0);
   // внутри: дверь закрывается, улица засыпает до следующего визита
   app.classList.remove("street");
   STREET.on = false;

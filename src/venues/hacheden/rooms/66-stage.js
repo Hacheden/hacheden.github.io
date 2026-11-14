@@ -39,7 +39,7 @@ const STAGE_M = {
   val.rotation.y = Math.PI;
   box(x0 - .05, x1 + .05, 3.68, 3.72, 5.7, 5.9, M.brass, world, 0);
   // вывеска с лампочками
-  const sign = group((x0 + x1) / 2, 2.86, 5.7);
+  const sign = group((x0 + x1) / 2, 2.74, 5.7);   // ниже, чтобы подпись зала сверху экрана не наезжала на вывеску
   sign.rotation.y = Math.PI;
   const tex = canvasTex(1024, 256, (g, w, hh) => {
     g.fillStyle = "#120608"; g.fillRect(0, 0, w, hh);

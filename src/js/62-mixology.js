@@ -6,7 +6,9 @@ const rr = (a, b) => a + Math.random() * (b - a);
 const chance = p => Math.random() < p;
 const choose = list => list[Math.floor(Math.random() * list.length)];
 function live() { if (SHOW.on && SHOW.gen !== SG) throw ABORT; }
-const SL = () => SHOW.slow || 1;
+// темп шоу: 0.78 — движения бармена быстрее на пятую часть, огненный коктейль идёт ~35 с вместо 49, простые — ~20–25 с
+const TEMPO = .78;
+const SL = () => (SHOW.slow || 1) * TEMPO;
 async function ws(s) { await sleep(SHOW.fast ? Math.min(s, .01) : s * SL()); live(); }
 const PROGS = () => Closeup.PROGRAMS;
 const NOM = { rum: "Ром", tequila: "Текила", gin: "Джин", whisky: "Виски", cognac: "Коньяк", pisco: "Писко", wine: "Красное вино", triple: "Апельсиновый ликёр", cherry: "Вишнёвый ликёр",
@@ -404,7 +406,7 @@ onTick((t, dt) => {
 });
 
 /* ---------- интерфейс: подписи, карточка рецепта, ярлык у бутылки ---------- */
-const showUI = { root: document.getElementById("show-ui"), title: document.getElementById("show-title"), count: document.getElementById("show-count"), text: document.getElementById("show-text"), cap: document.getElementById("show-cap"),
+const showUI = { root: document.getElementById("show-ui"), title: document.getElementById("show-title"), name: document.getElementById("sc-name"), count: document.getElementById("show-count"), text: document.getElementById("show-text"), cap: document.getElementById("show-cap"),
   list: document.getElementById("sc-list"), sub: document.getElementById("sc-sub"), cup: document.getElementById("sc-cup"), tag: document.getElementById("show-tag") };
 document.getElementById("show-skip").addEventListener("click", () => { if (SHOW.on) { SHOW.fast = true; SHOW.gen++; } });
 addEventListener("keydown", e => { if (e.key === "Escape" && SHOW.on) { SHOW.fast = true; SHOW.gen++; } });
@@ -1222,9 +1224,10 @@ onTick((t, dt) => {
     const L = LIGHTS.fire;
     if (tot > .01) _fl.multiplyScalar(1 / tot);
     FIRELT.pos.lerp(tot > .01 ? _fl : FIRELT.pos, smoothK(8, dt));
-    FIRELT.lev += (Math.min(1.6, tot) - FIRELT.lev) * smoothK(6, dt);
-    L.position.copy(FIRELT.pos).add(V3(0, .08, .12));
-    L.intensity = FIRELT.lev * (2.6 + .7 * Math.sin(t * 19) + .4 * Math.sin(t * 37)) ;
+    FIRELT.lev += (Math.min(1.1, tot) - FIRELT.lev) * smoothK(6, dt);
+    // свет чуть впереди пламени, к гостю: тёплый отблеск на бармене, но без пересвета рук и рубашки
+    L.position.copy(FIRELT.pos).add(V3(0, .16, .34));
+    L.intensity = FIRELT.lev * (1.25 + .3 * Math.sin(t * 19) + .18 * Math.sin(t * 37));
   }
 });
 function fireLight(on) {
@@ -1405,8 +1408,8 @@ async function stepFire() {
   const hi = y => [B(-.13, y, .34), B(.13, y, .36)], lo = y => [B(-.13, y, .36), B(.13, y, .37)];
   await Promise.all([move(A.g, hi(1.5)[0], { dur: .5 }), move(Bm.g, lo(1.17)[1], { dur: .5 })]);
   bt.look = mouth(Bm);
-  // четыре прохода, каждый выше прежнего
-  const passes = SHOW.fast ? 1 : 4;
+  // три прохода, каждый выше прежнего
+  const passes = SHOW.fast ? 1 : 3;
   let src = A, dst = Bm;
   for (let i = 0; i < passes; i++) {
     follow(B(0, 1.32 + i * .015, .36));
@@ -1615,7 +1618,8 @@ async function playShow(c) {
   SHOW.on = true; SHOW.ran = true; SHOW.fast = false; SHOW.served = false; SHOW.c = c;
   SG = ++SHOW.gen;
   const prog = (PROGS()[c.id] || [["garnish"]]).concat([["serve"]]);
-  showUI.title.textContent = c.name;
+  showUI.title.textContent = showUI.name.textContent = c.name;
+  showUI.root.classList.remove("docked");
   buildCard(c, prog);
   showUI.root.hidden = false;
   app.classList.add("showing");
@@ -1627,6 +1631,7 @@ async function playShow(c) {
     for (let i = 0; i < prog.length; i++) {
       const st = prog[i];
       caption(st[0] === "serve" ? "" : `Шаг ${i + 1} из ${total}`, stepCaption(st, c));
+      if (i === 0) showUI.root.classList.add("docked");   // дальше крупные планы: название уходит в карточку
       cardStep(i);
       await STEP[st[0]](st, c);
       const next = (prog[i + 1] || [])[0];
@@ -1641,6 +1646,7 @@ async function playShow(c) {
   cleanup(c, aborted);
   SHOW.fast = false;
   showUI.root.hidden = true;
+  showUI.root.classList.remove("docked");
   app.classList.remove("showing");
   SHOW.on = false;
   BT.mode = "free";

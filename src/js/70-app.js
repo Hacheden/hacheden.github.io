@@ -2,11 +2,11 @@
 const ZONES = [
   { name: "Читальня", sub: "Книги до потолка, дождь за окном, письмо на столе", pos: [-2.5, 1.6, 1.25], tgt: [-6.3, 1.3, -3.1], span: 5.4, pull: 2.6,
     hint: "Открой книгу рецептов на кафедре, прочти письмо или задуй свечу." },
-  { name: "Бар", sub: "Бармен на месте, лёд уже в ведёрке", pos: [0, 1.95, 1.45], tgt: [0, 1.48, -4.6], span: 7.0, pull: 3.0,
+  { name: "Бар", sub: "Бармен на месте, лёд уже в ведёрке", pos: [0, 1.95, 1.45], tgt: [0, 1.48, -4.6], span: 7.0, spanP: 4.3, pull: 3.0,
     hint: "Нажми на бутылку или сядь за стойку: бармен подберёт коктейль под настроение." },
   { name: "Курилка", sub: "Камин, кожаные кресла и дверь, в которую лучше постучать", pos: [2.8, 1.6, 1.65], tgt: [7.3, 1.05, -1.9], span: 5.6, pull: 2.4,
     hint: "Постучи в дверь, заведи граммофон или подбрось дров в камин." },
-  { name: "Сцена", sub: BAND_HERE ? "Джаз-бэнд: фортепиано, саксофон, контрабас и щётки" : "Музыканты выходят на сцену в 19:00", pos: [-2.7, 1.62, .55], tgt: [-4.85, 1.22, 5.0], span: 5.0, pull: 2.2,
+  { name: "Сцена", sub: BAND_HERE ? "Джаз-бэнд: фортепиано, саксофон, контрабас и щётки" : "Музыканты выходят на сцену в 19:00", pos: [-2.7, 1.62, .55], tgt: [-4.85, 1.3, 5.0], span: 5.0, pull: 2.2,
     hint: "Каждая нота, которую ты слышишь, сыграна на сцене. Кликни по музыканту — он что-нибудь расскажет." },
   { name: "Погреб", sub: "Тайный погреб под читальней: бочки, свечи и сомелье", pos: [-26, 1.75, 2.3], tgt: [-26.1, .95, -1.2], span: 3.0, pull: 1.0,
     hint: "Выбери вино: сомелье нальёт и расскажет его историю." }
@@ -28,7 +28,8 @@ function framed(z, extra = 0) {
   dir.normalize();
   let vfov = 50;
   const hOf = v => 2 * Math.atan(Math.tan(v / 2 * D2R) * aspect);
-  const span = (c.span || 6) * (aspect < .8 ? .8 : 1);   // на телефоне чуть ближе: остальное можно рассмотреть, проведя пальцем
+  // на телефоне чуть ближе: остальное можно рассмотреть, проведя пальцем; у бара свой кадр (spanP), чтобы бармен не терялся
+  const span = aspect < .62 && c.spanP ? c.spanP : (c.span || 6) * (aspect < .8 ? .8 : 1);
   const need = 2 * Math.atan(span / 2 / dist);
   if (hOf(vfov) < need) vfov = Math.min(68, 2 * Math.atan(Math.tan(need / 2) / aspect) / D2R);
   let d2 = dist;
@@ -75,7 +76,7 @@ function renderZoneUI(i) {
   }, STILL ? 0 : 280);
   if (!mixDlg.open && !busy) hintEl.textContent = ZONES[i].hint;
   spotsEl.innerHTML = "";
-  HOT.filter(h => h.userData.hot.zone === i && !h.userData.hot.noChip && !h.userData.hot.hidden).forEach(h => {
+  HOT.filter(h => h.userData.hot.zone === i && !h.userData.hot.noChip && !h.userData.hot.secret && !h.userData.hot.hidden).forEach(h => {
     const b = document.createElement("button");
     b.type = "button"; b.className = "spot"; b.textContent = h.userData.hot.label;
     b.addEventListener("click", () => activate(h));

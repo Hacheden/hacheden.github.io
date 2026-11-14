@@ -76,10 +76,11 @@ const FP = { x: 7.98, z: -1.7 };
   world.add(embers);
   FIRE.embers = { pos, life, N, eg, pts: embers };
   // картина в раме
-  box(7.93, 7.99, 1.62, 2.52, z - .72, z + .72, M.brass, world, 0);
+  // рама — матовое старое золото, а не зеркальная латунь: иначе ловит огонь камина и светится, как неон
+  box(7.93, 7.99, 1.62, 2.52, z - .72, z + .72, std({ color: 0x7a5a2e, metalness: .55, roughness: .62, envMapIntensity: .5 }), world, 0);
   const pic = mesh(new THREE.PlaneGeometry(1.32, .82), std({ map: TEX.painting, roughness: .8 }), 7.925, 2.07, z);
   pic.rotation.y = -Math.PI / 2;
-  glowSprite(0xffc890, .9, 7.8, 2.6, z, world, .15);
+  glowSprite(0xffc890, .5, 7.8, 2.64, z, world, .08);
   // часы на каминной полке, стрелки идут по-настоящему
   const clock = group(7.78, 1.32, z);
   mesh(new RoundedBoxGeometry(.12, .3, .28, 3, .03), M.walnutGloss, 0, .15, 0, clock);
@@ -284,7 +285,7 @@ const CAT = {};
   for (const s of [-1, 1]) { const e = mesh(new THREE.ConeGeometry(.026, .05, 4), fur, .0, .06, s * .04, CAT.head); e.rotation.x = s * .3; }
   const tail = mesh(new THREE.TorusGeometry(.17, .025, 8, 20, Math.PI * 1.1), fur, -.02, .03, 0, g);
   tail.rotation.x = Math.PI / 2;
-  hot(g, 2, "Кот", () => petCat(), { grow: .05 });
+  hot(g, 2, "Кот", () => petCat(), { grow: .05, secret: true });   // кота находят сами
 })();
 function petCat() {
   tween(CAT.head.rotation, { z: .5 }, .5, ease.out).then(() => wait(1.6)).then(() => tween(CAT.head.rotation, { z: 0 }, .8));

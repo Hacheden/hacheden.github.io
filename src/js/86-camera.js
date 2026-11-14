@@ -85,7 +85,7 @@ onTick((t, dt) => {
   if (IDLE.t > 14 && !SEAT.on && !modalOpen() && !mixDlg.open && !reduceMotion.matches) {
     IDLE.t = 0;
     let i = 0;
-    for (const root of HOT) if (root.userData.hot.zone === curZone && root.visible !== false) { const g = glowOf(root); if (g) setTimeout(() => { g.userData.pulse = Math.max(g.userData.pulse, .55); }, (i++) * 120); }
+    for (const root of HOT) if (root.userData.hot.zone === curZone && !root.userData.hot.secret && root.visible !== false) { const g = glowOf(root); if (g) setTimeout(() => { g.userData.pulse = Math.max(g.userData.pulse, .55); }, (i++) * 120); }
   }
   for (const [root, g] of GLOW) {
     const d = root.userData.hot;

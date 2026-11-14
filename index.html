@@ -710,6 +710,12 @@
   .show-card { position: absolute; right: 22px; top: max(84px, calc(50% - 230px)); width: 248px; box-sizing: border-box; padding: 16px 16px 12px;
     border-radius: 14px; border: 1px solid rgba(214,170,92,.32); background: linear-gradient(rgba(20,8,11,.82), rgba(12,4,7,.86));
     box-shadow: 0 18px 50px rgba(0,0,0,.5); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  /* название: крупно в начале шоу, потом переезжает в карточку, чтобы не закрывать бармена на крупных планах */
+  .show-title { transition: opacity .6s ease, transform .6s ease; }
+  .show-ui.docked .show-title { opacity: 0; transform: translateY(-14px); }
+  .sc-name { margin: 0; max-height: 0; overflow: hidden; opacity: 0; text-align: center; color: #ffe6ea; font: 400 22px/1.15 var(--font-display); letter-spacing: .04em;
+    text-shadow: 0 0 10px rgba(255,92,122,.55); transition: max-height .6s ease, opacity .6s ease .2s, margin .6s ease; }
+  .show-ui.docked .sc-name { max-height: 60px; opacity: 1; margin: 0 0 8px; }
   .sc-cup { display: block; width: 74px; height: 83px; margin: 0 auto 6px; overflow: visible; }
   .sc-cup .gl { fill: rgba(255,255,255,.05); stroke: rgba(241,228,204,.75); stroke-width: 1.6; stroke-linejoin: round; }
   .sc-cup .st { fill: none; stroke: rgba(241,228,204,.75); stroke-width: 1.6; stroke-linecap: round; }
@@ -735,12 +741,15 @@
     .show-card { top: 76px; padding: 10px 12px 8px; width: 230px; }
     .sc-cup { width: 46px; height: 52px; margin-bottom: 2px; }
     .sc-sub { font-size: 11px; margin-bottom: 4px; }
+    .sc-name { font-size: 18px; }
     .sc-list li { font-size: 13.5px; padding: 3px 7px; }
   }
   @media (max-width: 640px) {
     .show-card { top: 116px; right: 8px; left: auto; transform: none; width: 156px; padding: 8px 8px 5px; background: rgba(14,5,8,.62); }
     .sc-cup { width: 36px; height: 40px; margin-bottom: 0; }
     .sc-sub { display: none; }
+    .sc-name { font-size: 15px; }
+    .show-ui.docked .sc-name { margin-bottom: 4px; }
     .sc-list { max-height: 34vh; overflow: hidden; }
     .sc-list li { font-size: 12px; padding: 2px 5px; gap: 5px; grid-template-columns: 7px 1fr auto; }
     .sc-list li .a { font-size: 11px; }
@@ -787,6 +796,16 @@
   .show-ui.closing .show-card, .show-ui.closing .show-tag { display: none; }
   .owner-out:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
   .intro.gone { opacity: 0; visibility: hidden; pointer-events: none; }
+  /* пока открыта заставка, интерфейс бара под ней не просвечивает */
+  body:has(> .intro:not(.gone)) .app > :not(#gl) { opacity: 0; visibility: hidden; }
+  @media (max-width: 640px) {
+    .intro { background: radial-gradient(ellipse at 50% 45%, rgba(40,8,14,.95), rgba(5,1,2,.98) 70%); }
+  }
+  /* на сенсорных экранах — кнопки не меньше 44 px, чтобы попадать пальцем с первого раза */
+  @media (pointer: coarse) {
+    .spot, .nav button, .talk button, .peek, .show-skip { min-height: 44px; }
+    .spot { padding-top: 0; padding-bottom: 0; }
+  }
   .intro h1 { margin: 0; font: 400 clamp(56px, 11vw, 120px)/1 var(--font-display); letter-spacing: .06em; color: #ffe9ee;
     text-shadow: 0 0 6px #fff, 0 0 18px #ff4d6d, 0 0 44px #ff2450, 0 0 90px #ff2450; animation: flicker 2.4s .3s both; }
   .intro h1.off { color: #4a2a30; text-shadow: 0 0 2px rgba(255,80,110,.25); animation: none; }
@@ -844,6 +863,7 @@
     <h2 class="show-title" id="show-title"></h2>
     <button class="show-skip" id="show-skip" type="button">Пропустить</button>
     <aside class="show-card" aria-label="Рецепт">
+      <p class="sc-name" id="sc-name"></p>
       <svg class="sc-cup" id="sc-cup" viewBox="0 0 100 112" aria-hidden="true"></svg>
       <p class="sc-sub" id="sc-sub"></p>
       <ol class="sc-list" id="sc-list"></ol>
@@ -6814,10 +6834,11 @@ const FP = { x: 7.98, z: -1.7 };
   world.add(embers);
   FIRE.embers = { pos, life, N, eg, pts: embers };
   // картина в раме
-  box(7.93, 7.99, 1.62, 2.52, z - .72, z + .72, M.brass, world, 0);
+  // рама — матовое старое золото, а не зеркальная латунь: иначе ловит огонь камина и светится, как неон
+  box(7.93, 7.99, 1.62, 2.52, z - .72, z + .72, std({ color: 0x7a5a2e, metalness: .55, roughness: .62, envMapIntensity: .5 }), world, 0);
   const pic = mesh(new THREE.PlaneGeometry(1.32, .82), std({ map: TEX.painting, roughness: .8 }), 7.925, 2.07, z);
   pic.rotation.y = -Math.PI / 2;
-  glowSprite(0xffc890, .9, 7.8, 2.6, z, world, .15);
+  glowSprite(0xffc890, .5, 7.8, 2.64, z, world, .08);
   // часы на каминной полке, стрелки идут по-настоящему
   const clock = group(7.78, 1.32, z);
   mesh(new RoundedBoxGeometry(.12, .3, .28, 3, .03), M.walnutGloss, 0, .15, 0, clock);
@@ -7022,7 +7043,7 @@ const CAT = {};
   for (const s of [-1, 1]) { const e = mesh(new THREE.ConeGeometry(.026, .05, 4), fur, .0, .06, s * .04, CAT.head); e.rotation.x = s * .3; }
   const tail = mesh(new THREE.TorusGeometry(.17, .025, 8, 20, Math.PI * 1.1), fur, -.02, .03, 0, g);
   tail.rotation.x = Math.PI / 2;
-  hot(g, 2, "Кот", () => petCat(), { grow: .05 });
+  hot(g, 2, "Кот", () => petCat(), { grow: .05, secret: true });   // кота находят сами
 })();
 function petCat() {
   tween(CAT.head.rotation, { z: .5 }, .5, ease.out).then(() => wait(1.6)).then(() => tween(CAT.head.rotation, { z: 0 }, .8));
@@ -7841,7 +7862,9 @@ const rr = (a, b) => a + Math.random() * (b - a);
 const chance = p => Math.random() < p;
 const choose = list => list[Math.floor(Math.random() * list.length)];
 function live() { if (SHOW.on && SHOW.gen !== SG) throw ABORT; }
-const SL = () => SHOW.slow || 1;
+// темп шоу: 0.78 — движения бармена быстрее на пятую часть, огненный коктейль идёт ~35 с вместо 49, простые — ~20–25 с
+const TEMPO = .78;
+const SL = () => (SHOW.slow || 1) * TEMPO;
 async function ws(s) { await sleep(SHOW.fast ? Math.min(s, .01) : s * SL()); live(); }
 const PROGS = () => Closeup.PROGRAMS;
 const NOM = { rum: "Ром", tequila: "Текила", gin: "Джин", whisky: "Виски", cognac: "Коньяк", pisco: "Писко", wine: "Красное вино", triple: "Апельсиновый ликёр", cherry: "Вишнёвый ликёр",
@@ -8239,7 +8262,7 @@ onTick((t, dt) => {
 });
 
 /* ---------- интерфейс: подписи, карточка рецепта, ярлык у бутылки ---------- */
-const showUI = { root: document.getElementById("show-ui"), title: document.getElementById("show-title"), count: document.getElementById("show-count"), text: document.getElementById("show-text"), cap: document.getElementById("show-cap"),
+const showUI = { root: document.getElementById("show-ui"), title: document.getElementById("show-title"), name: document.getElementById("sc-name"), count: document.getElementById("show-count"), text: document.getElementById("show-text"), cap: document.getElementById("show-cap"),
   list: document.getElementById("sc-list"), sub: document.getElementById("sc-sub"), cup: document.getElementById("sc-cup"), tag: document.getElementById("show-tag") };
 document.getElementById("show-skip").addEventListener("click", () => { if (SHOW.on) { SHOW.fast = true; SHOW.gen++; } });
 addEventListener("keydown", e => { if (e.key === "Escape" && SHOW.on) { SHOW.fast = true; SHOW.gen++; } });
@@ -9057,9 +9080,10 @@ onTick((t, dt) => {
     const L = LIGHTS.fire;
     if (tot > .01) _fl.multiplyScalar(1 / tot);
     FIRELT.pos.lerp(tot > .01 ? _fl : FIRELT.pos, smoothK(8, dt));
-    FIRELT.lev += (Math.min(1.6, tot) - FIRELT.lev) * smoothK(6, dt);
-    L.position.copy(FIRELT.pos).add(V3(0, .08, .12));
-    L.intensity = FIRELT.lev * (2.6 + .7 * Math.sin(t * 19) + .4 * Math.sin(t * 37)) ;
+    FIRELT.lev += (Math.min(1.1, tot) - FIRELT.lev) * smoothK(6, dt);
+    // свет чуть впереди пламени, к гостю: тёплый отблеск на бармене, но без пересвета рук и рубашки
+    L.position.copy(FIRELT.pos).add(V3(0, .16, .34));
+    L.intensity = FIRELT.lev * (1.25 + .3 * Math.sin(t * 19) + .18 * Math.sin(t * 37));
   }
 });
 function fireLight(on) {
@@ -9240,8 +9264,8 @@ async function stepFire() {
   const hi = y => [B(-.13, y, .34), B(.13, y, .36)], lo = y => [B(-.13, y, .36), B(.13, y, .37)];
   await Promise.all([move(A.g, hi(1.5)[0], { dur: .5 }), move(Bm.g, lo(1.17)[1], { dur: .5 })]);
   bt.look = mouth(Bm);
-  // четыре прохода, каждый выше прежнего
-  const passes = SHOW.fast ? 1 : 4;
+  // три прохода, каждый выше прежнего
+  const passes = SHOW.fast ? 1 : 3;
   let src = A, dst = Bm;
   for (let i = 0; i < passes; i++) {
     follow(B(0, 1.32 + i * .015, .36));
@@ -9450,7 +9474,8 @@ async function playShow(c) {
   SHOW.on = true; SHOW.ran = true; SHOW.fast = false; SHOW.served = false; SHOW.c = c;
   SG = ++SHOW.gen;
   const prog = (PROGS()[c.id] || [["garnish"]]).concat([["serve"]]);
-  showUI.title.textContent = c.name;
+  showUI.title.textContent = showUI.name.textContent = c.name;
+  showUI.root.classList.remove("docked");
   buildCard(c, prog);
   showUI.root.hidden = false;
   app.classList.add("showing");
@@ -9462,6 +9487,7 @@ async function playShow(c) {
     for (let i = 0; i < prog.length; i++) {
       const st = prog[i];
       caption(st[0] === "serve" ? "" : `Шаг ${i + 1} из ${total}`, stepCaption(st, c));
+      if (i === 0) showUI.root.classList.add("docked");   // дальше крупные планы: название уходит в карточку
       cardStep(i);
       await STEP[st[0]](st, c);
       const next = (prog[i + 1] || [])[0];
@@ -9476,6 +9502,7 @@ async function playShow(c) {
   cleanup(c, aborted);
   SHOW.fast = false;
   showUI.root.hidden = true;
+  showUI.root.classList.remove("docked");
   app.classList.remove("showing");
   SHOW.on = false;
   BT.mode = "free";
@@ -9878,7 +9905,7 @@ const STAGE_M = {
   val.rotation.y = Math.PI;
   box(x0 - .05, x1 + .05, 3.68, 3.72, 5.7, 5.9, M.brass, world, 0);
   // вывеска с лампочками
-  const sign = group((x0 + x1) / 2, 2.86, 5.7);
+  const sign = group((x0 + x1) / 2, 2.74, 5.7);   // ниже, чтобы подпись зала сверху экрана не наезжала на вывеску
   sign.rotation.y = Math.PI;
   const tex = canvasTex(1024, 256, (g, w, hh) => {
     g.fillStyle = "#120608"; g.fillRect(0, 0, w, hh);
@@ -10302,7 +10329,7 @@ const SDOOR2 = { g: group(SECRET.hx, 0, SECRET.hz), a: 0 };
   mesh(new THREE.BoxGeometry(.004, .03, .052), M.brass, b.d + .037, b.h * .7, 0, hinge);
   mesh(new THREE.BoxGeometry(.004, .03, .052), M.brass, b.d + .037, b.h * .3, 0, hinge);
   SDOOR2.lever = hinge;
-  if (FEAT.cellar) hot(hinge, 0, "Книга, которая торчит", () => enterCellar(), { grow: .15 });
+  if (FEAT.cellar) hot(hinge, 0, "Книга, которая торчит", () => enterCellar(), { grow: .15, secret: true });   // тайник: только в самой сцене, без кнопки внизу
 })();
 /* потайной ход за стеной: каменные стены, площадка и ступени вниз, свеча */
 (() => {
@@ -10866,6 +10893,39 @@ async function sitDown() {
   await fly;
   if (g !== SEAT.gen) return;
   bt.look = camera.position;
+  // напиток уже подан: бармен придвигает бокал к гостю и не спрашивает про настроение заново
+  if (servedGlass && servedGlass.parent === world) {
+    const fresh = SIP.glass !== servedGlass, full = fresh || SIP.frac > .02;
+    const to = V3(SEAT_X + .06, CT.top, -2.14);
+    const gp = servedGlass.position, dist = gp.distanceTo(to);
+    if (dist > .04) {
+      BT.mode = "free";
+      if (Math.abs(gp.x - bt.x) > .45) await walkTo(gp.x + .2, BT_Z, 0);
+      const handOn = () => { const l = toFig(bt, gp); reach(bt.R, l.x + .02, CT.top + .06, l.z - .05, V3(0, -.3, 1), DIR.in(-1), .3); };
+      handOn();
+      await sleep(STILL ? 0 : .45);
+      if (g !== SEAT.gen) return;
+      const walk = walkTo(SEAT_X + .04, BT_Z + .1, 0);
+      let done = false;
+      tween(gp, { x: to.x, y: to.y, z: to.z }, STILL ? .001 : clamp(dist * 1.1, .8, 2), ease.io).then(() => { done = true; });
+      while (!done) { handOn(); await sleep(.05); }
+      await walk;
+      reach(bt.R, -.23, .92, .06, DIR.down, V3(1, 0, .3), .25);
+      BT.mode = "polish";
+      if (g !== SEAT.gen) return;
+    }
+    if (fresh) prepSip();
+    if (full) {
+      await btSay(choose(["С возвращением. Ваш бокал — я придвинул поближе.", "Присаживайтесь, ваш напиток вас дождался."]));
+      if (g !== SEAT.gen) return;
+      seatAnswers();
+    } else {
+      await btSay("Вижу, бокал уже пуст. Повторим?");
+      if (g !== SEAT.gen) return;
+      answers([["Ещё по одной", oneMore], standBtn]);
+    }
+    return;
+  }
   await btSay("Добрый вечер! Присаживайтесь. Какое сегодня настроение?");
   await sleep(.5);
   if (g !== SEAT.gen) return;
@@ -11956,16 +12016,17 @@ async function knockStreet() {
   STREET.step = "knock";
   streetTalk([]);
   hintEl.textContent = "";
-  await flyTo(framed(SHOT.door), STILL ? 0 : 1.8, 0);
+  // ритм входа ~8 с вместо 10: подойти, постучать, глаза в окошке, приветствие (время прочитать), дверь, внутрь
+  await flyTo(framed(SHOT.door), STILL ? 0 : 1.3, 0);
   knock();
-  await sleep(1.2);
+  await sleep(.9);
   SDOOR.eyes.visible = true;
   tween(SDOOR.flap.position, { y: SDOOR.flapY + .11 }, .35, ease.out);
-  await sleep(.6);
+  await sleep(.45);
   await doormanSays(GREET(), 4);
   try { localStorage.setItem("hacheden-visited", "1"); } catch (e) {}
   greeted = true;
-  await sleep(1.5);
+  await sleep(1.7);
   return openDoor();
 }
 async function openDoor() {
@@ -11995,9 +12056,9 @@ async function openDoor() {
   tween(LIGHTS.window, { intensity: 9 }, 1.2);
   Music.room(1);
   bubbleEl.classList.remove("show");
-  await sleep(.9);
+  await sleep(.55);
   hintEl.textContent = ZONES[1].hint;
-  await flyTo(framed(1), STILL ? 0 : 3.8, 0);
+  await flyTo(framed(1), STILL ? 0 : 3.1, 0);
   // внутри: дверь закрывается, улица засыпает до следующего визита
   app.classList.remove("street");
   STREET.on = false;
@@ -12015,11 +12076,11 @@ hot(SDOOR.g, "street", "Постучать в дверь", () => { if (STREET.st
 const ZONES = [
   { name: "Читальня", sub: "Книги до потолка, дождь за окном, письмо на столе", pos: [-2.5, 1.6, 1.25], tgt: [-6.3, 1.3, -3.1], span: 5.4, pull: 2.6,
     hint: "Открой книгу рецептов на кафедре, прочти письмо или задуй свечу." },
-  { name: "Бар", sub: "Бармен на месте, лёд уже в ведёрке", pos: [0, 1.95, 1.45], tgt: [0, 1.48, -4.6], span: 7.0, pull: 3.0,
+  { name: "Бар", sub: "Бармен на месте, лёд уже в ведёрке", pos: [0, 1.95, 1.45], tgt: [0, 1.48, -4.6], span: 7.0, spanP: 4.3, pull: 3.0,
     hint: "Нажми на бутылку или сядь за стойку: бармен подберёт коктейль под настроение." },
   { name: "Курилка", sub: "Камин, кожаные кресла и дверь, в которую лучше постучать", pos: [2.8, 1.6, 1.65], tgt: [7.3, 1.05, -1.9], span: 5.6, pull: 2.4,
     hint: "Постучи в дверь, заведи граммофон или подбрось дров в камин." },
-  { name: "Сцена", sub: BAND_HERE ? "Джаз-бэнд: фортепиано, саксофон, контрабас и щётки" : "Музыканты выходят на сцену в 19:00", pos: [-2.7, 1.62, .55], tgt: [-4.85, 1.22, 5.0], span: 5.0, pull: 2.2,
+  { name: "Сцена", sub: BAND_HERE ? "Джаз-бэнд: фортепиано, саксофон, контрабас и щётки" : "Музыканты выходят на сцену в 19:00", pos: [-2.7, 1.62, .55], tgt: [-4.85, 1.3, 5.0], span: 5.0, pull: 2.2,
     hint: "Каждая нота, которую ты слышишь, сыграна на сцене. Кликни по музыканту — он что-нибудь расскажет." },
   { name: "Погреб", sub: "Тайный погреб под читальней: бочки, свечи и сомелье", pos: [-26, 1.75, 2.3], tgt: [-26.1, .95, -1.2], span: 3.0, pull: 1.0,
     hint: "Выбери вино: сомелье нальёт и расскажет его историю." }
@@ -12041,7 +12102,8 @@ function framed(z, extra = 0) {
   dir.normalize();
   let vfov = 50;
   const hOf = v => 2 * Math.atan(Math.tan(v / 2 * D2R) * aspect);
-  const span = (c.span || 6) * (aspect < .8 ? .8 : 1);   // на телефоне чуть ближе: остальное можно рассмотреть, проведя пальцем
+  // на телефоне чуть ближе: остальное можно рассмотреть, проведя пальцем; у бара свой кадр (spanP), чтобы бармен не терялся
+  const span = aspect < .62 && c.spanP ? c.spanP : (c.span || 6) * (aspect < .8 ? .8 : 1);
   const need = 2 * Math.atan(span / 2 / dist);
   if (hOf(vfov) < need) vfov = Math.min(68, 2 * Math.atan(Math.tan(need / 2) / aspect) / D2R);
   let d2 = dist;
@@ -12088,7 +12150,7 @@ function renderZoneUI(i) {
   }, STILL ? 0 : 280);
   if (!mixDlg.open && !busy) hintEl.textContent = ZONES[i].hint;
   spotsEl.innerHTML = "";
-  HOT.filter(h => h.userData.hot.zone === i && !h.userData.hot.noChip && !h.userData.hot.hidden).forEach(h => {
+  HOT.filter(h => h.userData.hot.zone === i && !h.userData.hot.noChip && !h.userData.hot.secret && !h.userData.hot.hidden).forEach(h => {
     const b = document.createElement("button");
     b.type = "button"; b.className = "spot"; b.textContent = h.userData.hot.label;
     b.addEventListener("click", () => activate(h));
@@ -13855,7 +13917,7 @@ onTick((t, dt) => {
   if (IDLE.t > 14 && !SEAT.on && !modalOpen() && !mixDlg.open && !reduceMotion.matches) {
     IDLE.t = 0;
     let i = 0;
-    for (const root of HOT) if (root.userData.hot.zone === curZone && root.visible !== false) { const g = glowOf(root); if (g) setTimeout(() => { g.userData.pulse = Math.max(g.userData.pulse, .55); }, (i++) * 120); }
+    for (const root of HOT) if (root.userData.hot.zone === curZone && !root.userData.hot.secret && root.visible !== false) { const g = glowOf(root); if (g) setTimeout(() => { g.userData.pulse = Math.max(g.userData.pulse, .55); }, (i++) * 120); }
   }
   for (const [root, g] of GLOW) {
     const d = root.userData.hot;

@@ -30,7 +30,7 @@ const SDOOR2 = { g: group(SECRET.hx, 0, SECRET.hz), a: 0 };
   mesh(new THREE.BoxGeometry(.004, .03, .052), M.brass, b.d + .037, b.h * .7, 0, hinge);
   mesh(new THREE.BoxGeometry(.004, .03, .052), M.brass, b.d + .037, b.h * .3, 0, hinge);
   SDOOR2.lever = hinge;
-  if (FEAT.cellar) hot(hinge, 0, "Книга, которая торчит", () => enterCellar(), { grow: .15 });
+  if (FEAT.cellar) hot(hinge, 0, "Книга, которая торчит", () => enterCellar(), { grow: .15, secret: true });   // тайник: только в самой сцене, без кнопки внизу
 })();
 /* потайной ход за стеной: каменные стены, площадка и ступени вниз, свеча */
 (() => {

@@ -100,6 +100,39 @@ async function sitDown() {
   await fly;
   if (g !== SEAT.gen) return;
   bt.look = camera.position;
+  // напиток уже подан: бармен придвигает бокал к гостю и не спрашивает про настроение заново
+  if (servedGlass && servedGlass.parent === world) {
+    const fresh = SIP.glass !== servedGlass, full = fresh || SIP.frac > .02;
+    const to = V3(SEAT_X + .06, CT.top, -2.14);
+    const gp = servedGlass.position, dist = gp.distanceTo(to);
+    if (dist > .04) {
+      BT.mode = "free";
+      if (Math.abs(gp.x - bt.x) > .45) await walkTo(gp.x + .2, BT_Z, 0);
+      const handOn = () => { const l = toFig(bt, gp); reach(bt.R, l.x + .02, CT.top + .06, l.z - .05, V3(0, -.3, 1), DIR.in(-1), .3); };
+      handOn();
+      await sleep(STILL ? 0 : .45);
+      if (g !== SEAT.gen) return;
+      const walk = walkTo(SEAT_X + .04, BT_Z + .1, 0);
+      let done = false;
+      tween(gp, { x: to.x, y: to.y, z: to.z }, STILL ? .001 : clamp(dist * 1.1, .8, 2), ease.io).then(() => { done = true; });
+      while (!done) { handOn(); await sleep(.05); }
+      await walk;
+      reach(bt.R, -.23, .92, .06, DIR.down, V3(1, 0, .3), .25);
+      BT.mode = "polish";
+      if (g !== SEAT.gen) return;
+    }
+    if (fresh) prepSip();
+    if (full) {
+      await btSay(choose(["С возвращением. Ваш бокал — я придвинул поближе.", "Присаживайтесь, ваш напиток вас дождался."]));
+      if (g !== SEAT.gen) return;
+      seatAnswers();
+    } else {
+      await btSay("Вижу, бокал уже пуст. Повторим?");
+      if (g !== SEAT.gen) return;
+      answers([["Ещё по одной", oneMore], standBtn]);
+    }
+    return;
+  }
   await btSay("Добрый вечер! Присаживайтесь. Какое сегодня настроение?");
   await sleep(.5);
   if (g !== SEAT.gen) return;
