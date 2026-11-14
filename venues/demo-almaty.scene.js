@@ -160,10 +160,14 @@ await Promise.race([
 ]).catch(() => {});
 
 /* ================= реальное время и сезоны ================= */
-/* Бар живёт по часам того, кто зашёл: открыт с 17:00 до 3:00, сезон — по дате.
+/* Бар живёт по часам того, кто зашёл: часы работы — из meta.hours заведения (у Hacheden с 17:00 до 3:00), сезон — по дате.
    Для проверки можно подменить: ?time=21:30&season=winter */
 const QS = new URLSearchParams(location.search);
-const OPEN_H = 17, CLOSE_H = 3, LAST_CALL = 2.5;
+const hourOf = (t, def) => { const m = /^(\d{1,2}):(\d{2})$/.exec(t || "") || /^(\d{1,2}):(\d{2})$/.exec(def); return +m[1] + +m[2] / 60; };
+const VH = VENUE.meta.hours || {};
+const OPEN_H = hourOf(VH.open, "17:00"), CLOSE_H = hourOf(VH.close, "03:00"), LAST_CALL = hourOf(VH.last, "02:30");
+/* часы для текстов: «17:00», «3:00» */
+const HOURS_TXT = { open: (VH.open || "17:00").replace(/^0(?=\d:)/, ""), close: (VH.close || "03:00").replace(/^0(?=\d:)/, "") };
 const T0 = Date.now();
 let fakeBase = null;
 if (/^\d{1,2}(:\d{2})?$/.test(QS.get("time") || "")) {
@@ -5402,7 +5406,7 @@ H3D.post = POST;
 H3D.info = () => ({ calls: renderer.info.render.calls, tris: renderer.info.render.triangles, geos: renderer.info.memory.geometries, tex: renderer.info.memory.textures, dpr: DPR, zone: curZone, busy, btBusy: BT.busy });
 renderZoneUI(1);
 requestAnimationFrame(tick);
-/* ---------- часы работы: открыто с 17:00 до 3:00 ---------- */
+/* ---------- часы работы: из meta.hours заведения (Hacheden — с 17:00 до 3:00) ---------- */
 const introText = document.getElementById("intro-text"), statusEl = document.getElementById("status"), introTitle = intro.querySelector("h1");
 const ownerOut = document.getElementById("owner-out");
 ownerOut.addEventListener("click", () => {
@@ -5441,8 +5445,8 @@ function showClosed(afterVisit) {
   introTitle.classList.add("off");
   introText.textContent = afterVisit || intro.dataset.after
     ? "Бар закрылся. Спасибо, что заглянул! Ждём тебя снова."
-    : "Сейчас закрыто. Бар открывается каждый день в 17:00 и работает до 3:00 ночи.";
-  statusEl.textContent = `Откроемся в 17:00, через ${spell(min)}`;
+    : `Сейчас закрыто. Бар открывается каждый день в ${HOURS_TXT.open} и работает до ${HOURS_TXT.close} ночи.`;
+  statusEl.textContent = `Откроемся в ${HOURS_TXT.open}, через ${spell(min)}`;
   statusEl.hidden = false;
   enter.hidden = true;
 }
@@ -5453,8 +5457,8 @@ function showOpen() {
   // у другого бара — его собственный текст (meta.intro): про камин и читальню Hacheden там ни слова
   introText.textContent = VENUE_ID !== "hacheden" && VENUE.meta.intro ? VENUE.meta.intro : `${SEASON_INFO[SEASON].line} Стойка, курилка у камина и читальня ждут.`;
   statusEl.textContent = OWNER
-    ? (openByClock() ? "Режим хозяина. Для гостей открыто до 3:00" : "Режим хозяина: для тебя открыто. Гостей ждём с 17:00")
-    : left <= 30 ? `Последний заказ: закрываемся через ${spell(left)}` : "Открыто до 3:00";
+    ? (openByClock() ? `Режим хозяина. Для гостей открыто до ${HOURS_TXT.close}` : `Режим хозяина: для тебя открыто. Гостей ждём с ${HOURS_TXT.open}`)
+    : left <= 30 ? `Последний заказ: закрываемся через ${spell(left)}` : `Открыто до ${HOURS_TXT.close}`;
   ownerOut.hidden = !OWNER;
   statusEl.hidden = false;
   enter.hidden = false;
@@ -5477,7 +5481,7 @@ setInterval(() => {
   const h = hoursOf(nowDate());
   if (!OWNER && open && h >= LAST_CALL && h < CLOSE_H && !lastCallShown) {
     lastCallShown = true;
-    ZONES.forEach(z => { z.hint = `Последний заказ: в 3:00 бар закрывается. ${z.hint}`; });
+    ZONES.forEach(z => { z.hint = `Последний заказ: в ${HOURS_TXT.close} бар закрывается. ${z.hint}`; });
     if (!busy && !mixDlg.open) hintEl.textContent = ZONES[curZone].hint;
   }
   if (!open && !CLOSING.on) playClosing();
@@ -5674,7 +5678,7 @@ async function playClosing() {
     bt.look = camera.position;
     await flyTo(framed({ pos: [bt.x + .1, 1.55, -1.25], tgt: [bt.x, 1.5, -3.3], span: 1.6, pull: .4 }), STILL ? 0 : 1.6, 0);
     cAlive(g);
-    say(bt, "Спокойной ночи. Ждём завтра в пять.", 3.2);
+    say(bt, VENUE_ID === "hacheden" ? "Спокойной ночи. Ждём завтра в пять." : `Спокойной ночи. Ждём завтра с ${HOURS_TXT.open}.`, 3.2);
     bt.nod = .1;
     await cw(g, .6);
     bt.nod = 0;
@@ -5691,7 +5695,7 @@ async function playClosing() {
     LIGHTS.fill.intensity = LIGHTS.fill.userData.base;
     SHUT.neon = 1;
     setCam(framed(SHOT.near));
-    cCaption("До завтра. Открываемся в 17:00");
+    cCaption(`До завтра. Открываемся в ${HOURS_TXT.open}`);
     await fade(false, 1.2);
     cAlive(g);
     await cw(g, 1.2);
@@ -7667,12 +7671,15 @@ H3D.seats = () => {
 H3D.seats();
 
 /* ---------- афиша вечера: латунный стенд с ближайшим событием (VENUE.events) ----------
-   Место задаёт заведение: VENUE.eventStand = { pos: [x, z], rot, zone, kind }; kind: "counter" — рама на стойке (по умолчанию,
+   Место задаёт зал заведения: rooms[i].eventStand = { pos: [x, z], rot, kind } (или VENUE.eventStand с zone); kind: "counter" — рама на стойке (по умолчанию,
    видна и на телефоне), "floor" — напольный мольберт для зала, где у входа есть место. */
 const EVENT_STAND = (() => {
   const ev = vxNextEvent();
   if (!ev) return null;
-  const S = Object.assign({ pos: [-.85, -2.25], rot: .14, zone: 1, kind: "counter" }, VENUE.eventStand || {});
+  // место стенда — в зале (rooms[].eventStand, зона берётся из зала) или общим полем VENUE.eventStand
+  const room = VENUE.rooms.find(r => r.eventStand);
+  const S = Object.assign({ pos: [-.85, -2.25], rot: .14, zone: 1, kind: "counter" },
+    room ? Object.assign({ zone: ROOM_ZONE[room.id] ?? 1 }, room.eventStand) : VENUE.eventStand || {});
   const ac = vxAccent(ev), F = VENUE.theme.fonts;
   const poster = canvasTex(512, 720, (g, w, h) => {
     const bg = g.createLinearGradient(0, 0, 0, h);
@@ -7761,7 +7768,8 @@ const EVENT_STAND = (() => {
     g.fillStyle = "#c2a784"; g.font = "20px Literata, Georgia, serif"; g.fillText("спросите у бармена", w / 2, 188);
   });
   // если на этом месте стоит рама с афишей (по умолчанию так), табличка спешла отходит левее
-  const tent = group(vxNextEvent() && !(VENUE.eventStand && VENUE.eventStand.kind === "floor") ? -1.55 : -.82, CT.top, -2.17);
+  const st = (VENUE.rooms.find(r => r.eventStand) || {}).eventStand || VENUE.eventStand;
+  const tent = group(vxNextEvent() && !(st && st.kind === "floor") ? -1.55 : -.82, CT.top, -2.17);
   tent.rotation.y = .22;
   const face = std({ map: tex, roughness: .6 }), backMat = std({ color: 0x1c070b, roughness: .7 });
   for (const s of [1, -1]) {

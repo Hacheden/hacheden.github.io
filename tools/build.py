@@ -10,7 +10,8 @@ index.html = шаблон src/page.html + общие части (src/shared/) + 
 
 Залы склеиваются с движком по номерам в именах файлов (номер задаёт место зала среди файлов движка).
 У бара со своими залами недостающие залы Hacheden заменяются заглушками из src/stubs/ (флаг выключается сам).
-Зал Hacheden можно взять как есть, не копируя: перечислите имена файлов в src/venues/<id>/rooms/use.txt."""
+Зал можно взять как есть, не копируя: перечислите файлы в src/venues/<id>/rooms/use.txt —
+«30-bar.js» (зал Hacheden) или «demo-almaty:20-room.js» (зал другого заведения)."""
 import pathlib
 import re
 import shutil
@@ -32,9 +33,11 @@ def scene_files(vid):
     own = {p.name: p for p in rooms.glob("*.js")}
     use = rooms / "use.txt"
     if vid != FLAGSHIP and use.exists():
-        for name in read(use).split():
-            src = V / FLAGSHIP / "rooms" / name
-            assert src.exists(), f"{vid}/use.txt: у Hacheden нет зала {name}"
+        for line in read(use).split():
+            # «30-bar.js» — зал Hacheden; «demo-almaty:20-room.js» — зал другого заведения
+            owner, _, name = line.rpartition(":")
+            src = V / (owner or FLAGSHIP) / "rooms" / name
+            assert src.exists() and src.suffix == ".js", f"{vid}/use.txt: нет зала {line}"
             own.setdefault(name, src)
     clash = set(own) & set(files)
     assert not clash, f"{vid}: зал и файл движка с одним именем: {sorted(clash)}"

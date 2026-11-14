@@ -162,7 +162,7 @@ async function playClosing() {
     bt.look = camera.position;
     await flyTo(framed({ pos: [bt.x + .1, 1.55, -1.25], tgt: [bt.x, 1.5, -3.3], span: 1.6, pull: .4 }), STILL ? 0 : 1.6, 0);
     cAlive(g);
-    say(bt, "Спокойной ночи. Ждём завтра в пять.", 3.2);
+    say(bt, VENUE_ID === "hacheden" ? "Спокойной ночи. Ждём завтра в пять." : `Спокойной ночи. Ждём завтра с ${HOURS_TXT.open}.`, 3.2);
     bt.nod = .1;
     await cw(g, .6);
     bt.nod = 0;
@@ -179,7 +179,7 @@ async function playClosing() {
     LIGHTS.fill.intensity = LIGHTS.fill.userData.base;
     SHUT.neon = 1;
     setCam(framed(SHOT.near));
-    cCaption("До завтра. Открываемся в 17:00");
+    cCaption(`До завтра. Открываемся в ${HOURS_TXT.open}`);
     await fade(false, 1.2);
     cAlive(g);
     await cw(g, 1.2);

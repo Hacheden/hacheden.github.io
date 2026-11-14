@@ -45,6 +45,6 @@
     document.title = BAR_NAME;
     const h1 = document.querySelector("#intro h1"); if (h1) h1.textContent = BAR_NAME;
     const it = document.getElementById("intro-text"); if (it && VENUE.meta.intro) it.textContent = VENUE.meta.intro;
-    if (VENUE.meta.demo && h1) h1.insertAdjacentHTML("afterend", `<p class="demo-badge">Демо платформы · вымышленный бар · цены условные</p>`);
+    if (VENUE.meta.demo && h1) h1.insertAdjacentHTML("afterend", `<p class="demo-badge">${VENUE.meta.badge || "Демо платформы · вымышленный бар · цены условные"}</p>`);
     const md = document.querySelector('meta[name="description"]'); if (md && VENUE.meta.slogan) md.content = `${BAR_NAME}: ${VENUE.meta.slogan}`;
   }

@@ -367,7 +367,7 @@ H3D.post = POST;
 H3D.info = () => ({ calls: renderer.info.render.calls, tris: renderer.info.render.triangles, geos: renderer.info.memory.geometries, tex: renderer.info.memory.textures, dpr: DPR, zone: curZone, busy, btBusy: BT.busy });
 renderZoneUI(1);
 requestAnimationFrame(tick);
-/* ---------- часы работы: открыто с 17:00 до 3:00 ---------- */
+/* ---------- часы работы: из meta.hours заведения (Hacheden — с 17:00 до 3:00) ---------- */
 const introText = document.getElementById("intro-text"), statusEl = document.getElementById("status"), introTitle = intro.querySelector("h1");
 const ownerOut = document.getElementById("owner-out");
 ownerOut.addEventListener("click", () => {
@@ -406,8 +406,8 @@ function showClosed(afterVisit) {
   introTitle.classList.add("off");
   introText.textContent = afterVisit || intro.dataset.after
     ? "Бар закрылся. Спасибо, что заглянул! Ждём тебя снова."
-    : "Сейчас закрыто. Бар открывается каждый день в 17:00 и работает до 3:00 ночи.";
-  statusEl.textContent = `Откроемся в 17:00, через ${spell(min)}`;
+    : `Сейчас закрыто. Бар открывается каждый день в ${HOURS_TXT.open} и работает до ${HOURS_TXT.close} ночи.`;
+  statusEl.textContent = `Откроемся в ${HOURS_TXT.open}, через ${spell(min)}`;
   statusEl.hidden = false;
   enter.hidden = true;
 }
@@ -418,8 +418,8 @@ function showOpen() {
   // у другого бара — его собственный текст (meta.intro): про камин и читальню Hacheden там ни слова
   introText.textContent = VENUE_ID !== "hacheden" && VENUE.meta.intro ? VENUE.meta.intro : `${SEASON_INFO[SEASON].line} Стойка, курилка у камина и читальня ждут.`;
   statusEl.textContent = OWNER
-    ? (openByClock() ? "Режим хозяина. Для гостей открыто до 3:00" : "Режим хозяина: для тебя открыто. Гостей ждём с 17:00")
-    : left <= 30 ? `Последний заказ: закрываемся через ${spell(left)}` : "Открыто до 3:00";
+    ? (openByClock() ? `Режим хозяина. Для гостей открыто до ${HOURS_TXT.close}` : `Режим хозяина: для тебя открыто. Гостей ждём с ${HOURS_TXT.open}`)
+    : left <= 30 ? `Последний заказ: закрываемся через ${spell(left)}` : `Открыто до ${HOURS_TXT.close}`;
   ownerOut.hidden = !OWNER;
   statusEl.hidden = false;
   enter.hidden = false;
@@ -442,7 +442,7 @@ setInterval(() => {
   const h = hoursOf(nowDate());
   if (!OWNER && open && h >= LAST_CALL && h < CLOSE_H && !lastCallShown) {
     lastCallShown = true;
-    ZONES.forEach(z => { z.hint = `Последний заказ: в 3:00 бар закрывается. ${z.hint}`; });
+    ZONES.forEach(z => { z.hint = `Последний заказ: в ${HOURS_TXT.close} бар закрывается. ${z.hint}`; });
     if (!busy && !mixDlg.open) hintEl.textContent = ZONES[curZone].hint;
   }
   if (!open && !CLOSING.on) playClosing();

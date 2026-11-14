@@ -1,0 +1,2 @@
+demo-almaty:20-room.js
+30-bar.js

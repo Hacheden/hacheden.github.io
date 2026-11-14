@@ -1,8 +1,12 @@
 /* ================= реальное время и сезоны ================= */
-/* Бар живёт по часам того, кто зашёл: открыт с 17:00 до 3:00, сезон — по дате.
+/* Бар живёт по часам того, кто зашёл: часы работы — из meta.hours заведения (у Hacheden с 17:00 до 3:00), сезон — по дате.
    Для проверки можно подменить: ?time=21:30&season=winter */
 const QS = new URLSearchParams(location.search);
-const OPEN_H = 17, CLOSE_H = 3, LAST_CALL = 2.5;
+const hourOf = (t, def) => { const m = /^(\d{1,2}):(\d{2})$/.exec(t || "") || /^(\d{1,2}):(\d{2})$/.exec(def); return +m[1] + +m[2] / 60; };
+const VH = VENUE.meta.hours || {};
+const OPEN_H = hourOf(VH.open, "17:00"), CLOSE_H = hourOf(VH.close, "03:00"), LAST_CALL = hourOf(VH.last, "02:30");
+/* часы для текстов: «17:00», «3:00» */
+const HOURS_TXT = { open: (VH.open || "17:00").replace(/^0(?=\d:)/, ""), close: (VH.close || "03:00").replace(/^0(?=\d:)/, "") };
 const T0 = Date.now();
 let fakeBase = null;
 if (/^\d{1,2}(:\d{2})?$/.test(QS.get("time") || "")) {

@@ -35,12 +35,15 @@ H3D.seats = () => {
 H3D.seats();
 
 /* ---------- афиша вечера: латунный стенд с ближайшим событием (VENUE.events) ----------
-   Место задаёт заведение: VENUE.eventStand = { pos: [x, z], rot, zone, kind }; kind: "counter" — рама на стойке (по умолчанию,
+   Место задаёт зал заведения: rooms[i].eventStand = { pos: [x, z], rot, kind } (или VENUE.eventStand с zone); kind: "counter" — рама на стойке (по умолчанию,
    видна и на телефоне), "floor" — напольный мольберт для зала, где у входа есть место. */
 const EVENT_STAND = (() => {
   const ev = vxNextEvent();
   if (!ev) return null;
-  const S = Object.assign({ pos: [-.85, -2.25], rot: .14, zone: 1, kind: "counter" }, VENUE.eventStand || {});
+  // место стенда — в зале (rooms[].eventStand, зона берётся из зала) или общим полем VENUE.eventStand
+  const room = VENUE.rooms.find(r => r.eventStand);
+  const S = Object.assign({ pos: [-.85, -2.25], rot: .14, zone: 1, kind: "counter" },
+    room ? Object.assign({ zone: ROOM_ZONE[room.id] ?? 1 }, room.eventStand) : VENUE.eventStand || {});
   const ac = vxAccent(ev), F = VENUE.theme.fonts;
   const poster = canvasTex(512, 720, (g, w, h) => {
     const bg = g.createLinearGradient(0, 0, 0, h);
@@ -129,7 +132,8 @@ const EVENT_STAND = (() => {
     g.fillStyle = "#c2a784"; g.font = "20px Literata, Georgia, serif"; g.fillText("спросите у бармена", w / 2, 188);
   });
   // если на этом месте стоит рама с афишей (по умолчанию так), табличка спешла отходит левее
-  const tent = group(vxNextEvent() && !(VENUE.eventStand && VENUE.eventStand.kind === "floor") ? -1.55 : -.82, CT.top, -2.17);
+  const st = (VENUE.rooms.find(r => r.eventStand) || {}).eventStand || VENUE.eventStand;
+  const tent = group(vxNextEvent() && !(st && st.kind === "floor") ? -1.55 : -.82, CT.top, -2.17);
   tent.rotation.y = .22;
   const face = std({ map: tex, roughness: .6 }), backMat = std({ color: 0x1c070b, roughness: .7 });
   for (const s of [1, -1]) {

@@ -56,11 +56,13 @@
         network: [
           { id: "hacheden", name: "Hacheden", tagline: "Бар, которого нет на карте", district: "Онлайн · спикизи 1920-х" }
         ],
-        /* афиша в зале: латунная рама на стойке слева от меню (табличка спешла отходит левее) — видна и с телефона */
-        eventStand: { pos: [-.85, -2.25], rot: .14, zone: 1, kind: "counter" },
         menu,
         /* камерный зал: только бар (залы — src/venues/demo-almaty/rooms; улицы, читальни, курилки, сцены и погреба нет) */
-        rooms: [Object.assign({}, base.rooms.find(r => r.id === "bar"), { audio: { rain: 0, fire: 0, clinks: 1 } })],
+        rooms: [Object.assign({}, base.rooms.find(r => r.id === "bar"), {
+          audio: { rain: 0, fire: 0, clinks: 1 },
+          /* афиша в зале: латунная рама на стойке слева от меню (табличка спешла отходит левее) — видна и с телефона */
+          eventStand: { pos: [-.85, -2.25], rot: .14, kind: "counter" }
+        })],
         features: { street: false, nook: false, smoke: false, stage: false, cellar: false, bartenderShow: true, booking: true, quests: false, liveBar: true }
       };
     }
