@@ -1,3 +1,5 @@
+/* атрибут hidden сильнее любого display из правил ниже: скрытая форма, кнопка или окно не появятся случайно */
+  [hidden] { display: none !important; }
 /* Бар тёмный в любом режиме: те же значения для светлой и тёмной темы. */
   :root {
     color-scheme: dark;
@@ -461,7 +463,7 @@
   @media (max-width: 620px) {
     .tools { top: 72px; right: 14px; gap: 6px; }
     .tool { width: 42px; height: 42px; }
-    dialog.sheet, dialog.sheet.wide { inset: auto 0 0 0; width: 100%; height: auto; max-height: 86svh; border-left: 0; border-top: 1px solid rgba(214,170,92,.35); border-radius: 18px 18px 0 0; }
+    dialog.sheet, dialog.sheet.wide { inset: auto 0 0 0; width: 100%; max-width: 100%; height: auto; max-height: 86svh; border-left: 0; border-top: 1px solid rgba(214,170,92,.35); border-radius: 18px 18px 0 0; }
     dialog.sheet[open] { animation-name: slide-up; }
     .sheet-in { padding: 18px 18px calc(28px + env(safe-area-inset-bottom, 0px)); }
     .sheet-top h2 { font-size: 27px; }
@@ -666,3 +668,8 @@
   .vx-match em { font: italic 400 12px/1 var(--font-text); color: var(--brass); }
   .vx-match.here { opacity: .82; }
   @media (prefers-reduced-motion: reduce) { .vx-match { transition: none; } }
+  .vx-warn { margin: 0 0 10px; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(214,170,92,.45); background: rgba(214,170,92,.1); color: var(--cream); font-size: 14px; line-height: 1.45; }
+  .vx-form input, .vx-form select { width: 100%; min-width: 0; box-sizing: border-box; }
+  .vx-two > * { min-width: 0; }
+  /* iPhone увеличивает страницу при фокусе на поле мельче 16 px — на сенсорных экранах поля не мельче */
+  @media (pointer: coarse) { input, select, textarea { font-size: max(16px, 1em); } }

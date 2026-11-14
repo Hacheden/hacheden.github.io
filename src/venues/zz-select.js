@@ -16,6 +16,12 @@
     if (f.display) r.setProperty("--font-display", `"${f.display}", "Palatino Linotype", Georgia, serif`);
     if (f.text) r.setProperty("--font-text", `"${f.text}", Georgia, "Times New Roman", serif`);
   })();
+  /* ?demo=1 — показ на встрече: бронь и пропуск видны всем, заявки идут на тестовые контакты (DEMO_CONTACTS), в статистику не попадают */
+  const DEMO_MODE = (() => { try { return new URLSearchParams(location.search).get("demo") === "1"; } catch (e) { return false; } })();
+  if (DEMO_MODE) {
+    const c = DEMO_CONTACTS.whatsapp || DEMO_CONTACTS.telegram ? DEMO_CONTACTS : VENUE.meta.contacts;
+    VENUE.meta = Object.assign({}, VENUE.meta, { demo: true, contacts: Object.assign({}, c) });
+  }
   /* возможности заведения (features в его файле); чего нет в файле — включено. Заглушка зала (src/stubs) выключает свой флаг сама:
      street — улица перед входом, nook — читальня, smoke — курилка, stage — сцена, cellar — погреб */
   const FEAT = Object.assign({ street: true, nook: true, smoke: true, cellar: true, stage: true, bartenderShow: true, booking: true, quests: true, liveBar: true }, VENUE.features || {});

@@ -6,3 +6,7 @@
   const VENUES = {};
   const VENUE_PATCHES = [];
   const VENUE_ID_RE = /^[a-z0-9-]{3,32}$/;
+  /* тестовые контакты для показа владельцам баров: демо-бар (?bar=demo-almaty) и любой бар с ?demo=1.
+     whatsapp — номер в международном виде без «+» (например 77011234567), telegram — имя без «@».
+     Пока пусто, кнопки WhatsApp и Telegram в демо неактивны; с номером заявка по-настоящему откроет мессенджер. */
+  const DEMO_CONTACTS = { whatsapp: "", telegram: "" };

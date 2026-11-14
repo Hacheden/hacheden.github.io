@@ -32,7 +32,7 @@
           address: "Алматы · адрес укажет заведение",
           hours: { open: "17:00", close: "03:00", last: "02:30" },
           site: "hacheden.github.io/?bar=demo-almaty",
-          contacts: { whatsapp: "", telegram: "" },   // ← тестовые контакты для показа брони
+          contacts: Object.assign({}, DEMO_CONTACTS),   // тестовые контакты — в src/venues/00-registry.js (DEMO_CONTACTS)
           currency: "₸",
           codePrefix: "ALT",
           district: "Алматы · Медеуский район",

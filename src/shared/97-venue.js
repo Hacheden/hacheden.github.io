@@ -19,7 +19,7 @@
     const n = escH(VENUE.meta.name);
     if (VENUE.meta.demo) return vxReal
       ? (kind === "pass" ? "Демо: так выглядит пропуск в настоящем баре, этот код нигде не действует" : "Демо для владельцев заведений: заявка уйдёт на тестовый номер, а не в настоящий бар")
-      : "Демо для владельцев заведений: впишите тестовые WhatsApp или Telegram в src/venues/demo-almaty/venue.js, и кнопки заработают";
+      : "Демо для владельцев заведений: так гость бронирует место; кнопки мессенджеров включатся, когда у бара будут контакты";
     if (!vxReal) return kind === "pass" ? `Предпросмотр: у ${n} нет настоящего зала, код не действует` : `Предпросмотр для хозяина: у ${n} нет настоящего зала, заявка никуда не уйдёт`;
     return "";
   }
@@ -203,6 +203,16 @@
     return lines;
   }
   const vxPlain = s => String(s).replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+  /* тайл зерна: светлые и тёмные крапинки поверх фона (наложение обычным смешиванием, как раньше ±10 яркости) */
+  let VX_GRAIN = null;
+  function vxGrain() {
+    if (VX_GRAIN) return VX_GRAIN;
+    const t = document.createElement("canvas"); t.width = t.height = 128;
+    const c = t.getContext("2d"), im = c.createImageData(128, 128), d = im.data;
+    for (let i = 0; i < d.length; i += 4) { const n = Math.random() - .5, v = n > 0 ? 255 : 0; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = Math.abs(n) * 2 * (v ? 12 : 60); }   // фон тёмный: белым крапинкам нужно меньше прозрачности, чем чёрным
+    c.putImageData(im, 0, 0);
+    return (VX_GRAIN = t);
+  }
   /* основа карточки 1080×1920: тёплый полумрак, зерно, двойная латунная рамка, шапка с названием бара */
   async function vxCanvasBase() {
     const W = 1080, H = 1920, cv = document.createElement("canvas");
@@ -214,9 +224,8 @@
     const bg = g.createRadialGradient(W / 2, H * .36, 40, W / 2, H * .45, H * .78);
     bg.addColorStop(0, "#43141c"); bg.addColorStop(.42, "#1d070b"); bg.addColorStop(1, "#070304");
     g.fillStyle = bg; g.fillRect(0, 0, W, H);
-    const img = g.getImageData(0, 0, W, H), px = img.data;
-    for (let i = 0; i < px.length; i += 4) { const n = (Math.random() - .5) * 20; px[i] += n; px[i + 1] += n; px[i + 2] += n; }
-    g.putImageData(img, 0, 0);
+    // зерно плёнки: один тайл 128×128, размноженный узором, — вместо обхода двух миллионов пикселей
+    g.fillStyle = g.createPattern(vxGrain(), "repeat"); g.fillRect(0, 0, W, H);
     g.strokeStyle = brass; g.lineWidth = 4; g.strokeRect(48, 48, W - 96, H - 96);
     g.globalAlpha = .55; g.lineWidth = 1.5; g.strokeRect(66, 66, W - 132, H - 132); g.globalAlpha = 1;
     g.fillStyle = brass;
@@ -411,6 +420,17 @@
         ${vxTag("pass") ? `<span class="vx-demo-tag">${vxTag("pass")}</span>` : ""}
         <span class="vx-pass-h">Барный пропуск</span><b>${escH(code)}</b>${P ? `<span class="vx-priv">${escH(P)}</span>` : ""}<small>${escH(hint)}</small></div>`;
   }
+  /* ближайшее время брони на сегодня: сейчас + 30 минут, вверх до четверти часа; null — бар сегодня уже не успеет */
+  function vxSoonest(M, now = new Date()) {
+    const toM = t => { const [a, b] = t.split(":").map(Number); return a * 60 + b; };
+    const open = toM(M.hours.open), close = toM(M.hours.close), last = M.hours.last ? toM(M.hours.last) : close;
+    const night = m => close <= open && m < close ? m + 1440 : m;
+    const cur = now.getHours() * 60 + now.getMinutes(), n = Math.ceil((night(cur) + 30) / 15) * 15, from = Math.max(n, open);
+    if (from > night(last)) return null;
+    const m = from % 1440;
+    return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+  }
+  const vxDefaultTime = M => { const s = vxSoonest(M); if (!s) return "20:00"; const [a, b] = s.split(":").map(Number), m = a * 60 + b; return (m >= 20 * 60 || m < 5 * 60) ? s : "20:00"; };
   function vxSeatMax(s) { const n = String(s.cap).match(/\d+/g); return n ? +n[n.length - 1] : 2; }
   /* id — место из VENUE.rooms; или opt.seat — «стол на вечер» из афиши, тогда форма открыта сразу, дата и время подставлены */
   function vxBook(id, opt = {}) {
@@ -426,7 +446,7 @@
       <div class="acts"${opt.seat ? " hidden" : ""}><button class="make" type="button" data-vx-take>Занять это место</button></div>
       <form class="vx-form" id="vx-book-form"${opt.seat ? "" : " hidden"}>
         <div class="vx-two"><label>Дата<input type="date" name="date" required min="${iso(today)}" value="${opt.date || iso(today)}"></label>
-        <label>Время<input type="time" name="time" required value="${opt.time || "20:00"}" step="900"></label></div>
+        <label>Время<input type="time" name="time" required value="${opt.time || vxDefaultTime(M)}" step="900"></label></div>
         <div class="vx-two"><label>Гостей<select name="n">${Array.from({ length: vxSeatMax(s) }, (_, i) => `<option>${i + 1}</option>`).join("")}</select></label>
         <label>Имя<input name="name" maxlength="40" required autocomplete="name" value="${escH(vxName())}"></label></div>
         <p class="note">Открыто с ${M.hours.open} до ${M.hours.close}${M.address ? ` · ${escH(M.address)}` : ""}.</p>
@@ -443,12 +463,21 @@
       const open = toM(M.hours.open), close = toM(M.hours.close), inHours = close > open ? mins >= open && mins < close : mins >= open || mins < close;
       out.hidden = false;
       if (!inHours) { out.innerHTML = `<p class="vx-err">В это время бар закрыт: мы работаем с ${M.hours.open} до ${M.hours.close}.</p>`; return; }
+      // время ночи бара: 01:30 после вечера 14-го — это ещё вечер 14-го; бронь не раньше чем через 30 минут от «сейчас»
+      const night = m => close <= open && m < close ? m + 1440 : m;
+      const when = new Date(f.get("date") + "T00:00"); when.setMinutes(night(mins));
+      if (when.getTime() < Date.now() + 30 * 60000) {
+        const soon = vxSoonest(M);
+        out.innerHTML = `<p class="vx-err">${soon ? `Это время уже прошло или совсем близко. Ближайшая бронь — на ${soon}: столу нужно хотя бы полчаса на подготовку.` : "На сегодня бронь уже не принимаем — выберите другой день."}</p>`;
+        return;
+      }
+      const late = M.hours.last && night(mins) > night(toM(M.hours.last));
       const date = new Date(f.get("date") + "T12:00").toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
       // код пропуска едет в самой заявке: хостес отмечает гостя, пришедшего с платформы
       const text = `${M.demo ? "[Тест с демо-страницы] " : ""}Привет! Хочу забронировать ${s.id === "event" ? s.name.charAt(0).toLowerCase() + s.name.slice(1) : `«${s.name}»`} в баре ${M.name} на ${date}, ${f.get("time")}, гостей: ${f.get("n")}. Имя: ${vxClean(f.get("name"), 40)}. Код пропуска: ${code}.`;
       const wa = M.contacts.whatsapp ? `https://wa.me/${M.contacts.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(text)}` : "";
       const tg = M.contacts.telegram ? `https://t.me/${M.contacts.telegram.replace(/^@/, "")}` : "";
-      out.innerHTML = `<p class="vx-msg">${escH(text)}</p>
+      out.innerHTML = `${late ? `<p class="vx-warn">Последний заказ в ${M.hours.last}, закрываемся в ${M.hours.close}: после ${M.hours.last} бар уже не принимает заказы.</p>` : ""}<p class="vx-msg">${escH(text)}</p>
         ${vxPassHTML(code, "Покажите код хостес при входе")}
         <div class="acts">${vxDemo() ? `<button class="make" type="button" disabled>WhatsApp</button><button class="make ghost" type="button" disabled>Telegram</button>`
           : `${wa ? `<a class="make" href="${wa}" target="_blank" rel="noopener">Отправить в WhatsApp</a>` : ""}${tg ? `<a class="make ghost" href="${tg}" target="_blank" rel="noopener" data-vx-tg>Открыть Telegram</a>` : ""}`}</div>

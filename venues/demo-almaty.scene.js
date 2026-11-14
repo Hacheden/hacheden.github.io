@@ -6452,7 +6452,7 @@ function liveGlass(s, d) {
 function liveSync(peers) {
   LIVE.peers = peers;
   const byZone = {};
-  for (const [uid, u] of Object.entries(peers)) (byZone[u.zone ?? 1] = byZone[u.zone ?? 1] || []).push([uid, u]);
+  for (const [uid, u] of Object.entries(peers)) { const z = ZONE_ON[u.zone] ? u.zone : 1; (byZone[z] = byZone[z] || []).push([uid, u]); }   // зала нет у этого бара — гость у стойки
   const used = new Set();
   for (const z of Object.keys(byZone)) {
     const list = byZone[z].sort((a, b) => a[0] < b[0] ? -1 : 1);
@@ -6468,7 +6468,7 @@ function liveSync(peers) {
   }
   for (const s of LIVE_SLOTS) {
     const u = s.uid && peers[s.uid];
-    if (!u || u.zone !== s.zone || !used.has(s)) {
+    if (!u || (ZONE_ON[u.zone] ? u.zone : 1) !== s.zone || !used.has(s)) {
       if (s.F) s.F.root.visible = false;
       if (s.glass) s.glass.visible = false;
       s.uid = null; s.tag.hidden = true; s.bub.classList.remove("show");
@@ -7632,6 +7632,9 @@ Object.assign(H3D, { served: () => servedGlass });
 
 /* ================= платформа заведений в 3D: места для брони, колода у камина, спешл недели на стойке,
    строчка в углях для квеста, бокал «для вас» от друга. Данные — src/venues/<бар>.js, интерфейс — src/shared/97-venue.js ================= */
+
+/* квест идёт через читальню (пометка в книге) и камин (строчка в углях): без этих залов его не пройти — выключаем */
+if (!FEAT.nook || !FEAT.smoke) FEAT.quests = false;
 
 /* ---------- маркеры мест: латунное кольцо на сиденье и ромбик над ним ---------- */
 const SEAT_MARKS = [];

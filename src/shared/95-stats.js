@@ -11,7 +11,7 @@
     try {
       const q = new URLSearchParams(location.search);
       return location.protocol !== "https:" || /^(localhost|127\.|\[::1\])/.test(location.hostname) || location.hash === "#test"
-        || ["net", "time", "season", "wx", "rare", "holiday"].some(k => q.has(k));
+        || ["net", "time", "season", "wx", "rare", "holiday", "demo"].some(k => q.has(k));
     } catch (e) { return true; }
   })();
   const statDay = () => { const d = new Date(), p = n => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };
