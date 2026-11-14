@@ -11,16 +11,19 @@
     treat: null, sheets: {}
   };
   const VX_SEATS = VENUE.rooms.flatMap((r, i) => (r.seats || []).map(s => Object.assign({ zone: ROOM_ZONE[r.id] ?? i, room: r.name }, s)));
-  const vxO2O = () => O2O || (!!H3D.owner && VX.preview);   // бронь и пропуск видны
+  const vxPassOn = () => PASS || (!!H3D.owner && VX.preview);                  // барный пропуск: у бара есть привилегия или хозяин смотрит предпросмотр
+  const vxBookOn = () => FEAT.booking && (O2O || (!!H3D.owner && VX.preview));   // бронь столов — только у заведений с features.booking
+  const vxO2O = vxBookOn;
   const vxReal = !!(VENUE.meta.contacts.whatsapp || VENUE.meta.contacts.telegram);
   const vxDemo = () => !vxReal;                                // контактов нет: только предпросмотр, ничего не отправляется
-  /* пометка над бронью и пропуском: у Hacheden — предпросмотр хозяина, у демо-профиля — пояснение для владельцев баров */
+  const vxPrivilege = () => VENUE.meta.privilege || "Комплимент от бармена по коду пропуска";
+  /* пометка над пропуском и сообщением бару: у Hacheden — предпросмотр хозяина, у демо и шаблона — пояснение для владельцев баров */
   function vxTag(kind) {
     const n = escH(VENUE.meta.name);
-    if (VENUE.meta.demo) return vxReal
-      ? (kind === "pass" ? "Демо: так выглядит пропуск в настоящем баре, этот код нигде не действует" : "Демо для владельцев заведений: заявка уйдёт на тестовый номер, а не в настоящий бар")
-      : "Демо для владельцев заведений: так гость бронирует место; кнопки мессенджеров включатся, когда у бара будут контакты";
-    if (!vxReal) return kind === "pass" ? `Предпросмотр: у ${n} нет настоящего зала, код не действует` : `Предпросмотр для хозяина: у ${n} нет настоящего зала, заявка никуда не уйдёт`;
+    if (VENUE.meta.demo) return kind === "pass" ? "Демо: так выглядит пропуск в настоящем баре — этот код нигде не действует"
+      : vxReal ? "Демо для владельцев заведений: сообщение уйдёт на тестовый номер, а не в настоящий бар"
+      : "Демо для владельцев заведений: с контактами бара кнопка откроет чат с ним";
+    if (!PASS) return kind === "pass" ? `Предпросмотр для хозяина: у ${n} нет настоящего зала, код не действует` : `Предпросмотр для хозяина: у ${n} нет настоящего зала, сообщение никуда не уйдёт`;
     return "";
   }
   function vxSheet(id, title, extra) {
@@ -157,7 +160,7 @@
         <div class="vx-sp-row">${glassSVG(sp, { pre: "spw-", still: true })}<div><b>${escH(sp.name)}</b><p>${sp.tagline}</p></div>
         <button class="make ghost" type="button" data-special-info="${sp.id}">Подробнее</button></div></div>`);
     }
-    if (vxO2O()) list.querySelectorAll("[data-info]").forEach(b => {
+    list.querySelectorAll("[data-info]").forEach(b => {   // цены — у заведения, где они есть в карте (у Hacheden их нет)
       const c = COCKTAIL_BY_ID[b.dataset.info];
       if (c && c.price && !b.closest("li").querySelector(".vx-price")) b.closest("li").querySelector(".meta").insertAdjacentHTML("afterend", `<span class="vx-price">${c.price} ${VENUE.meta.currency}</span>`);
     });
@@ -175,8 +178,9 @@
     let h = "";
     if (d.legend) h += `<p class="vx-legend">Легендарный рецепт · квест через три зала пройден</p>`;
     const crafted = d.signature || d.secret || d.custom;
-    if (VX.passOpen && VX.passFor === d.id && crafted && vxO2O()) {
+    if (VX.passOpen && VX.passFor === d.id && crafted && vxPassOn()) {
       h += vxPassHTML(VX.passCode, "Покажите этот код бармену у стойки");
+      vxStat("pass_issued");
     }
     const sendable = !d.custom || d.ings || d.need;
     h += `<div class="card-acts vx-acts"><button class="make ghost" type="button" data-vx-story="${d.id}">Карточка для сторис</button>${sendable ? `<button class="make ghost" type="button" data-vx-treat="${d.id}">Угостить друга</button>` : ""}</div>`;
@@ -267,7 +271,7 @@
     while (g.measureText(c.name).width > W - 220 && size > 56) { size -= 6; g.font = `${size}px "${F.display}"`; }
     g.fillText(c.name, W / 2, y);
     g.fillStyle = muted; g.font = `italic 36px "${F.text}"`;
-    const priv = code && VENUE.meta.privilege ? vxWrap((g.font = `italic 28px "${F.text}"`, g), VENUE.meta.privilege, 540).slice(0, 2) : [];
+    const priv = code ? vxWrap((g.font = `italic 28px "${F.text}"`, g), vxPrivilege(), 540).slice(0, 2) : [];
     g.fillStyle = muted; g.font = `italic 36px "${F.text}"`;
     for (const l of vxWrap(g, vxPlain(c.tagline || ""), W - 260).slice(0, priv.length ? 1 : 2)) { y += 54; g.fillText(l, W / 2, y); }
     y += 46;
@@ -291,7 +295,7 @@
     d.body.innerHTML = `<p class="note">Рисую карточку…</p>`;
     if (dlg.open) dlg.close();
     openSheet(d);
-    const code = VX.passFor === c.id && vxO2O() && (c.signature || c.secret || c.custom) ? VX.passCode : "";
+    const code = VX.passFor === c.id && vxPassOn() && (c.signature || c.secret || c.custom) ? VX.passCode : "";
     const cv = await vxStoryCanvas(c, code);
     const blob = await new Promise(r => cv.toBlob(r, "image/png"));
     if (!blob) { d.body.innerHTML = `<p class="note">Не получилось нарисовать карточку в этом браузере.</p>`; return; }
@@ -415,7 +419,7 @@
   }
   /* блок пропуска: код и привилегия заведения (meta.privilege) */
   function vxPassHTML(code, hint) {
-    const P = VENUE.meta.privilege;
+    const P = vxPrivilege();
     return `<div class="vx-pass" role="group" aria-label="Барный пропуск">
         ${vxTag("pass") ? `<span class="vx-demo-tag">${vxTag("pass")}</span>` : ""}
         <span class="vx-pass-h">Барный пропуск</span><b>${escH(code)}</b>${P ? `<span class="vx-priv">${escH(P)}</span>` : ""}<small>${escH(hint)}</small></div>`;
@@ -557,4 +561,5 @@
     VX.preview = on;
     try { on ? localStorage.setItem("hacheden-o2o-preview", "1") : localStorage.removeItem("hacheden-o2o-preview"); } catch (e) {}
     if (H3D.seats) H3D.seats();
+    if (H3D.visit) H3D.visit();
   }

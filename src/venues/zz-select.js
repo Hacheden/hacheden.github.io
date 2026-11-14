@@ -20,13 +20,17 @@
   const DEMO_MODE = (() => { try { return new URLSearchParams(location.search).get("demo") === "1"; } catch (e) { return false; } })();
   if (DEMO_MODE) {
     const c = DEMO_CONTACTS.whatsapp || DEMO_CONTACTS.telegram ? DEMO_CONTACTS : VENUE.meta.contacts;
-    VENUE.meta = Object.assign({}, VENUE.meta, { demo: true, contacts: Object.assign({}, c) });
+    VENUE.meta = Object.assign({}, VENUE.meta, { demo: true, contacts: Object.assign({}, c),
+      privilege: VENUE.meta.privilege || "Комплимент от бармена по коду пропуска" });
   }
   /* возможности заведения (features в его файле); чего нет в файле — включено. Заглушка зала (src/stubs) выключает свой флаг сама:
      street — улица перед входом, nook — читальня, smoke — курилка, stage — сцена, cellar — погреб */
-  const FEAT = Object.assign({ street: true, nook: true, smoke: true, cellar: true, stage: true, bartenderShow: true, booking: true, quests: true, liveBar: true }, VENUE.features || {});
-  /* бронь и «код бармена» работают у заведения с настоящими контактами; у демо-профиля — для показа владельцам */
+  const FEAT = Object.assign({ street: true, nook: true, smoke: true, cellar: true, stage: true, bartenderShow: true, booking: false, quests: true, liveBar: true }, VENUE.features || {});
+  /* бронь столов: в барах Алматы ей почти не пользуются — выключена у всех (features.booking: false), код оставлен для лаунжей и клубов */
   const O2O = FEAT.booking && !!(VENUE.meta.contacts.whatsapp || VENUE.meta.contacts.telegram || VENUE.meta.demo);
+  /* барный пропуск — главная связка сайта с баром: код + привилегия заведения (meta.privilege) за спонтанный визит.
+     У Hacheden привилегии нет — пропуск скрыт (хозяину — предпросмотр в настройках) */
+  const PASS = !!VENUE.meta.privilege;
 
   /* залы заведения → номера зон 3D-сцены (порядок кнопок: читальня, бар, курилка, сцена); у камерного бара может быть один «bar» */
   const ROOM_ZONE = { reading: 0, bar: 1, smoking: 2, stage: 3 };

@@ -1,7 +1,8 @@
 /* ================= платформа: афиша вечера и бары сети =================
    Афиша — VENUE.events: [{ title, date: "гггг-мм-дд", time: "чч:мм", lineup, desc, accent: "#rrggbb" }].
    В 3D-зале стоит латунный стенд с ближайшим событием (src/js/92-venue.js); по нажатию — карточка события:
-   «Занять стол на этот вечер» (бронь с датой и временем события) и «Карточка в сторис» (1080×1920 со ссылкой на бар).
+   «Загляну на этот вечер» (пропуск с комплиментом), «Позвать друзей» (ссылка на бар) и «Карточка в сторис» (1080×1920).
+   Брони нет: гости в барах приходят спонтанно — бар узнаёт пришедших с сайта по коду пропуска.
    Бары сети — VENUE.network: [{ id, name, tagline, district }]: футляр со спичечными коробками, переход в один клик
    (?bar=<id>); имя гостя живёт в этом браузере и переходит вместе с ним. Нет сети — нет и кнопки. */
   const VX_EVENTS = (VENUE.events || []).filter(e => e && e.title && /^\d{4}-\d{2}-\d{2}$/.test(e.date) && /^\d{2}:\d{2}$/.test(e.time || ""));
@@ -26,16 +27,65 @@
         ${e.lineup ? `<p class="vx-ev-line">${escH(e.lineup)}</p>` : ""}
         ${e.desc ? `<p>${escH(e.desc)}</p>` : ""}
       </article>
-      <div class="acts">${vxO2O() ? `<button class="make" type="button" data-ev-book>Занять стол на этот вечер</button>` : ""}
-        <button class="make${vxO2O() ? " ghost" : ""}" type="button" data-ev-story>Карточка в сторис</button></div>
-      ${VENUE.meta.privilege && vxO2O() ? `<p class="note">По барному пропуску: ${escH(VENUE.meta.privilege)}</p>` : ""}`;
+      <div class="acts">${vxPassOn() ? `<button class="make" type="button" data-ev-visit>Загляну на этот вечер</button>` : ""}
+        <button class="make ghost" type="button" data-ev-invite>Позвать друзей</button>
+        <button class="make ghost" type="button" data-ev-story>Карточка в сторис</button></div>
+      ${vxPassOn() ? `<p class="note">По барному пропуску: ${escH(vxPrivilege())}</p>` : ""}`;
     openSheet(d);
-    const bb = d.querySelector("[data-ev-book]");
-    if (bb) bb.addEventListener("click", () => {
-      d.close();
-      vxBook(null, { date: e.date, time: e.time, seat: { id: "event", name: `Стол на вечер «${e.title}»`, room: `${vxEventDay(e)}, ${e.time}`, cap: "1–6 гостей", mood: e.lineup || e.desc || "" } });
-    });
+    const vb = d.querySelector("[data-ev-visit]");
+    if (vb) vb.addEventListener("click", () => { d.close(); vxVisit(e); });
+    d.querySelector("[data-ev-invite]").addEventListener("click", ev => vxInvite(ev.currentTarget, e));
     d.querySelector("[data-ev-story]").addEventListener("click", () => vxEventStory(e));
+  }
+
+  /* ---------- «Позвать друзей»: ссылка на бар (и на событие) — через меню «Поделиться» или в буфер ---------- */
+  const vxBarURL = () => { const u = new URL(location.href), q = new URLSearchParams(); if (VENUE_ID !== "hacheden") q.set("bar", VENUE_ID); u.search = q.toString(); u.hash = ""; return u.href; };
+  async function vxInvite(btn, e) {
+    const url = vxBarURL();
+    const text = e ? `${e.title} — ${vxEventDay(e).toLowerCase()}, ${e.time}, ${VENUE.meta.name}. Пойдём?` : `Загляну сегодня в ${VENUE.meta.name}. Пойдём со мной?`;
+    vxStat("invite_share");
+    if (navigator.share) { try { await navigator.share({ title: VENUE.meta.name, text, url }); return; } catch (er) { if (er && er.name === "AbortError") return; } }
+    try { await navigator.clipboard.writeText(`${text} ${url}`); if (btn) { const t = btn.textContent; btn.textContent = "Ссылка скопирована"; setTimeout(() => { btn.textContent = t; }, 1800); } }
+    catch (er) { toast("Ссылка на бар", url); }
+  }
+
+  /* ---------- «Загляну сегодня»: спонтанный визит без брони ----------
+     Гость получает код пропуска и привилегию, видит часы и адрес, строит маршрут в 2ГИС и может написать бару.
+     Адрес — meta.address, точная ссылка на карточку в 2ГИС — meta.gis (иначе поиск по названию и адресу). */
+  function vxHoursLine(now = new Date()) {
+    const H = VENUE.meta.hours, toM = t => { const [a, b] = t.split(":").map(Number); return a * 60 + b; };
+    const open = toM(H.open), close = toM(H.close), cur = now.getHours() * 60 + now.getMinutes();
+    const isOpen = close > open ? cur >= open && cur < close : cur >= open || cur < close;
+    const t = s => s.replace(/^0(?=\d:)/, "");
+    if (isOpen) return `Сейчас открыто до ${t(H.close)}${H.last ? ` · последний заказ в ${t(H.last)}` : ""}`;
+    return `Сегодня открываемся в ${t(H.open)} и работаем до ${t(H.close)}`;
+  }
+  function vxGisURL() {
+    const M = VENUE.meta;
+    if (/^https:\/\/(go\.)?2gis\.(kz|ru|com)\//.test(M.gis || "")) return M.gis;
+    return M.address ? `https://2gis.kz/${M.city === "Астана" ? "astana" : "almaty"}/search/${encodeURIComponent(`${M.name} ${M.address}`)}` : "";
+  }
+  function vxVisit(e) {
+    if (!vxPassOn()) return;
+    const M = VENUE.meta, code = vxPassCode(), d = vxSheet("vx-visit", e ? "Загляну на этот вечер" : "Загляну сегодня");
+    const when = e ? `${vxEventDay(e)}, ${e.time} — «${e.title}»` : vxHoursLine();
+    const msg = `${M.demo ? "[Тест с демо-страницы] " : ""}Привет! ${e ? `Загляну на «${e.title}» (${vxEventDay(e).toLowerCase()}, ${e.time})` : "Загляну сегодня вечером"}. Мой код пропуска: ${code}.`;
+    const wa = M.contacts.whatsapp ? `https://wa.me/${M.contacts.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(msg)}` : "";
+    const tg = M.contacts.telegram ? `https://t.me/${M.contacts.telegram.replace(/^@/, "")}` : "";
+    const gis = vxGisURL();
+    vxStat("pass_issued");
+    d.body.innerHTML = `<p class="vx-room">${escH(when)}</p>
+      ${M.address ? `<p>${escH(M.address)}${M.district && M.district !== M.city ? ` · ${escH(M.district)}` : ""}</p>` : ""}
+      <p>Без брони: приходите, когда захочется. Покажите код у стойки — бармен отметит визит.</p>
+      ${vxPassHTML(code, "Покажите этот код бармену или хостес")}
+      <div class="acts">${gis ? `<a class="make" href="${escH(gis)}" target="_blank" rel="noopener" data-vx-gis>Маршрут в 2ГИС</a>` : ""}
+        ${wa ? `<a class="make ghost" href="${escH(wa)}" target="_blank" rel="noopener" data-vx-msg>Написать бару</a>` : tg ? `<a class="make ghost" href="${escH(tg)}" target="_blank" rel="noopener" data-vx-msg data-vx-tg>Написать бару</a>` : `<button class="make ghost" type="button" disabled>Написать бару</button>`}
+        <button class="make ghost" type="button" data-vx-invite>Позвать друзей</button></div>
+      ${vxTag("visit") ? `<p class="note">${vxTag("visit")}</p>` : ""}`;
+    openSheet(d);
+    const tl = d.querySelector("[data-vx-tg]");
+    if (tl) tl.addEventListener("click", () => { try { navigator.clipboard.writeText(msg); } catch (er) {} });
+    d.querySelector("[data-vx-invite]").addEventListener("click", ev => vxInvite(ev.currentTarget, e));
   }
   /* анонс события для сторис: дата, название, состав, ссылка на бар */
   async function vxEventStoryCanvas(e) {
@@ -60,7 +110,7 @@
     if (e.lineup) { g.fillStyle = cream; g.font = `40px "${F.text}"`; vxWrap(g, e.lineup, W - 240).slice(0, 2).forEach(l => { y += 64; g.fillText(l, W / 2, y); }); }
     if (e.desc) { g.fillStyle = muted; g.font = `italic 34px "${F.text}"`; y += 20; vxWrap(g, e.desc, W - 260).slice(0, 3).forEach(l => { y += 50; g.fillText(l, W / 2, y); }); }
     g.fillStyle = cream; g.font = `32px "${F.text}"`;
-    g.fillText(O2O ? "Стол на этот вечер — по ссылке" : "Заглядывайте", W / 2, H - 220);
+    g.fillText(PASS ? `Комплимент по барному пропуску — на сайте бара` : "Заглядывайте", W / 2, H - 220);
     vxCanvasFoot(B, `18+ · ${VENUE.meta.city || ""}`.replace(/ · $/, ""));
     return cv;
   }

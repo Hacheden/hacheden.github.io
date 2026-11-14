@@ -4,12 +4,12 @@
 /* квест идёт через читальню (пометка в книге) и камин (строчка в углях): без этих залов его не пройти — выключаем */
 if (!FEAT.nook || !FEAT.smoke) FEAT.quests = false;
 
-/* ---------- маркеры мест: латунное кольцо на сиденье и ромбик над ним ---------- */
+/* ---------- маркеры мест для брони: латунное кольцо на сиденье и ромбик над ним (только у заведений с features.booking) ---------- */
 const SEAT_MARKS = [];
 (() => {
   const ringMat = std({ color: 0xd6aa5c, metalness: 1, roughness: .3, emissive: 0x6a4010, emissiveIntensity: .6 });
   const gemMat = std({ color: 0xffd8a0, metalness: .6, roughness: .25, emissive: 0xd6902a, emissiveIntensity: 1.1 });
-  for (const s of VX_SEATS) {
+  for (const s of FEAT.booking ? VX_SEATS : []) {   // бронь выключена (features.booking: false) — маркеров нет вовсе
     const g = group(s.pos[0], s.pos[1], s.pos[2]);
     const ring = mesh(new THREE.TorusGeometry(.15, .007, 8, 40), ringMat, 0, .01, 0, g);
     ring.rotation.x = Math.PI / 2;
@@ -33,6 +33,15 @@ H3D.seats = () => {
   if (typeof renderZoneUI === "function" && started) renderZoneUI(curZone);
 };
 H3D.seats();
+
+/* ---------- «Загляну сегодня»: пропуск с комплиментом, маршрут, сообщение бару — кнопка у стойки ---------- */
+const VISIT_CHIP = chipOnly(1, "Загляну сегодня", () => vxVisit());
+HOT.splice(HOT.indexOf(VISIT_CHIP), 1); HOT.unshift(VISIT_CHIP);   // первая кнопка у стойки
+H3D.visit = () => {
+  VISIT_CHIP.userData.hot.hidden = !vxPassOn();
+  if (typeof renderZoneUI === "function" && started) renderZoneUI(curZone);
+};
+H3D.visit();
 
 /* ---------- афиша вечера: латунный стенд с ближайшим событием (VENUE.events) ----------
    Место задаёт зал заведения: rooms[i].eventStand = { pos: [x, z], rot, kind } (или VENUE.eventStand с zone); kind: "counter" — рама на стойке (по умолчанию,

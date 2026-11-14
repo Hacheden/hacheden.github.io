@@ -27,7 +27,7 @@
           name: "Алатау",
           sign: "Алатау",
           slogan: "Коктейльный бар у подножия гор",
-          intro: "Камерный коктейльный бар в Алматы — демо платформы. Афиша вечера, бронь стола, барный пропуск с комплиментом и бары сети работают так же, как в настоящем заведении.",
+          intro: "Камерный коктейльный бар в Алматы — демо платформы. Афиша вечера, барный пропуск с комплиментом за визит и бары сети работают так же, как в настоящем заведении.",
           city: "Алматы",
           address: "Алматы · адрес укажет заведение",
           hours: { open: "17:00", close: "03:00", last: "02:30" },
@@ -62,7 +62,7 @@
           /* афиша в зале: латунная рама на стойке слева от меню (табличка спешла отходит левее) — видна и с телефона */
           eventStand: { pos: [-.85, -2.25], rot: .14, kind: "counter" }
         })],
-        features: { street: false, nook: false, smoke: false, stage: false, cellar: false, bartenderShow: true, booking: true, quests: false, liveBar: true }
+        features: { street: false, nook: false, smoke: false, stage: false, cellar: false, bartenderShow: true, booking: false, quests: false, liveBar: true }
       };
     }
   });

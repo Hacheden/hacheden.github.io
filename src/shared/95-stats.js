@@ -2,11 +2,12 @@
    stats/<бар>/<гггг-мм-дд>/<событие>: n — счётчик, u/<анонимный id> — отметка, что этот браузер уже посчитан.
    Правила базы пропускают только «+1» вместе с новой отметкой: один браузер — один раз в день на событие.
    Личных данных нет: только анонимный id Firebase. Не считаются: хозяин, проверки (?time=, #test…), локальный запуск.
-   События: menu_open — открыл барную карту, event_open — открыл афишу вечера, booking_click — начал бронь
-   (место в 3D или «Занять стол на этот вечер»), booking_send — нажал WhatsApp или Telegram с готовой заявкой,
-   story_share — поделился или скачал карточку для сторис, treat_open — открыл ссылку «угостить».
+   События: menu_open — открыл барную карту, event_open — открыл афишу вечера, pass_issued — получил барный пропуск
+   (после фирменного или авторского коктейля или по «Загляну сегодня»), story_share — поделился или скачал карточку для сторис,
+   invite_share — позвал друзей ссылкой на бар, treat_open — открыл ссылку «угостить».
+   Бронь столов выключена (features.booking): её события booking_click и booking_send остались на случай лаунжей и клубов.
    Смотреть цифры: консоль Firebase → Realtime Database → stats. */
-  const STAT_EVENTS = ["menu_open", "event_open", "booking_click", "booking_send", "story_share", "treat_open"];
+  const STAT_EVENTS = ["menu_open", "event_open", "pass_issued", "story_share", "invite_share", "treat_open", "booking_click", "booking_send"];
   const STAT_OFF = (() => {
     try {
       const q = new URLSearchParams(location.search);
