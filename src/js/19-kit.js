@@ -69,6 +69,51 @@ const CUPS = {
   wine:     { p: [[0, 0], [3.5, 0], [3.5, .3], [.6, .8], [.4, 8], [2.4, 9.4], [4, 12.8], [3.7, 18.2]], liq: [2.2, 3.9, 9.4, 13] },
   snifter:  { p: [[0, 0], [3.5, 0], [3.5, .3], [.6, .8], [.4, 4], [3, 5.4], [4.9, 8.6], [4.5, 12.4], [3.4, 13.8]], liq: [3, 4.9, 5.5, 8.6] }
 };
+/* ---------- длинная спираль апельсиновой цедры на краю бокала ----------
+   Начало координат — точка на ободке; +x — наружу от бокала. Спираль висит снаружи, касаясь ободка верхним витком. Лента: снаружи кожура, изнутри белая мякоть. */
+const TWIST_MAT = {
+  peel: std({ color: 0xe9821c, roughness: .42, emissive: 0x5a2400, emissiveIntensity: .35, side: THREE.FrontSide }),
+  pith: std({ color: 0xf7e6c4, roughness: .75, side: THREE.BackSide })
+};
+Object.values(TWIST_MAT).forEach(m => KEEP.add(m));
+function twistGeo(s = 1) {
+  const pts = [], up = V3(0, 1, 0);
+  // спираль: 2,5 витка, сужается книзу; первый виток касается ободка снаружи (на нём цедра и держится)
+  const turns = 2.5, H = .052, N = 60, cx = .0098;
+  for (let i = 0; i <= N; i++) {
+    const t = i / N, a = Math.PI + t * turns * Math.PI * 2, r = .0096 * (1 - t * .18);
+    pts.push(V3(cx + .0004 + Math.cos(a) * r, -.0015 - t * H, Math.sin(a) * r));
+  }
+  const curve = new THREE.CatmullRomCurve3(pts, false, "centripetal");
+  const M = 150, pos = [], idx = [];
+  const pp = curve.getSpacedPoints(M);
+  for (let i = 0; i <= M; i++) {
+    const t = i / M, tg = curve.getTangentAt(t), w = up.clone();
+    w.sub(tg.clone().multiplyScalar(w.dot(tg))).normalize();
+    const hw = .0042 * (t < .03 ? .55 + t / .03 * .45 : t > .93 ? Math.max(.25, 1 - (t - .93) / .07 * .75) : 1);
+    const p = pp[i];
+    pos.push(p.x + w.x * hw, p.y + w.y * hw, p.z + w.z * hw, p.x - w.x * hw, p.y - w.y * hw, p.z - w.z * hw);
+    if (i < M) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos.map(v => v * s), 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  // кожура должна смотреть наружу от оси спирали: проверяем по середине и при надобности разворачиваем треугольники
+  const mi = Math.round(M * .6) * 2, n = V3().fromBufferAttribute(g.attributes.normal, mi), p = V3().fromBufferAttribute(g.attributes.position, mi);
+  if (n.x * (p.x - cx * s) + n.z * p.z < 0) {
+    for (let i = 0; i < idx.length; i += 3) [idx[i + 1], idx[i + 2]] = [idx[i + 2], idx[i + 1]];
+    g.setIndex(idx); g.computeVertexNormals();
+  }
+  return g;
+}
+function twistMesh(s = 1, parent = world) {
+  const gr = new THREE.Group(), geo = twistGeo(s);
+  mesh(geo, TWIST_MAT.peel, 0, 0, 0, gr);
+  mesh(geo, TWIST_MAT.pith, 0, 0, 0, gr);
+  parent.add(gr);
+  return gr;
+}
 const glassMat = std({ color: 0xeef4ff, transparent: true, opacity: .2, roughness: .02, envMapIntensity: 2.5, side: THREE.DoubleSide, depthWrite: false });
 KEEP.add(glassMat); Object.values(M).forEach(m => KEEP.add(m)); Object.values(BGEO).forEach(g => KEEP.add(g));
 function makeGlass(cup, color, { garnish = null, ice = false, op = .85 } = {}) {
@@ -85,9 +130,10 @@ function makeGlass(cup, color, { garnish = null, ice = false, op = .85 } = {}) {
     cube.renderOrder = 5;
   }
   if (garnish) {
-    const col = { flame: 0xf08a22, wheel: 0x9fc23a, wedge: 0x9fc23a, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0x9a0f1e, pineapple: 0xf2c84a, olive: 0x7a8a2a }[garnish] || 0x9fc23a;
+    const col = { twist: 0xe9821c, flame: 0xf08a22, wheel: 0x9fc23a, wedge: 0x9fc23a, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0x9a0f1e, pineapple: 0xf2c84a, olive: 0x7a8a2a }[garnish] || 0x9fc23a;
     const topR = c.p[c.p.length - 1][0] / 100, topY = c.p[c.p.length - 1][1] / 100;
-    if (garnish === "cherry" || garnish === "olive") mesh(new THREE.SphereGeometry(.012, 12, 8), std({ color: col, roughness: .3 }), 0, y1 - .004, 0, gr);
+    if (garnish === "twist") twistMesh(1, gr).position.set(topR, topY, 0);
+    else if (garnish === "cherry" || garnish === "olive") mesh(new THREE.SphereGeometry(.012, 12, 8), std({ color: col, roughness: .3 }), 0, y1 - .004, 0, gr);
     else if (garnish === "mint") for (let i = 0; i < 3; i++) { const l = mesh(new THREE.SphereGeometry(.016, 8, 6), std({ color: col }), R(-.01, .01), topY + .01, R(-.01, .01), gr); l.scale.set(1, .35, .6); l.rotation.set(R(0, 1), R(0, 3), 0); }
     else { const w = mesh(new THREE.CylinderGeometry(.024, .024, .005, 18), std({ color: col, roughness: .5 }), topR - .01, topY - .012, 0, gr); w.rotation.z = Math.PI / 2.4; }
   }

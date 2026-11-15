@@ -23,7 +23,7 @@
     make: base => {
       /* ЗАПОЛНИТЬ: ₸ за порцию по прайсу заведения (сейчас — ориентир для коктейльного бара Алматы) */
       const PRICE = {
-        "c-hacheden": 6500, "c-mojito": 4200, "c-daiquiri": 4200, "c-cubalibre": 3500, "c-pinacolada": 4500,
+        "c-hacheden": 6500, "c-mojito": 4200, "c-daiquiri": 4200, "c-presidente": 5200, "c-cubalibre": 3500, "c-pinacolada": 4500,
         "c-junglebird": 4800, "c-margarita": 4500, "c-sunrise": 3900, "c-gintonic": 3800, "c-negroni": 4800,
         "c-martini": 4900, "c-collins": 4200, "c-oldfashioned": 5200, "c-manhattan": 5200, "c-sour": 4800,
         "c-pisco": 5500, "c-sidecar": 5200, "c-sangria": 3500, "c-nojito": 2500, "c-irish": 3800,

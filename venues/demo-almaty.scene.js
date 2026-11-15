@@ -711,6 +711,51 @@ const CUPS = {
   wine:     { p: [[0, 0], [3.5, 0], [3.5, .3], [.6, .8], [.4, 8], [2.4, 9.4], [4, 12.8], [3.7, 18.2]], liq: [2.2, 3.9, 9.4, 13] },
   snifter:  { p: [[0, 0], [3.5, 0], [3.5, .3], [.6, .8], [.4, 4], [3, 5.4], [4.9, 8.6], [4.5, 12.4], [3.4, 13.8]], liq: [3, 4.9, 5.5, 8.6] }
 };
+/* ---------- длинная спираль апельсиновой цедры на краю бокала ----------
+   Начало координат — точка на ободке; +x — наружу от бокала. Спираль висит снаружи, касаясь ободка верхним витком. Лента: снаружи кожура, изнутри белая мякоть. */
+const TWIST_MAT = {
+  peel: std({ color: 0xe9821c, roughness: .42, emissive: 0x5a2400, emissiveIntensity: .35, side: THREE.FrontSide }),
+  pith: std({ color: 0xf7e6c4, roughness: .75, side: THREE.BackSide })
+};
+Object.values(TWIST_MAT).forEach(m => KEEP.add(m));
+function twistGeo(s = 1) {
+  const pts = [], up = V3(0, 1, 0);
+  // спираль: 2,5 витка, сужается книзу; первый виток касается ободка снаружи (на нём цедра и держится)
+  const turns = 2.5, H = .052, N = 60, cx = .0098;
+  for (let i = 0; i <= N; i++) {
+    const t = i / N, a = Math.PI + t * turns * Math.PI * 2, r = .0096 * (1 - t * .18);
+    pts.push(V3(cx + .0004 + Math.cos(a) * r, -.0015 - t * H, Math.sin(a) * r));
+  }
+  const curve = new THREE.CatmullRomCurve3(pts, false, "centripetal");
+  const M = 150, pos = [], idx = [];
+  const pp = curve.getSpacedPoints(M);
+  for (let i = 0; i <= M; i++) {
+    const t = i / M, tg = curve.getTangentAt(t), w = up.clone();
+    w.sub(tg.clone().multiplyScalar(w.dot(tg))).normalize();
+    const hw = .0042 * (t < .03 ? .55 + t / .03 * .45 : t > .93 ? Math.max(.25, 1 - (t - .93) / .07 * .75) : 1);
+    const p = pp[i];
+    pos.push(p.x + w.x * hw, p.y + w.y * hw, p.z + w.z * hw, p.x - w.x * hw, p.y - w.y * hw, p.z - w.z * hw);
+    if (i < M) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos.map(v => v * s), 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  // кожура должна смотреть наружу от оси спирали: проверяем по середине и при надобности разворачиваем треугольники
+  const mi = Math.round(M * .6) * 2, n = V3().fromBufferAttribute(g.attributes.normal, mi), p = V3().fromBufferAttribute(g.attributes.position, mi);
+  if (n.x * (p.x - cx * s) + n.z * p.z < 0) {
+    for (let i = 0; i < idx.length; i += 3) [idx[i + 1], idx[i + 2]] = [idx[i + 2], idx[i + 1]];
+    g.setIndex(idx); g.computeVertexNormals();
+  }
+  return g;
+}
+function twistMesh(s = 1, parent = world) {
+  const gr = new THREE.Group(), geo = twistGeo(s);
+  mesh(geo, TWIST_MAT.peel, 0, 0, 0, gr);
+  mesh(geo, TWIST_MAT.pith, 0, 0, 0, gr);
+  parent.add(gr);
+  return gr;
+}
 const glassMat = std({ color: 0xeef4ff, transparent: true, opacity: .2, roughness: .02, envMapIntensity: 2.5, side: THREE.DoubleSide, depthWrite: false });
 KEEP.add(glassMat); Object.values(M).forEach(m => KEEP.add(m)); Object.values(BGEO).forEach(g => KEEP.add(g));
 function makeGlass(cup, color, { garnish = null, ice = false, op = .85 } = {}) {
@@ -727,9 +772,10 @@ function makeGlass(cup, color, { garnish = null, ice = false, op = .85 } = {}) {
     cube.renderOrder = 5;
   }
   if (garnish) {
-    const col = { flame: 0xf08a22, wheel: 0x9fc23a, wedge: 0x9fc23a, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0x9a0f1e, pineapple: 0xf2c84a, olive: 0x7a8a2a }[garnish] || 0x9fc23a;
+    const col = { twist: 0xe9821c, flame: 0xf08a22, wheel: 0x9fc23a, wedge: 0x9fc23a, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0x9a0f1e, pineapple: 0xf2c84a, olive: 0x7a8a2a }[garnish] || 0x9fc23a;
     const topR = c.p[c.p.length - 1][0] / 100, topY = c.p[c.p.length - 1][1] / 100;
-    if (garnish === "cherry" || garnish === "olive") mesh(new THREE.SphereGeometry(.012, 12, 8), std({ color: col, roughness: .3 }), 0, y1 - .004, 0, gr);
+    if (garnish === "twist") twistMesh(1, gr).position.set(topR, topY, 0);
+    else if (garnish === "cherry" || garnish === "olive") mesh(new THREE.SphereGeometry(.012, 12, 8), std({ color: col, roughness: .3 }), 0, y1 - .004, 0, gr);
     else if (garnish === "mint") for (let i = 0; i < 3; i++) { const l = mesh(new THREE.SphereGeometry(.016, 8, 6), std({ color: col }), R(-.01, .01), topY + .01, R(-.01, .01), gr); l.scale.set(1, .35, .6); l.rotation.set(R(0, 1), R(0, 3), 0); }
     else { const w = mesh(new THREE.CylinderGeometry(.024, .024, .005, 18), std({ color: col, roughness: .5 }), topR - .01, topY - .012, 0, gr); w.rotation.z = Math.PI / 2.4; }
   }
@@ -2538,7 +2584,7 @@ function stepCaption(st, c) {
   }
   return "";
 }
-const GCOL = { flame: 0xf08a22, wheel: 0xa8c83e, wedge: 0xa8c83e, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0xa8101e, pineapple: 0xf2c84a, olive: 0x8a9a30 };
+const GCOL = { twist: 0xe9821c, flame: 0xf08a22, wheel: 0xa8c83e, wedge: 0xa8c83e, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0xa8101e, pineapple: 0xf2c84a, olive: 0x8a9a30 };
 /* строка карточки для шага рецепта */
 function cardRow(st, c) {
   const { GNAME } = Closeup;
@@ -3091,7 +3137,9 @@ function garnishMesh(kind) {
   const col = GCOL[kind] || 0x9fc23a;
   const g = new THREE.Group();
   const m = std({ color: col, roughness: kind === "cherry" ? .15 : .45, emissive: new THREE.Color(col).multiplyScalar(.15) });
-  if (kind === "olive" || kind === "cherry") {
+  if (kind === "twist") {
+    twistMesh(SHOW.glassV ? SHOW.glassV.scale : 1.35, g);
+  } else if (kind === "olive" || kind === "cherry") {
     mesh(new THREE.SphereGeometry(.011, 16, 12), m, 0, 0, 0, g).scale.set(1, kind === "olive" ? .8 : 1, 1);
     if (kind === "olive") { mesh(new THREE.CylinderGeometry(.0011, .0011, .11, 6), std({ color: 0xd8c08a, roughness: .5 }), 0, .035, 0, g); mesh(new THREE.SphereGeometry(.003, 8, 6), std({ color: 0xa8101e }), 0, 0, .009, g); }
     else { const s = mesh(new THREE.CylinderGeometry(.0009, .0009, .035, 4), std({ color: 0x3a5a1a }), 0, .02, 0, g); s.rotation.z = .3; }
@@ -3142,6 +3190,26 @@ async function stepGarnish(c) {
       SND.plop();
       letGo(R, "open");
     }
+  } else if (kind === "twist") {
+    // длинная спираль цедры: над бокалом бармен проворачивает её — брызги масла; крючок садится на ободок, спираль висит снаружи
+    G.g.updateMatrixWorld(true);
+    const rimW = G.g.localToWorld(V3(G.mouthR, G.mouthY, 0)), gq = G.g.getWorldQuaternion(new THREE.Quaternion());
+    const turn = a => gq.clone().multiply(Qe(0, a, 0));
+    const hold = rimW.clone().add(V3(-rw * .6, .13, 0));
+    await move(gm, hold, { q: turn(-.6), dur: .6, arc: .04 });
+    bt.look = camera.position;
+    follow(hold.clone().add(V3(0, -.04, 0)));
+    await ws(rr(.35, .5));
+    bt.look = m;
+    const spark = () => { for (let i = 0; i < 7; i++) { const s = glowSprite(0xffc070, .03, gm.position.x + rr(-.012, .012), gm.position.y - rr(.005, .04), gm.position.z + rr(-.012, .012), world, .85); tween(s.position, { x: s.position.x + rr(-.04, .04), y: s.position.y - rr(.03, .07), z: s.position.z + rr(-.04, .04) }, .5).then(() => drop(s)); } };
+    spark();
+    await move(gm, hold, { q: turn(1.2), dur: .45 });
+    spark();
+    await move(gm, hold, { q: turn(0), dur: .4 });
+    await move(gm, rimW.clone().add(V3(0, .035, 0)), { q: gq, dur: .5, arc: .02 });
+    await move(gm, rimW, { q: gq, dur: .3, e: ease.in });
+    letGo(R, "open");
+    shot("low", rimW.clone().add(V3(0, -.025, 0)));
   } else if (kind === "mint") {
     // хлопок: мята между ладонями отдаёт аромат
     const mid = B(-.05, 1.33, .38);
@@ -4138,6 +4206,7 @@ const ADVICE = {
     strong: [
       ["c-sidecar", "Тогда «Сайдкар»: коньяк, апельсиновый ликёр и лимон. Классика Парижа и Лондона, ровесница ревущих двадцатых."],
       ["c-manhattan", "«Манхэттен»: ржаной виски, красный вермут и вишня. Нью-Йорк конца XIX века — торжественно и без суеты."],
+      ["c-presidente", "«Эль Президенте»: белый ром, сухой вермут, кюрасао и капля гренадина. Гавана двадцатых — коктейль, названный в честь президента, и спираль цедры на краю."],
       ["c-hacheden", `Тогда наш фирменный «${BAR_NAME}»: горящий коньяк с вишней, огненная струя между двух кружек и цедра через пламя. Смотрите внимательно.`]
     ],
     light: [
@@ -7135,9 +7204,9 @@ function ripple(G) {
   const base = STEP.garnish;
   STEP.garnish = async (st, c) => {
     const G = SHOW.glassV;
-    if (G && (c.garnish === "orange" || c.garnish === "lemon")) {
+    if (G && (c.garnish === "orange" || c.garnish === "lemon" || c.garnish === "twist")) {
       shot("macro", mouth(G, .04));
-      citrusMist(G, c.garnish === "orange" ? 0xffb04a : 0xfff07a);
+      citrusMist(G, c.garnish !== "lemon" ? 0xffb04a : 0xfff07a);
       FSND.hiss && FSND.hiss();
       await ws(.5);
     }

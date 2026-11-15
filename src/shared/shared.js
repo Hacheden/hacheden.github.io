@@ -73,6 +73,7 @@
     wheel: `<circle r="15" fill="#8fb12f"/><circle r="12.5" fill="#d3e57c"/><path d="M0 0L0 -12.5M0 0L10.8 -6.2M0 0L10.8 6.2M0 0L0 12.5M0 0L-10.8 6.2M0 0L-10.8 -6.2" stroke="#8fb12f" stroke-width="1.2"/><circle r="2" fill="#8fb12f"/>`,
     wedge: `<path d="M0 14C6 -4 30 -2 34 18C26 8 12 8 0 14Z" fill="#8fb12f"/><path d="M4 14C9 2 26 2 29 15C22 9 12 9 4 14Z" fill="#d3e57c"/>`,
     orange: `<circle r="14" fill="#e98a1a"/><circle r="11.5" fill="#f6b54a"/><path d="M0 0L0 -11.5M0 0L10 -5.7M0 0L10 5.7M0 0L0 11.5M0 0L-10 5.7M0 0L-10 -5.7" stroke="#e98a1a" stroke-width="1.2"/>`,
+    twist: `<path d="M-10 6C-6 2 -2 0 2 1" stroke="#e98a1a" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M2 1C10 1 13 8 8 11C2 14 4 20 10 20C16 20 17 27 11 30C6 32 7 37 11 38" stroke="#e98a1a" stroke-width="3.4" fill="none" stroke-linecap="round"/><path d="M3 2C10 2 12 8 8 10M10 21C15 21 16 27 11 29" stroke="#f7e0b0" stroke-width="1" fill="none" stroke-linecap="round" opacity=".8"/>`,
     lemon: `<path d="M-14 -2C-6 -14 6 8 16 -4" stroke="#f2d14a" stroke-width="4" fill="none" stroke-linecap="round"/>`,
     mint: `<g transform="translate(0 9)"><path d="M0 0C-10 -6 -12 -18 -4 -24C2 -16 4 -6 0 0Z" fill="#3f8f3a"/><path d="M2 -2C10 -10 20 -10 24 -4C16 0 8 2 2 -2Z" fill="#4fa548"/><path d="M-2 -2C-12 -6 -20 -2 -22 4C-14 6 -6 4 -2 -2Z" fill="#357d31"/></g>`,
     cherry: `<path d="M0 -4C4 -14 10 -20 16 -24" stroke="#5a3a1a" stroke-width="1.6" fill="none"/><circle r="7" fill="#a3122a"/><circle cx="-2.5" cy="-2.5" r="1.8" fill="#ff8a9a"/>`,
@@ -1472,6 +1473,7 @@
       "c-sunrise": [["ice", "glass"], ["jig", "tequila", 45], ["pour", "oj", 90], ["float"], ["garnish"]],
       "c-gintonic": [["ice", "glass"], ["jig", "gin", 50], ["top", "tonic"], ["squeeze"], ["stirIn"], ["garnish"]],
       "c-negroni": [["ice", "mixer"], ["jig", "gin", 30], ["jig", "campari", 30], ["jig", "vermouthR", 30], ["stir"], ["ice", "glass"], ["strain"], ["garnish"]],
+      "c-presidente": [["ice", "mixer"], ["jig", "rum", 45], ["jig", "vermouthD", 20], ["jig", "triple", 10], ["jig", "grenadine", 5], ["stir"], ["strain"], ["garnish"]],
       "c-martini": [["ice", "mixer"], ["jig", "gin", 60], ["jig", "vermouthD", 10], ["stir"], ["strain"], ["garnish"]],
       "c-collins": [["ice", "glass"], ["jig", "gin", 45], ["jig", "lemon", 30], ["jig", "syrup", 15], ["top", "soda"], ["stirIn"], ["garnish"]],
       "c-oldfashioned": [["jig", "syrup", 10, "glass"], ["dash", "bitters", 2, "glass"], ["ice", "glass"], ["jig", "whisky", 45, "glass"], ["stirIn"], ["garnish"]],
@@ -1489,7 +1491,7 @@
       lemon: "лимонного сока", syrup: "сахарного сиропа", grenadine: "гренадина", coffee: "кофе", tea: "чая", cream: "сливок" };
     const TOPACC = { soda: "содовую", tonic: "тоник", cola: "колу", coffee: "кофе", tea: "чай" };
     const GNAME = { wheel: "кружок лайма", wedge: "долька лайма", orange: "кружок апельсина", lemon: "лимонная цедра", mint: "веточка мяты",
-      cherry: "коктейльная вишня", pineapple: "долька ананаса", olive: "оливка на шпажке", flame: "обожжённая апельсиновая цедра" };
+      cherry: "коктейльная вишня", pineapple: "долька ананаса", olive: "оливка на шпажке", twist: "спираль апельсиновой цедры", flame: "обожжённая апельсиновая цедра" };
     function stepText(st) {
       switch (st[0]) {
         case "ice": return st[2] ? "Засыпаем колотый лёд" : st[1] === "tin" ? "Кладём лёд в шейкер" : st[1] === "mixer" ? "Наполняем стакан для смешивания льдом" : "Наполняем бокал льдом";

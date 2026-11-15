@@ -439,7 +439,7 @@ function stepCaption(st, c) {
   }
   return "";
 }
-const GCOL = { flame: 0xf08a22, wheel: 0xa8c83e, wedge: 0xa8c83e, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0xa8101e, pineapple: 0xf2c84a, olive: 0x8a9a30 };
+const GCOL = { twist: 0xe9821c, flame: 0xf08a22, wheel: 0xa8c83e, wedge: 0xa8c83e, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0xa8101e, pineapple: 0xf2c84a, olive: 0x8a9a30 };
 /* строка карточки для шага рецепта */
 function cardRow(st, c) {
   const { GNAME } = Closeup;
@@ -992,7 +992,9 @@ function garnishMesh(kind) {
   const col = GCOL[kind] || 0x9fc23a;
   const g = new THREE.Group();
   const m = std({ color: col, roughness: kind === "cherry" ? .15 : .45, emissive: new THREE.Color(col).multiplyScalar(.15) });
-  if (kind === "olive" || kind === "cherry") {
+  if (kind === "twist") {
+    twistMesh(SHOW.glassV ? SHOW.glassV.scale : 1.35, g);
+  } else if (kind === "olive" || kind === "cherry") {
     mesh(new THREE.SphereGeometry(.011, 16, 12), m, 0, 0, 0, g).scale.set(1, kind === "olive" ? .8 : 1, 1);
     if (kind === "olive") { mesh(new THREE.CylinderGeometry(.0011, .0011, .11, 6), std({ color: 0xd8c08a, roughness: .5 }), 0, .035, 0, g); mesh(new THREE.SphereGeometry(.003, 8, 6), std({ color: 0xa8101e }), 0, 0, .009, g); }
     else { const s = mesh(new THREE.CylinderGeometry(.0009, .0009, .035, 4), std({ color: 0x3a5a1a }), 0, .02, 0, g); s.rotation.z = .3; }
@@ -1043,6 +1045,26 @@ async function stepGarnish(c) {
       SND.plop();
       letGo(R, "open");
     }
+  } else if (kind === "twist") {
+    // длинная спираль цедры: над бокалом бармен проворачивает её — брызги масла; крючок садится на ободок, спираль висит снаружи
+    G.g.updateMatrixWorld(true);
+    const rimW = G.g.localToWorld(V3(G.mouthR, G.mouthY, 0)), gq = G.g.getWorldQuaternion(new THREE.Quaternion());
+    const turn = a => gq.clone().multiply(Qe(0, a, 0));
+    const hold = rimW.clone().add(V3(-rw * .6, .13, 0));
+    await move(gm, hold, { q: turn(-.6), dur: .6, arc: .04 });
+    bt.look = camera.position;
+    follow(hold.clone().add(V3(0, -.04, 0)));
+    await ws(rr(.35, .5));
+    bt.look = m;
+    const spark = () => { for (let i = 0; i < 7; i++) { const s = glowSprite(0xffc070, .03, gm.position.x + rr(-.012, .012), gm.position.y - rr(.005, .04), gm.position.z + rr(-.012, .012), world, .85); tween(s.position, { x: s.position.x + rr(-.04, .04), y: s.position.y - rr(.03, .07), z: s.position.z + rr(-.04, .04) }, .5).then(() => drop(s)); } };
+    spark();
+    await move(gm, hold, { q: turn(1.2), dur: .45 });
+    spark();
+    await move(gm, hold, { q: turn(0), dur: .4 });
+    await move(gm, rimW.clone().add(V3(0, .035, 0)), { q: gq, dur: .5, arc: .02 });
+    await move(gm, rimW, { q: gq, dur: .3, e: ease.in });
+    letGo(R, "open");
+    shot("low", rimW.clone().add(V3(0, -.025, 0)));
   } else if (kind === "mint") {
     // хлопок: мята между ладонями отдаёт аромат
     const mid = B(-.05, 1.33, .38);

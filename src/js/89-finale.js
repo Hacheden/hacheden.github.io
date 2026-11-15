@@ -78,9 +78,9 @@ function ripple(G) {
   const base = STEP.garnish;
   STEP.garnish = async (st, c) => {
     const G = SHOW.glassV;
-    if (G && (c.garnish === "orange" || c.garnish === "lemon")) {
+    if (G && (c.garnish === "orange" || c.garnish === "lemon" || c.garnish === "twist")) {
       shot("macro", mouth(G, .04));
-      citrusMist(G, c.garnish === "orange" ? 0xffb04a : 0xfff07a);
+      citrusMist(G, c.garnish !== "lemon" ? 0xffb04a : 0xfff07a);
       FSND.hiss && FSND.hiss();
       await ws(.5);
     }
