@@ -114,6 +114,83 @@ function twistMesh(s = 1, parent = world) {
   parent.add(gr);
   return gr;
 }
+/* ---------- «шея лошади»: длинная лимонная спираль внутри высокого стакана ----------
+   Начало координат — точка на ободке (+x — наружу), как у twist. Короткий язычок висит снаружи, лента перекидывается
+   через край и уходит вниз по стенке спиралью почти до дна. Лента лежит вдоль стекла: снаружи на язычке и у стенки — жёлтая кожура,
+   к центру стакана — белая мякоть (на спуске у края лента мягко переворачивается). Лёд держим в центре, чтобы не задеть спираль. */
+const SPIRAL_MAT = {
+  peel: std({ color: 0xf2cf3a, roughness: .4, emissive: 0x4a3a00, emissiveIntensity: .3, side: THREE.FrontSide }),
+  pith: std({ color: 0xf3e6b4, roughness: .78, side: THREE.BackSide })
+};
+Object.values(SPIRAL_MAT).forEach(m => KEEP.add(m));
+const SPIRAL_GEO = {};
+function spiralGeo(s = 1) {
+  const key = s.toFixed(3);
+  if (SPIRAL_GEO[key]) return SPIRAL_GEO[key];
+  const prof = CUPS.highball.p, top = prof[prof.length - 1], bot = prof[prof.length - 2];
+  const rTop = top[0] / 100, yTop = top[1] / 100;
+  const wall = y => { const k = clamp((y * 100 - bot[1]) / (top[1] - bot[1]), 0, 1); return (bot[0] + (top[0] - bot[0]) * k) / 100; };
+  const ax = -rTop, up = V3(0, 1, 0);
+  // точки: [x, y, z] в координатах стакана и нормаль «от стекла»; потом всё сдвигаем к ободку
+  const pts = [], nrm = [];
+  const rho = .0021;
+  for (let i = 0; i <= 10; i++) { const y = yTop - .017 + i * .0017; pts.push(V3(wall(y) + rho, y, 0)); nrm.push(V3(1, 0, 0)); }
+  for (let i = 1; i <= 14; i++) { const f = i / 14 * Math.PI; pts.push(V3(rTop + Math.cos(f) * rho, yTop + Math.sin(f) * rho, 0)); nrm.push(V3(Math.cos(f), Math.sin(f), 0)); }
+  for (let i = 1; i <= 5; i++) { const y = yTop - i * .0018; pts.push(V3(wall(y) - rho, y, 0)); nrm.push(V3(-1, 0, 0)); }
+  const nIn = pts.length;
+  // спираль: 3,3 витка от края почти до дна; первые полвитка — переворот ленты (чуть дальше от стекла)
+  const turns = 3.3, y0 = yTop - .009, y1 = .016, N = 150;
+  for (let i = 1; i <= N; i++) {
+    const t = i / N, a = t * turns * Math.PI * 2, y = y0 + (y1 - y0) * Math.pow(t, .92);
+    const flip = clamp(a / Math.PI, 0, 1), r = wall(y) - .0026 - Math.sin(flip * Math.PI) * .0032;
+    pts.push(V3(Math.cos(a) * r, y, Math.sin(a) * r)); nrm.push(null);
+  }
+  const curve = new THREE.CatmullRomCurve3(pts, false, "centripetal");
+  const M = 260, pp = curve.getSpacedPoints(M), pos = [], idx = [];
+  // доля длины, где кончается крючок
+  const lens = [0]; for (let i = 1; i < pts.length; i++) lens.push(lens[i - 1] + pts[i].distanceTo(pts[i - 1]));
+  const L = lens[lens.length - 1], tHook = lens[nIn - 1] / L;
+  let wPrev = null;
+  for (let i = 0; i <= M; i++) {
+    const t = i / M, p = pp[i], tg = curve.getTangentAt(t);
+    const rad = V3(p.x, 0, p.z).normalize();
+    let w;
+    if (t <= tHook) {
+      // нормаль крючка: по ближайшей точке исходной ломаной
+      const d = t * L; let j = 0; while (j < nIn - 1 && lens[j + 1] < d) j++;
+      const n = nrm[Math.min(j, nIn - 1)].clone();
+      w = n.cross(tg).normalize();
+    } else {
+      // у стенки лента лежит плашмя: w = r̂ × t; на первых полвитка поворачиваем её на 180° вокруг касательной
+      const wHelix = rad.clone().cross(tg).normalize();
+      const a = (t - tHook) * L / ((L - lens[nIn - 1]) / (turns * Math.PI * 2));
+      const f = clamp(a / Math.PI, 0, 1), k = f * f * (3 - 2 * f);
+      w = wHelix.clone().negate().applyAxisAngle(tg, Math.PI * k).normalize();
+    }
+    if (wPrev && w.dot(wPrev) < 0) w.negate();
+    wPrev = w;
+    const hw = .0036 * (t < .02 ? .45 + t / .02 * .55 : t > .94 ? Math.max(.22, 1 - (t - .94) / .06 * .78) : 1);
+    const q = V3(p.x - rTop, p.y - yTop, p.z);
+    pos.push(q.x + w.x * hw, q.y + w.y * hw, q.z + w.z * hw, q.x - w.x * hw, q.y - w.y * hw, q.z - w.z * hw);
+    if (i < M) { const b = i * 2; idx.push(b, b + 1, b + 2, b + 1, b + 3, b + 2); }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos.map(v => v * s), 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  // кожура (лицевая сторона) на язычке смотрит наружу от стакана
+  const n0 = V3().fromBufferAttribute(g.attributes.normal, 8);
+  if (n0.x < 0) { for (let i = 0; i < idx.length; i += 3) [idx[i + 1], idx[i + 2]] = [idx[i + 2], idx[i + 1]]; g.setIndex(idx); g.computeVertexNormals(); }
+  KEEP.add(g);
+  return SPIRAL_GEO[key] = g;
+}
+function spiralMesh(s = 1, parent = world) {
+  const gr = new THREE.Group(), geo = spiralGeo(s);
+  mesh(geo, SPIRAL_MAT.peel, 0, 0, 0, gr);
+  mesh(geo, SPIRAL_MAT.pith, 0, 0, 0, gr);
+  parent.add(gr);
+  return gr;
+}
 const glassMat = std({ color: 0xeef4ff, transparent: true, opacity: .2, roughness: .02, envMapIntensity: 2.5, side: THREE.DoubleSide, depthWrite: false });
 KEEP.add(glassMat); Object.values(M).forEach(m => KEEP.add(m)); Object.values(BGEO).forEach(g => KEEP.add(g));
 function makeGlass(cup, color, { garnish = null, ice = false, op = .85 } = {}) {
@@ -124,15 +201,18 @@ function makeGlass(cup, color, { garnish = null, ice = false, op = .85 } = {}) {
   const liq = mesh(new THREE.CylinderGeometry(r1, r0, y1 - y0, 24), std({ color, transparent: true, opacity: op, roughness: .15, emissive: new THREE.Color(color), emissiveIntensity: .25 }), 0, (y0 + y1) / 2, 0, gr);
   liq.renderOrder = 4;
   gr.userData.liq = { mesh: liq, y0, y1 };
+  if (garnish === "spiral") liq.material.depthWrite = false;
   if (ice) for (let i = 0; i < 2; i++) {
-    const cube = mesh(new RoundedBoxGeometry(.028, .028, .028, 2, .006), std({ color: 0xffffff, transparent: true, opacity: .35, roughness: .05 }), R(-.012, .012), y1 - .016 - i * .02, R(-.012, .012), gr);
+    const sp = garnish === "spiral" ? .003 : .012;   // со спиралью лёд держится в центре, не задевая цедру
+    const cube = mesh(new RoundedBoxGeometry(.028, .028, .028, 2, .006), std({ color: 0xffffff, transparent: true, opacity: .35, roughness: .05 }), R(-sp, sp), y1 - .016 - i * .02 - (garnish === "spiral" ? .006 : 0), R(-sp, sp), gr);
     cube.rotation.set(R(0, 1), R(0, 1), 0);
-    cube.renderOrder = 5;
+    cube.renderOrder = garnish === "spiral" ? 3 : 5;
   }
   if (garnish) {
-    const col = { twist: 0xe9821c, flame: 0xf08a22, wheel: 0x9fc23a, wedge: 0x9fc23a, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0x9a0f1e, pineapple: 0xf2c84a, olive: 0x7a8a2a }[garnish] || 0x9fc23a;
+    const col = { twist: 0xe9821c, spiral: 0xf2cf3a, flame: 0xf08a22, wheel: 0x9fc23a, wedge: 0x9fc23a, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0x9a0f1e, pineapple: 0xf2c84a, olive: 0x7a8a2a }[garnish] || 0x9fc23a;
     const topR = c.p[c.p.length - 1][0] / 100, topY = c.p[c.p.length - 1][1] / 100;
     if (garnish === "twist") twistMesh(1, gr).position.set(topR, topY, 0);
+    else if (garnish === "spiral") spiralMesh(1, gr).position.set(topR, topY, 0);
     else if (garnish === "cherry" || garnish === "olive") mesh(new THREE.SphereGeometry(.012, 12, 8), std({ color: col, roughness: .3 }), 0, y1 - .004, 0, gr);
     else if (garnish === "mint") for (let i = 0; i < 3; i++) { const l = mesh(new THREE.SphereGeometry(.016, 8, 6), std({ color: col }), R(-.01, .01), topY + .01, R(-.01, .01), gr); l.scale.set(1, .35, .6); l.rotation.set(R(0, 1), R(0, 3), 0); }
     else { const w = mesh(new THREE.CylinderGeometry(.024, .024, .005, 18), std({ color: col, roughness: .5 }), topR - .01, topY - .012, 0, gr); w.rotation.z = Math.PI / 2.4; }

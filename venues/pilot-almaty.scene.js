@@ -756,6 +756,83 @@ function twistMesh(s = 1, parent = world) {
   parent.add(gr);
   return gr;
 }
+/* ---------- «шея лошади»: длинная лимонная спираль внутри высокого стакана ----------
+   Начало координат — точка на ободке (+x — наружу), как у twist. Короткий язычок висит снаружи, лента перекидывается
+   через край и уходит вниз по стенке спиралью почти до дна. Лента лежит вдоль стекла: снаружи на язычке и у стенки — жёлтая кожура,
+   к центру стакана — белая мякоть (на спуске у края лента мягко переворачивается). Лёд держим в центре, чтобы не задеть спираль. */
+const SPIRAL_MAT = {
+  peel: std({ color: 0xf2cf3a, roughness: .4, emissive: 0x4a3a00, emissiveIntensity: .3, side: THREE.FrontSide }),
+  pith: std({ color: 0xf3e6b4, roughness: .78, side: THREE.BackSide })
+};
+Object.values(SPIRAL_MAT).forEach(m => KEEP.add(m));
+const SPIRAL_GEO = {};
+function spiralGeo(s = 1) {
+  const key = s.toFixed(3);
+  if (SPIRAL_GEO[key]) return SPIRAL_GEO[key];
+  const prof = CUPS.highball.p, top = prof[prof.length - 1], bot = prof[prof.length - 2];
+  const rTop = top[0] / 100, yTop = top[1] / 100;
+  const wall = y => { const k = clamp((y * 100 - bot[1]) / (top[1] - bot[1]), 0, 1); return (bot[0] + (top[0] - bot[0]) * k) / 100; };
+  const ax = -rTop, up = V3(0, 1, 0);
+  // точки: [x, y, z] в координатах стакана и нормаль «от стекла»; потом всё сдвигаем к ободку
+  const pts = [], nrm = [];
+  const rho = .0021;
+  for (let i = 0; i <= 10; i++) { const y = yTop - .017 + i * .0017; pts.push(V3(wall(y) + rho, y, 0)); nrm.push(V3(1, 0, 0)); }
+  for (let i = 1; i <= 14; i++) { const f = i / 14 * Math.PI; pts.push(V3(rTop + Math.cos(f) * rho, yTop + Math.sin(f) * rho, 0)); nrm.push(V3(Math.cos(f), Math.sin(f), 0)); }
+  for (let i = 1; i <= 5; i++) { const y = yTop - i * .0018; pts.push(V3(wall(y) - rho, y, 0)); nrm.push(V3(-1, 0, 0)); }
+  const nIn = pts.length;
+  // спираль: 3,3 витка от края почти до дна; первые полвитка — переворот ленты (чуть дальше от стекла)
+  const turns = 3.3, y0 = yTop - .009, y1 = .016, N = 150;
+  for (let i = 1; i <= N; i++) {
+    const t = i / N, a = t * turns * Math.PI * 2, y = y0 + (y1 - y0) * Math.pow(t, .92);
+    const flip = clamp(a / Math.PI, 0, 1), r = wall(y) - .0026 - Math.sin(flip * Math.PI) * .0032;
+    pts.push(V3(Math.cos(a) * r, y, Math.sin(a) * r)); nrm.push(null);
+  }
+  const curve = new THREE.CatmullRomCurve3(pts, false, "centripetal");
+  const M = 260, pp = curve.getSpacedPoints(M), pos = [], idx = [];
+  // доля длины, где кончается крючок
+  const lens = [0]; for (let i = 1; i < pts.length; i++) lens.push(lens[i - 1] + pts[i].distanceTo(pts[i - 1]));
+  const L = lens[lens.length - 1], tHook = lens[nIn - 1] / L;
+  let wPrev = null;
+  for (let i = 0; i <= M; i++) {
+    const t = i / M, p = pp[i], tg = curve.getTangentAt(t);
+    const rad = V3(p.x, 0, p.z).normalize();
+    let w;
+    if (t <= tHook) {
+      // нормаль крючка: по ближайшей точке исходной ломаной
+      const d = t * L; let j = 0; while (j < nIn - 1 && lens[j + 1] < d) j++;
+      const n = nrm[Math.min(j, nIn - 1)].clone();
+      w = n.cross(tg).normalize();
+    } else {
+      // у стенки лента лежит плашмя: w = r̂ × t; на первых полвитка поворачиваем её на 180° вокруг касательной
+      const wHelix = rad.clone().cross(tg).normalize();
+      const a = (t - tHook) * L / ((L - lens[nIn - 1]) / (turns * Math.PI * 2));
+      const f = clamp(a / Math.PI, 0, 1), k = f * f * (3 - 2 * f);
+      w = wHelix.clone().negate().applyAxisAngle(tg, Math.PI * k).normalize();
+    }
+    if (wPrev && w.dot(wPrev) < 0) w.negate();
+    wPrev = w;
+    const hw = .0036 * (t < .02 ? .45 + t / .02 * .55 : t > .94 ? Math.max(.22, 1 - (t - .94) / .06 * .78) : 1);
+    const q = V3(p.x - rTop, p.y - yTop, p.z);
+    pos.push(q.x + w.x * hw, q.y + w.y * hw, q.z + w.z * hw, q.x - w.x * hw, q.y - w.y * hw, q.z - w.z * hw);
+    if (i < M) { const b = i * 2; idx.push(b, b + 1, b + 2, b + 1, b + 3, b + 2); }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos.map(v => v * s), 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  // кожура (лицевая сторона) на язычке смотрит наружу от стакана
+  const n0 = V3().fromBufferAttribute(g.attributes.normal, 8);
+  if (n0.x < 0) { for (let i = 0; i < idx.length; i += 3) [idx[i + 1], idx[i + 2]] = [idx[i + 2], idx[i + 1]]; g.setIndex(idx); g.computeVertexNormals(); }
+  KEEP.add(g);
+  return SPIRAL_GEO[key] = g;
+}
+function spiralMesh(s = 1, parent = world) {
+  const gr = new THREE.Group(), geo = spiralGeo(s);
+  mesh(geo, SPIRAL_MAT.peel, 0, 0, 0, gr);
+  mesh(geo, SPIRAL_MAT.pith, 0, 0, 0, gr);
+  parent.add(gr);
+  return gr;
+}
 const glassMat = std({ color: 0xeef4ff, transparent: true, opacity: .2, roughness: .02, envMapIntensity: 2.5, side: THREE.DoubleSide, depthWrite: false });
 KEEP.add(glassMat); Object.values(M).forEach(m => KEEP.add(m)); Object.values(BGEO).forEach(g => KEEP.add(g));
 function makeGlass(cup, color, { garnish = null, ice = false, op = .85 } = {}) {
@@ -766,15 +843,18 @@ function makeGlass(cup, color, { garnish = null, ice = false, op = .85 } = {}) {
   const liq = mesh(new THREE.CylinderGeometry(r1, r0, y1 - y0, 24), std({ color, transparent: true, opacity: op, roughness: .15, emissive: new THREE.Color(color), emissiveIntensity: .25 }), 0, (y0 + y1) / 2, 0, gr);
   liq.renderOrder = 4;
   gr.userData.liq = { mesh: liq, y0, y1 };
+  if (garnish === "spiral") liq.material.depthWrite = false;
   if (ice) for (let i = 0; i < 2; i++) {
-    const cube = mesh(new RoundedBoxGeometry(.028, .028, .028, 2, .006), std({ color: 0xffffff, transparent: true, opacity: .35, roughness: .05 }), R(-.012, .012), y1 - .016 - i * .02, R(-.012, .012), gr);
+    const sp = garnish === "spiral" ? .003 : .012;   // со спиралью лёд держится в центре, не задевая цедру
+    const cube = mesh(new RoundedBoxGeometry(.028, .028, .028, 2, .006), std({ color: 0xffffff, transparent: true, opacity: .35, roughness: .05 }), R(-sp, sp), y1 - .016 - i * .02 - (garnish === "spiral" ? .006 : 0), R(-sp, sp), gr);
     cube.rotation.set(R(0, 1), R(0, 1), 0);
-    cube.renderOrder = 5;
+    cube.renderOrder = garnish === "spiral" ? 3 : 5;
   }
   if (garnish) {
-    const col = { twist: 0xe9821c, flame: 0xf08a22, wheel: 0x9fc23a, wedge: 0x9fc23a, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0x9a0f1e, pineapple: 0xf2c84a, olive: 0x7a8a2a }[garnish] || 0x9fc23a;
+    const col = { twist: 0xe9821c, spiral: 0xf2cf3a, flame: 0xf08a22, wheel: 0x9fc23a, wedge: 0x9fc23a, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0x9a0f1e, pineapple: 0xf2c84a, olive: 0x7a8a2a }[garnish] || 0x9fc23a;
     const topR = c.p[c.p.length - 1][0] / 100, topY = c.p[c.p.length - 1][1] / 100;
     if (garnish === "twist") twistMesh(1, gr).position.set(topR, topY, 0);
+    else if (garnish === "spiral") spiralMesh(1, gr).position.set(topR, topY, 0);
     else if (garnish === "cherry" || garnish === "olive") mesh(new THREE.SphereGeometry(.012, 12, 8), std({ color: col, roughness: .3 }), 0, y1 - .004, 0, gr);
     else if (garnish === "mint") for (let i = 0; i < 3; i++) { const l = mesh(new THREE.SphereGeometry(.016, 8, 6), std({ color: col }), R(-.01, .01), topY + .01, R(-.01, .01), gr); l.scale.set(1, .35, .6); l.rotation.set(R(0, 1), R(0, 3), 0); }
     else { const w = mesh(new THREE.CylinderGeometry(.024, .024, .005, 18), std({ color: col, roughness: .5 }), topR - .01, topY - .012, 0, gr); w.rotation.z = Math.PI / 2.4; }
@@ -2158,7 +2238,7 @@ async function ws(s) { await sleep(SHOW.fast ? Math.min(s, .01) : s * SL()); liv
 const PROGS = () => Closeup.PROGRAMS;
 const NOM = { rum: "Ром", tequila: "Текила", gin: "Джин", whisky: "Виски", cognac: "Коньяк", pisco: "Писко", wine: "Красное вино", triple: "Апельсиновый ликёр", cherry: "Вишнёвый ликёр",
   campari: "Кампари", vermouthR: "Красный вермут", vermouthD: "Сухой вермут", bitters: "Ангостура", tonic: "Тоник", soda: "Содовая",
-  cola: "Кола", oj: "Апельсиновый сок", pineapple: "Ананасовый сок", coconut: "Кокосовые сливки", lime: "Сок лайма",
+  cola: "Кола", ginger: "Имбирный эль", oj: "Апельсиновый сок", pineapple: "Ананасовый сок", coconut: "Кокосовые сливки", lime: "Сок лайма",
   lemon: "Лимонный сок", syrup: "Сахарный сироп", grenadine: "Гренадин", coffee: "Кофе", tea: "Чай", cream: "Сливки" };
 const liqOf = ing => new THREE.Color((Closeup.LOOK[ing] || {}).liq || "#ffffff");
 
@@ -2214,7 +2294,7 @@ function setLevel(V) {
   V.liq.material.emissive.copy(V.col).multiplyScalar(.3);
   // светлое и прозрачное (вода, джин, содовая) не должно выглядеть молоком
   const lum = V.col.r * .3 + V.col.g * .59 + V.col.b * .11;
-  V.liq.material.opacity = .9 - .52 * clamp((lum - .62) / .3, 0, 1);
+  V.liq.material.opacity = Math.min(V.opMax || 1, .9 - .52 * clamp((lum - .62) / .3, 0, 1));
 }
 const mouth = (V, dy = 0) => V.g.localToWorld(V3(0, V.mouthY + dy / V.scale, 0));
 const surface = V => V.g.localToWorld(V3(0, V.y0 + Math.max(.004, clamp(V.ml / V.cap, 0, .94) * (V.y1 - V.y0)), 0));
@@ -2579,12 +2659,13 @@ function stepCaption(st, c) {
     case "float": return "Гренадин тяжелее — он опускается на дно";
     case "hot": return "Горячая вода: этот коктейль подают тёплым";
     case "fire": return "Огненная струя: горящий коньяк переливают из кружки в кружку";
+    case "peel": return "Длинная лимонная спираль — первой в стакан, конец через край";
     case "garnish": return c.garnish === "flame" ? "Цедра через пламя: масло апельсина вспыхивает над стаканом" : `Финальный штрих: ${GNAME[c.garnish] || "украшение"}`;
     case "serve": return choose(["Готово. Приятного вечера!", "Ваш коктейль. Наслаждайтесь.", "Прошу. За ваш вечер!"]);
   }
   return "";
 }
-const GCOL = { twist: 0xe9821c, flame: 0xf08a22, wheel: 0xa8c83e, wedge: 0xa8c83e, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0xa8101e, pineapple: 0xf2c84a, olive: 0x8a9a30 };
+const GCOL = { twist: 0xe9821c, spiral: 0xf2cf3a, flame: 0xf08a22, wheel: 0xa8c83e, wedge: 0xa8c83e, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0xa8101e, pineapple: 0xf2c84a, olive: 0x8a9a30 };
 /* строка карточки для шага рецепта */
 function cardRow(st, c) {
   const { GNAME } = Closeup;
@@ -2606,7 +2687,7 @@ function cardRow(st, c) {
     case "stir": return tech("Размешать", "со льдом");
     case "stirIn": return tech("Перемешать");
     case "strain": return tech("Процедить", "в бокал");
-    case "garnish": { const g = GNAME[c.garnish] || "украшение"; return { name: g[0].toUpperCase() + g.slice(1), amt: "", col: "#" + new THREE.Color(GCOL[c.garnish] || 0x9fc23a).getHexString() }; }
+    case "peel": case "garnish": { const g = GNAME[c.garnish] || "украшение"; return { name: g[0].toUpperCase() + g.slice(1), amt: "", col: "#" + new THREE.Color(GCOL[c.garnish] || 0x9fc23a).getHexString() }; }
   }
   return null;
 }
@@ -2682,14 +2763,15 @@ onTick(() => {
 
 /* ---------- лёд ---------- */
 function iceSpot(V, crushed) {
-  const n = V.ice.length, r = Math.max(.006, Math.min(V.r0, V.r1) * .55);
+  // со спиралью цедры у стенки лёд ложится ближе к центру
+  const n = V.ice.length, r = Math.max(.006, Math.min(V.r0, V.r1) * (V.spiral ? .3 : .55));
   const a = n * 2.39996, per = crushed ? 6 : 3;
   const ring = n % per === 0 ? .2 : 1;
   return V3(Math.cos(a) * r * ring, V.y0 + .013 + Math.floor(n / per) * (crushed ? .011 : .02), Math.sin(a) * r * ring);
 }
 async function dropCube(V, from, crushed) {
   const cube = new THREE.Mesh(crushed ? crushGeo : cubeGeo, MX.ice);
-  cube.renderOrder = 5;
+  cube.renderOrder = V.spiral ? 3 : 5;   // в «Хорсес неке» лёд виден сквозь напиток и тонируется им
   cube.position.copy(from);
   cube.rotation.set(rr(0, 3), rr(0, 3), 0);
   world.add(cube);
@@ -2702,7 +2784,7 @@ async function dropCube(V, from, crushed) {
 }
 async function stepIce(st) {
   const V = st[1] === "tin" ? P.tin : st[1] === "mixer" ? P.mixer : SHOW.glassV, crushed = !!st[2];
-  const n = crushed ? 12 : V === SHOW.glassV ? (SHOW.c.cup === "rocks" ? 3 : 5) : 7;
+  const n = crushed ? 12 : V === SHOW.glassV ? (SHOW.c.cup === "rocks" ? 3 : V.spiral ? 8 : 5) : 7;
   const S = P.scoop.g, R = bt.R;
   shot(choose(["macro", "low", "medium"]), ST.bucket.clone().add(V3(.15, .12, .05)));
   bt.look = ST.bucket;
@@ -3139,6 +3221,8 @@ function garnishMesh(kind) {
   const m = std({ color: col, roughness: kind === "cherry" ? .15 : .45, emissive: new THREE.Color(col).multiplyScalar(.15) });
   if (kind === "twist") {
     twistMesh(SHOW.glassV ? SHOW.glassV.scale : 1.35, g);
+  } else if (kind === "spiral") {
+    spiralMesh(SHOW.glassV ? SHOW.glassV.scale : 1.35, g);
   } else if (kind === "olive" || kind === "cherry") {
     mesh(new THREE.SphereGeometry(.011, 16, 12), m, 0, 0, 0, g).scale.set(1, kind === "olive" ? .8 : 1, 1);
     if (kind === "olive") { mesh(new THREE.CylinderGeometry(.0011, .0011, .11, 6), std({ color: 0xd8c08a, roughness: .5 }), 0, .035, 0, g); mesh(new THREE.SphereGeometry(.003, 8, 6), std({ color: 0xa8101e }), 0, 0, .009, g); }
@@ -3242,6 +3326,46 @@ async function stepGarnish(c) {
   }
   G.g.attach(gm);
   await ws(.2);
+  await rest(R);
+}
+
+/* ---------- «Хорсес нек»: длинная лимонная спираль первой опускается в пустой стакан ----------
+   Бармен держит ленту за верхний конец высоко над стаканом — спираль раскачивается, как пружина, — затем ровно по оси
+   опускает её в стакан и перекидывает конец через край. Лёд потом ложится в середину, внутрь витков. */
+async function stepPeel(c) {
+  const G = SHOW.glassV, R = bt.R;
+  G.spiral = true; G.opMax = .62;
+  G.liq.material.depthWrite = false;   // лёд и спираль видны сквозь светлый напиток
+  G.g.updateMatrixWorld(true);
+  const rimW = G.g.localToWorld(V3(G.mouthR, G.mouthY, 0)), gq = G.g.getWorldQuaternion(new THREE.Quaternion());
+  shot("side", rimW.clone().add(V3(-.06, .13, 0)));
+  bt.look = ST.tray;
+  const gm = garnishMesh("spiral");
+  gm.userData.ing = true;   // если шоу прервут, лента не останется висеть в воздухе
+  // с подноса бармен поднимает свёрнутую ленту — по дороге к стакану она разворачивается в спираль
+  place(gm, ST.tray.clone().add(V3(.03, .012, 0)), gq);
+  gm.scale.setScalar(.02);
+  await grip(R, gm, PINCH(V3(0, .004, 0)), .42);
+  const high = rimW.clone().add(V3(0, .24, 0));
+  tween(gm.scale, { x: 1, y: 1, z: 1 }, SHOW.fast ? .001 : .9 * SL(), ease.io);
+  await move(gm, high, { q: gq, dur: .9, arc: .05 });
+  bt.look = camera.position;
+  follow(rimW.clone().add(V3(-.02, .14, 0)));
+  const sway = rr(.5, .8);
+  await waitTicks(sway, (k, t) => {
+    const d = Math.sin(k * Math.PI * 2) * (1 - k) * .006;
+    gm.position.set(high.x, high.y + d, high.z);
+  });
+  bt.look = mouth(G);
+  // строго вниз по оси стакана: витки проходят внутри стекла, язычок — снаружи
+  follow(mouth(G, .03));
+  await move(gm, rimW.clone().add(V3(0, .03, 0)), { q: gq, dur: .8, e: ease.io });
+  await move(gm, rimW, { q: gq, dur: .35, e: ease.out });
+  SND.tap();
+  letGo(R, "open");
+  G.g.attach(gm);
+  shot("macro", mouth(G, -.05));
+  await ws(.35);
   await rest(R);
 }
 
@@ -3690,7 +3814,7 @@ async function stepFlameZest(gm, G) {
 const STEP = {
   ice: stepIce, jig: stepJig, pour: st => stepPour(st), top: st => stepPour(st, true), dash: stepDash, shake: stepShake, stir: stepStir,
   strain: stepStrain, stirIn: stepStirIn, leaves: stepLeaves, muddle: stepMuddle, squeeze: stepSqueeze, rim: stepRim, float: stepFloat,
-  garnish: (st, c) => stepGarnish(c), serve: stepServe, hot: stepHot, fire: stepFire
+  garnish: (st, c) => stepGarnish(c), peel: (st, c) => stepPeel(c), serve: stepServe, hot: stepHot, fire: stepFire
 };
 function buildGlass(c) {
   const cup = CUPS[c.cup] || CUPS.rocks;
@@ -4221,7 +4345,8 @@ const ADVICE = {
     ],
     light: [
       ["c-pinacolada", "«Пина колада»: ром, ананас и кокос. С 1978 года — официальный напиток Пуэрто-Рико."],
-      ["c-cubalibre", "«Куба либре»: ром, кола и лайм. Гавана, около 1900 года. Просто и без спешки."]
+      ["c-cubalibre", "«Куба либре»: ром, кола и лайм. Гавана, около 1900 года. Просто и без спешки."],
+      ["c-horsesneck", "«Хорсес нек»: коньяк, имбирный эль и лимонная спираль во весь стакан. Америка 1890-х — мягко, пряно и с пузырьками."]
     ]
   },
   think: {

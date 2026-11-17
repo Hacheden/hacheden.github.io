@@ -13,7 +13,7 @@ async function ws(s) { await sleep(SHOW.fast ? Math.min(s, .01) : s * SL()); liv
 const PROGS = () => Closeup.PROGRAMS;
 const NOM = { rum: "Ром", tequila: "Текила", gin: "Джин", whisky: "Виски", cognac: "Коньяк", pisco: "Писко", wine: "Красное вино", triple: "Апельсиновый ликёр", cherry: "Вишнёвый ликёр",
   campari: "Кампари", vermouthR: "Красный вермут", vermouthD: "Сухой вермут", bitters: "Ангостура", tonic: "Тоник", soda: "Содовая",
-  cola: "Кола", oj: "Апельсиновый сок", pineapple: "Ананасовый сок", coconut: "Кокосовые сливки", lime: "Сок лайма",
+  cola: "Кола", ginger: "Имбирный эль", oj: "Апельсиновый сок", pineapple: "Ананасовый сок", coconut: "Кокосовые сливки", lime: "Сок лайма",
   lemon: "Лимонный сок", syrup: "Сахарный сироп", grenadine: "Гренадин", coffee: "Кофе", tea: "Чай", cream: "Сливки" };
 const liqOf = ing => new THREE.Color((Closeup.LOOK[ing] || {}).liq || "#ffffff");
 
@@ -69,7 +69,7 @@ function setLevel(V) {
   V.liq.material.emissive.copy(V.col).multiplyScalar(.3);
   // светлое и прозрачное (вода, джин, содовая) не должно выглядеть молоком
   const lum = V.col.r * .3 + V.col.g * .59 + V.col.b * .11;
-  V.liq.material.opacity = .9 - .52 * clamp((lum - .62) / .3, 0, 1);
+  V.liq.material.opacity = Math.min(V.opMax || 1, .9 - .52 * clamp((lum - .62) / .3, 0, 1));
 }
 const mouth = (V, dy = 0) => V.g.localToWorld(V3(0, V.mouthY + dy / V.scale, 0));
 const surface = V => V.g.localToWorld(V3(0, V.y0 + Math.max(.004, clamp(V.ml / V.cap, 0, .94) * (V.y1 - V.y0)), 0));
@@ -434,12 +434,13 @@ function stepCaption(st, c) {
     case "float": return "Гренадин тяжелее — он опускается на дно";
     case "hot": return "Горячая вода: этот коктейль подают тёплым";
     case "fire": return "Огненная струя: горящий коньяк переливают из кружки в кружку";
+    case "peel": return "Длинная лимонная спираль — первой в стакан, конец через край";
     case "garnish": return c.garnish === "flame" ? "Цедра через пламя: масло апельсина вспыхивает над стаканом" : `Финальный штрих: ${GNAME[c.garnish] || "украшение"}`;
     case "serve": return choose(["Готово. Приятного вечера!", "Ваш коктейль. Наслаждайтесь.", "Прошу. За ваш вечер!"]);
   }
   return "";
 }
-const GCOL = { twist: 0xe9821c, flame: 0xf08a22, wheel: 0xa8c83e, wedge: 0xa8c83e, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0xa8101e, pineapple: 0xf2c84a, olive: 0x8a9a30 };
+const GCOL = { twist: 0xe9821c, spiral: 0xf2cf3a, flame: 0xf08a22, wheel: 0xa8c83e, wedge: 0xa8c83e, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0xa8101e, pineapple: 0xf2c84a, olive: 0x8a9a30 };
 /* строка карточки для шага рецепта */
 function cardRow(st, c) {
   const { GNAME } = Closeup;
@@ -461,7 +462,7 @@ function cardRow(st, c) {
     case "stir": return tech("Размешать", "со льдом");
     case "stirIn": return tech("Перемешать");
     case "strain": return tech("Процедить", "в бокал");
-    case "garnish": { const g = GNAME[c.garnish] || "украшение"; return { name: g[0].toUpperCase() + g.slice(1), amt: "", col: "#" + new THREE.Color(GCOL[c.garnish] || 0x9fc23a).getHexString() }; }
+    case "peel": case "garnish": { const g = GNAME[c.garnish] || "украшение"; return { name: g[0].toUpperCase() + g.slice(1), amt: "", col: "#" + new THREE.Color(GCOL[c.garnish] || 0x9fc23a).getHexString() }; }
   }
   return null;
 }
@@ -537,14 +538,15 @@ onTick(() => {
 
 /* ---------- лёд ---------- */
 function iceSpot(V, crushed) {
-  const n = V.ice.length, r = Math.max(.006, Math.min(V.r0, V.r1) * .55);
+  // со спиралью цедры у стенки лёд ложится ближе к центру
+  const n = V.ice.length, r = Math.max(.006, Math.min(V.r0, V.r1) * (V.spiral ? .3 : .55));
   const a = n * 2.39996, per = crushed ? 6 : 3;
   const ring = n % per === 0 ? .2 : 1;
   return V3(Math.cos(a) * r * ring, V.y0 + .013 + Math.floor(n / per) * (crushed ? .011 : .02), Math.sin(a) * r * ring);
 }
 async function dropCube(V, from, crushed) {
   const cube = new THREE.Mesh(crushed ? crushGeo : cubeGeo, MX.ice);
-  cube.renderOrder = 5;
+  cube.renderOrder = V.spiral ? 3 : 5;   // в «Хорсес неке» лёд виден сквозь напиток и тонируется им
   cube.position.copy(from);
   cube.rotation.set(rr(0, 3), rr(0, 3), 0);
   world.add(cube);
@@ -557,7 +559,7 @@ async function dropCube(V, from, crushed) {
 }
 async function stepIce(st) {
   const V = st[1] === "tin" ? P.tin : st[1] === "mixer" ? P.mixer : SHOW.glassV, crushed = !!st[2];
-  const n = crushed ? 12 : V === SHOW.glassV ? (SHOW.c.cup === "rocks" ? 3 : 5) : 7;
+  const n = crushed ? 12 : V === SHOW.glassV ? (SHOW.c.cup === "rocks" ? 3 : V.spiral ? 8 : 5) : 7;
   const S = P.scoop.g, R = bt.R;
   shot(choose(["macro", "low", "medium"]), ST.bucket.clone().add(V3(.15, .12, .05)));
   bt.look = ST.bucket;
@@ -994,6 +996,8 @@ function garnishMesh(kind) {
   const m = std({ color: col, roughness: kind === "cherry" ? .15 : .45, emissive: new THREE.Color(col).multiplyScalar(.15) });
   if (kind === "twist") {
     twistMesh(SHOW.glassV ? SHOW.glassV.scale : 1.35, g);
+  } else if (kind === "spiral") {
+    spiralMesh(SHOW.glassV ? SHOW.glassV.scale : 1.35, g);
   } else if (kind === "olive" || kind === "cherry") {
     mesh(new THREE.SphereGeometry(.011, 16, 12), m, 0, 0, 0, g).scale.set(1, kind === "olive" ? .8 : 1, 1);
     if (kind === "olive") { mesh(new THREE.CylinderGeometry(.0011, .0011, .11, 6), std({ color: 0xd8c08a, roughness: .5 }), 0, .035, 0, g); mesh(new THREE.SphereGeometry(.003, 8, 6), std({ color: 0xa8101e }), 0, 0, .009, g); }
@@ -1097,6 +1101,46 @@ async function stepGarnish(c) {
   }
   G.g.attach(gm);
   await ws(.2);
+  await rest(R);
+}
+
+/* ---------- «Хорсес нек»: длинная лимонная спираль первой опускается в пустой стакан ----------
+   Бармен держит ленту за верхний конец высоко над стаканом — спираль раскачивается, как пружина, — затем ровно по оси
+   опускает её в стакан и перекидывает конец через край. Лёд потом ложится в середину, внутрь витков. */
+async function stepPeel(c) {
+  const G = SHOW.glassV, R = bt.R;
+  G.spiral = true; G.opMax = .62;
+  G.liq.material.depthWrite = false;   // лёд и спираль видны сквозь светлый напиток
+  G.g.updateMatrixWorld(true);
+  const rimW = G.g.localToWorld(V3(G.mouthR, G.mouthY, 0)), gq = G.g.getWorldQuaternion(new THREE.Quaternion());
+  shot("side", rimW.clone().add(V3(-.06, .13, 0)));
+  bt.look = ST.tray;
+  const gm = garnishMesh("spiral");
+  gm.userData.ing = true;   // если шоу прервут, лента не останется висеть в воздухе
+  // с подноса бармен поднимает свёрнутую ленту — по дороге к стакану она разворачивается в спираль
+  place(gm, ST.tray.clone().add(V3(.03, .012, 0)), gq);
+  gm.scale.setScalar(.02);
+  await grip(R, gm, PINCH(V3(0, .004, 0)), .42);
+  const high = rimW.clone().add(V3(0, .24, 0));
+  tween(gm.scale, { x: 1, y: 1, z: 1 }, SHOW.fast ? .001 : .9 * SL(), ease.io);
+  await move(gm, high, { q: gq, dur: .9, arc: .05 });
+  bt.look = camera.position;
+  follow(rimW.clone().add(V3(-.02, .14, 0)));
+  const sway = rr(.5, .8);
+  await waitTicks(sway, (k, t) => {
+    const d = Math.sin(k * Math.PI * 2) * (1 - k) * .006;
+    gm.position.set(high.x, high.y + d, high.z);
+  });
+  bt.look = mouth(G);
+  // строго вниз по оси стакана: витки проходят внутри стекла, язычок — снаружи
+  follow(mouth(G, .03));
+  await move(gm, rimW.clone().add(V3(0, .03, 0)), { q: gq, dur: .8, e: ease.io });
+  await move(gm, rimW, { q: gq, dur: .35, e: ease.out });
+  SND.tap();
+  letGo(R, "open");
+  G.g.attach(gm);
+  shot("macro", mouth(G, -.05));
+  await ws(.35);
   await rest(R);
 }
 
@@ -1545,7 +1589,7 @@ async function stepFlameZest(gm, G) {
 const STEP = {
   ice: stepIce, jig: stepJig, pour: st => stepPour(st), top: st => stepPour(st, true), dash: stepDash, shake: stepShake, stir: stepStir,
   strain: stepStrain, stirIn: stepStirIn, leaves: stepLeaves, muddle: stepMuddle, squeeze: stepSqueeze, rim: stepRim, float: stepFloat,
-  garnish: (st, c) => stepGarnish(c), serve: stepServe, hot: stepHot, fire: stepFire
+  garnish: (st, c) => stepGarnish(c), peel: (st, c) => stepPeel(c), serve: stepServe, hot: stepHot, fire: stepFire
 };
 function buildGlass(c) {
   const cup = CUPS[c.cup] || CUPS.rocks;
