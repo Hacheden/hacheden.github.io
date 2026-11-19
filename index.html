@@ -210,6 +210,36 @@
   .pg-glass { width: clamp(130px, 15vw, 170px); aspect-ratio: 1; margin: 12px auto 6px; border-radius: 50%; display: grid; place-items: center;
     background: radial-gradient(circle, #3a1a14, #1a0a0c 70%); box-shadow: 0 0 0 3px #c9a46a, 0 0 0 7px #3a1a12; }
   .pg-glass svg { height: 82%; width: auto; }
+  /* печать «Попробовано»: чернила в книге, латунь на карточке */
+  .pg-glass { position: relative; }
+  .pg-glass svg.stamp { position: absolute; height: auto; width: clamp(74px, 8.4vw, 92px); left: calc(100% - 14px); bottom: -10px;
+    color: #7a1626; opacity: .8; mix-blend-mode: multiply; transform: rotate(-14deg); pointer-events: none; }
+  .stamp text { fill: currentColor; font-family: var(--font-display); text-anchor: middle; }
+  .stamp .st-ring { font-size: 8.6px; letter-spacing: .14em; }
+  .stamp .st-dot { font-size: 6px; }
+  .stamp .st-d { font-size: 12.5px; letter-spacing: .04em; }
+  .stamp .st-y { font-size: 8px; letter-spacing: .22em; }
+  .stamp .st-star { font-size: 17px; }
+  .stamp.fresh { opacity: 0; }
+  .pg-glass svg.stamp.fresh.press { animation: stamp-book .5s cubic-bezier(.5,0,.4,1) both; }
+  @keyframes stamp-book {
+    0% { opacity: 0; transform: translate(-6px, -18px) rotate(-6deg) scale(1.5); }
+    62% { opacity: .9; transform: rotate(-14.5deg) scale(.95); }
+    100% { opacity: .8; transform: rotate(-14deg) scale(1); } }
+  .toc li.tried button { color: #3a1a10; }
+  .toc .tk { color: #7a1626; font-size: 13px; opacity: .85; transform: translateY(-1px); }
+  .pg-title .tried-n { margin-top: 14px; font: italic 400 clamp(14px, 1.4vw, 16px)/1.4 var(--font-text); color: #6a4a32; }
+  .pg-title .tried-n b { font: 400 1.3em/1 var(--font-display); color: #6b0f22; font-style: normal; }
+  .pg-title .tried-bar { width: 150px; height: 2px; margin: 2px auto 0; background: rgba(160,138,100,.4); }
+  .pg-title .tried-bar i { display: block; height: 100%; background: #6b0f22; }
+  .stage { position: relative; }
+  .stage svg.stamp.st-card { position: absolute; height: auto; width: 84px; top: 6px; left: calc(50% + 58px);
+    color: #e2b867; opacity: .88; transform: rotate(-13deg); filter: drop-shadow(0 0 8px rgba(255,180,90,.35));
+    animation: stamp-card .52s 1.15s cubic-bezier(.5,0,.4,1) both; pointer-events: none; }
+  @keyframes stamp-card {
+    0% { opacity: 0; transform: translate(-8px, -22px) rotate(-5deg) scale(1.6); }
+    62% { opacity: 1; transform: rotate(-13.5deg) scale(.94); }
+    100% { opacity: .88; transform: rotate(-13deg) scale(1); } }
   .pg-num { position: absolute; bottom: 14px; font-size: 13px; color: #8a6a4a; }
   .page.left .pg-num, .leaf .face.l .pg-num { left: 26px; }
   .page.right .pg-num, .leaf .face.r .pg-num { right: 26px; }
@@ -329,7 +359,7 @@
     .flame, .nook-glow, .smoke-wisp, .wisp { animation: none; }
     .smoke-wisp { opacity: .35; }
     .nook-dark { transition: none; }
-    .card-inner > *, .pour, .late { animation: none; }
+    .card-inner > *, .pour, .late, .stage svg.stamp.st-card { animation: none; }
     dialog.card[open] { animation: none; }
     .bottle svg { transition: none; }
     .pa-head, .pb-arm, .pb-head, .neon.blink { animation: none; }
@@ -1567,6 +1597,7 @@
     if (kind === "tick") tone(2100, 0, .045, .035, "triangle");
     else if (kind === "soft") tone(1300, 0, .07, .03);
     else if (kind === "open") { tone(660, 0, .16, .03); tone(990, .05, .2, .022); }
+    else if (kind === "stamp") { tone(150, 0, .16, .09); tone(96, .005, .22, .07); tone(2400, 0, .018, .012, "triangle"); }
     else if (kind === "chime") { tone(1318.5, 0, .9, .045); tone(1760, .11, 1.1, .04); tone(2637, .22, .9, .015); }
   }
   document.addEventListener("pointerdown", e => {
@@ -1596,7 +1627,7 @@
   }
 
   /* прогресс гостя: где был, что пил, что нашёл */
-  const PROG = Object.assign({ rooms: [], secrets: {}, ach: {}, drinks: {}, tracks: [], favTracks: [], stories: [], visits: 0, first: 0, counters: {} },
+  const PROG = Object.assign({ rooms: [], secrets: {}, ach: {}, drinks: {}, tried: {}, stamped: [], tracks: [], favTracks: [], stories: [], visits: 0, first: 0, counters: {} },
     (() => { try { return JSON.parse(localStorage.getItem("hacheden-progress")) || {}; } catch (e) { return {}; } })());
   function saveProgress() { try { localStorage.setItem("hacheden-progress", JSON.stringify(PROG)); } catch (e) {} }
   const PROG_LISTEN = [];
@@ -1605,7 +1636,7 @@
     let changed = false;
     const addTo = (arr, x) => { if (!arr.includes(x)) { arr.push(x); changed = true; } };
     if (ev === "room") addTo(PROG.rooms, v);
-    else if (ev === "drink") { PROG.drinks[v] = (PROG.drinks[v] || 0) + 1; changed = true; }
+    else if (ev === "drink") { PROG.drinks[v] = (PROG.drinks[v] || 0) + 1; if (!(v in PROG.tried)) PROG.tried[v] = Date.now(); changed = true; }
     else if (ev === "track") addTo(PROG.tracks, v);
     else if (ev === "story") addTo(PROG.stories, v);
     else if (ev === "count") { PROG.counters[v] = (PROG.counters[v] || 0) + 1; changed = true; }
@@ -1622,6 +1653,8 @@
   }
   const onProgress = f => PROG_LISTEN.push(f);
   if (!PROG.first) PROG.first = Date.now();
+  // печати книги рецептов: у старых заказов даты первой пробы нет — печать без даты, уже «поставлена»
+  for (const id in PROG.drinks) if (!(id in PROG.tried)) { PROG.tried[id] = 0; if (!PROG.stamped.includes(id)) PROG.stamped.push(id); }
   PROG.visits++;
   saveProgress();
 
@@ -1805,16 +1838,38 @@
     </svg>`;
   }
 
+  /* печать «Попробовано»: круглый штамп с названием бара по кругу и датой первой пробы.
+     Края чернил чуть стёрты шумом — как у настоящей резиновой печати. */
+  const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
+  let stampN = 0;
+  function stampSVG(id, opt = {}) {
+    const t = PROG.tried[id], d = t ? new Date(t) : null, k = "stp" + (stampN++), seed = [...id].reduce((a, ch) => a + ch.charCodeAt(0), 0) % 97;
+    const mid = d ? `<text x="50" y="52" class="st-d">${d.getDate()} · ${ROMAN[d.getMonth()]}</text><text x="50" y="63.5" class="st-y">${d.getFullYear()}</text>`
+      : `<text x="50" y="57" class="st-d st-star">✦</text>`;
+    return `<svg class="stamp${opt.cls ? " " + opt.cls : ""}" data-stamp="${id}" viewBox="0 0 100 100" role="img" aria-label="Попробовано${d ? ", " + d.toLocaleDateString("ru-RU", { day: "numeric", month: "long" }) : ""}">
+      <defs><filter id="${k}f" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="${seed}"/>
+        <feColorMatrix values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.4 0 0 0 2.15"/><feComposite in="SourceGraphic" operator="in"/></filter>
+        <path id="${k}t" d="M20 50A30 30 0 0 1 80 50"/><path id="${k}b" d="M14.5 50A35.5 35.5 0 0 0 85.5 50"/></defs>
+      <g filter="url(#${k}f)"><g fill="none" stroke="currentColor"><circle cx="50" cy="50" r="46" stroke-width="2.6"/><circle cx="50" cy="50" r="41.5" stroke-width=".9"/><circle cx="50" cy="50" r="24.5" stroke-width=".9"/></g>
+        <text class="st-ring"><textPath href="#${k}t" startOffset="50%">ПОПРОБОВАНО</textPath></text>
+        <text class="st-ring"><textPath href="#${k}b" startOffset="50%">${escH(String(VENUE.meta.name).toUpperCase())}</textPath></text>
+        <text x="17" y="53" class="st-dot">✦</text><text x="83" y="53" class="st-dot">✦</text>${mid}</g>
+    </svg>`;
+  }
+
   
 /* ---------- карточка ---------- */
   const dlg = document.getElementById("card");
+  let freshTry = null;                                  // первая проба: на карточке ставится печать
+  const triedCount = () => COCKTAILS.filter(c => c.id in PROG.tried).length;
   function cardHTML(d, opt) {
     const head = `<div class="close-wrap"><button class="close" type="button" aria-label="Закрыть" data-close>×</button></div>`;
     const facts = `<dl class="facts">${d.facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>`;
     if (d.recipe) {
       return head + `<div class="card-inner">
-        <div class="stage">${glassSVG(d)}</div>
+        <div class="stage">${glassSVG(d)}${freshTry === d.id ? stampSVG(d.id, { cls: "st-card" }) : ""}</div>
         ${freshFind === d.id ? `<p class="found-note">Тайный рецепт найден · ${FOUND.size} из ${SECRETS.length}</p>` : ""}
+        ${freshTry === d.id && freshFind !== d.id ? `<p class="found-note">Новая печать в книге рецептов · ${triedCount()} из ${COCKTAILS.length}</p>` : ""}
         <h2 class="title" id="card-title">${escH(d.name)}</h2>
         <p class="tagline">${d.tagline}</p>
         ${facts}
@@ -1851,6 +1906,7 @@
   function openCard(d, opt) {
     dlg.innerHTML = cardHTML(d, opt);
     if (freshFind === d.id) freshFind = null;
+    if (freshTry === d.id) { freshTry = null; if (dlg.querySelector(".st-card")) setTimeout(() => { if (dlg.open) uiSound("stamp"); }, reduceMotion.matches ? 0 : 1480); }
     dlg.showModal();
     dlg.scrollTop = 0;
     dlg.querySelectorAll(".card-inner > *").forEach((el, i) => { el.style.animationDelay = (0.2 + i * 0.07) + "s"; });
@@ -2374,17 +2430,20 @@
         if (!list.length) return "";
         return `<p class="toc-h">${title}</p><ul class="toc">${list.map(c => {
           const k = COCKTAILS.indexOf(c), pg = first + k * 2;
-          return `<li><button type="button" data-go="${pg}">${escH(c.name)}</button><span class="dots"></span><span>${pg + 1}</span></li>`;
+          const t = c.id in PROG.tried;
+          return `<li${t ? ' class="tried"' : ""}><button type="button" data-go="${pg}">${escH(c.name)}</button>${t ? '<span class="tk" role="img" aria-label="попробовано">✓</span>' : ""}<span class="dots"></span><span>${pg + 1}</span></li>`;
         }).join("")}</ul>`;
       }).join("");
       pages = [
         `<div class="pg pg-title">${ORN}<div class="big">${escH(VENUE.meta.name)}</div><h3>Книга рецептов</h3>${ORN}
-          <p class="tag">Классика, фирменный коктейль<br>и рецепты, которые вы нашли сами</p></div>`,
+          <p class="tag">Классика, фирменный коктейль<br>и рецепты, которые вы нашли сами</p>
+          ${triedCount() ? `<p class="tried-n">Печатей «Попробовано» — <b>${triedCount()}</b> из ${COCKTAILS.length}</p><div class="tried-bar"><i style="width:${triedCount() / COCKTAILS.length * 100}%"></i></div>`
+            : `<p class="tried-n">Каждый попробованный коктейль бармен отметит печатью на его странице</p>`}</div>`,
         `<div class="pg"><h2>Содержание</h2>${toc}</div>`
       ];
       COCKTAILS.forEach(c => {
         pages.push(`<div class="pg"><h2>${escH(c.name)}</h2><p class="tag">${c.tagline}</p>
-          <div class="pg-glass">${glassSVG(c, { pre: "bk" + (n++) + "-", still: true })}</div>
+          <div class="pg-glass">${glassSVG(c, { pre: "bk" + (n++) + "-", still: true })}<i data-st="${c.id}"></i></div>
           <dl>${c.facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>
           <h3>История</h3><p>${c.history}</p></div>`);
         pages.push(`<div class="pg"><h3>Рецепт</h3><ul>${c.recipe.map(([a, b]) => `<li><b>${a}</b> ${b}</li>`).join("")}</ul>
@@ -2394,12 +2453,26 @@
       // последняя страница: пометка карандашом — начало квеста через три зала
       if (VENUE.quest && FEAT.quests) pages.push(`<div class="pg pg-note" data-quest-note><h3>Последняя страница</h3><p class="pencil">${VENUE.quest.note}</p></div>`);
     }
-    const page = k => pages[k] ? pages[k] + `<span class="pg-num">${k + 1}</span>` : "";
+    const stampAt = id => !(id in PROG.tried) ? ""
+      : stampSVG(id, { cls: "st-book" + (!PROG.stamped.includes(id) && !reduceMotion.matches ? " fresh" : "") });
+    const page = k => pages[k] ? pages[k].replace(/<i data-st="([^"]+)"><\/i>/g, (m, id) => stampAt(id)) + `<span class="pg-num">${k + 1}</span>` : "";
+    // свежая печать ставится, когда страница легла: штамп опускается на бумагу, глухой стук
+    function pressStamps() {
+      const fresh = [...L.querySelectorAll(".stamp.fresh"), ...R.querySelectorAll(".stamp.fresh")];
+      fresh.forEach((st, j) => {
+        st.style.animationDelay = (.45 + j * .2) + "s";
+        st.classList.add("press");
+        setTimeout(() => { if (bookDlg.open) uiSound("stamp"); }, 640 + j * 200);
+        if (!PROG.stamped.includes(st.dataset.stamp)) PROG.stamped.push(st.dataset.stamp);
+      });
+      if (fresh.length) saveProgress();
+    }
     const stepSize = () => wide.matches ? 2 : 1;
     function render() {
       if (wide.matches) { i -= i % 2; L.innerHTML = page(i); R.innerHTML = page(i + 1); }
       else { L.innerHTML = ""; R.innerHTML = page(i); }
       if (stage.querySelector("[data-quest-note]") && typeof vxQuestNote === "function") vxQuestNote();
+      pressStamps();
       const st = stepSize();
       prevB.disabled = i <= 0;
       nextB.disabled = i + st >= pages.length;
@@ -2455,7 +2528,7 @@
     }
     function open(at) {
       if (busy) return;
-      if (!pages.length) build();
+      build();                                         // печати и счётчик каждый раз свежие
       if (at != null) i = at;
       render();
       bookDlg.showModal();
@@ -3989,6 +4062,7 @@
     hintEl.textContent = HINT;
     busy = false;
     LAST_DRINK = c;
+    if (!(c.id in PROG.tried) && COCKTAILS.includes(c)) freshTry = c.id;
     track("drink", c.id);
     openCard(c, { served: true });
   }

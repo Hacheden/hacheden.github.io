@@ -121,16 +121,38 @@
     </svg>`;
   }
 
+  /* печать «Попробовано»: круглый штамп с названием бара по кругу и датой первой пробы.
+     Края чернил чуть стёрты шумом — как у настоящей резиновой печати. */
+  const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
+  let stampN = 0;
+  function stampSVG(id, opt = {}) {
+    const t = PROG.tried[id], d = t ? new Date(t) : null, k = "stp" + (stampN++), seed = [...id].reduce((a, ch) => a + ch.charCodeAt(0), 0) % 97;
+    const mid = d ? `<text x="50" y="52" class="st-d">${d.getDate()} · ${ROMAN[d.getMonth()]}</text><text x="50" y="63.5" class="st-y">${d.getFullYear()}</text>`
+      : `<text x="50" y="57" class="st-d st-star">✦</text>`;
+    return `<svg class="stamp${opt.cls ? " " + opt.cls : ""}" data-stamp="${id}" viewBox="0 0 100 100" role="img" aria-label="Попробовано${d ? ", " + d.toLocaleDateString("ru-RU", { day: "numeric", month: "long" }) : ""}">
+      <defs><filter id="${k}f" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="${seed}"/>
+        <feColorMatrix values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.4 0 0 0 2.15"/><feComposite in="SourceGraphic" operator="in"/></filter>
+        <path id="${k}t" d="M20 50A30 30 0 0 1 80 50"/><path id="${k}b" d="M14.5 50A35.5 35.5 0 0 0 85.5 50"/></defs>
+      <g filter="url(#${k}f)"><g fill="none" stroke="currentColor"><circle cx="50" cy="50" r="46" stroke-width="2.6"/><circle cx="50" cy="50" r="41.5" stroke-width=".9"/><circle cx="50" cy="50" r="24.5" stroke-width=".9"/></g>
+        <text class="st-ring"><textPath href="#${k}t" startOffset="50%">ПОПРОБОВАНО</textPath></text>
+        <text class="st-ring"><textPath href="#${k}b" startOffset="50%">${escH(String(VENUE.meta.name).toUpperCase())}</textPath></text>
+        <text x="17" y="53" class="st-dot">✦</text><text x="83" y="53" class="st-dot">✦</text>${mid}</g>
+    </svg>`;
+  }
+
   
 /* ---------- карточка ---------- */
   const dlg = document.getElementById("card");
+  let freshTry = null;                                  // первая проба: на карточке ставится печать
+  const triedCount = () => COCKTAILS.filter(c => c.id in PROG.tried).length;
   function cardHTML(d, opt) {
     const head = `<div class="close-wrap"><button class="close" type="button" aria-label="Закрыть" data-close>×</button></div>`;
     const facts = `<dl class="facts">${d.facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>`;
     if (d.recipe) {
       return head + `<div class="card-inner">
-        <div class="stage">${glassSVG(d)}</div>
+        <div class="stage">${glassSVG(d)}${freshTry === d.id ? stampSVG(d.id, { cls: "st-card" }) : ""}</div>
         ${freshFind === d.id ? `<p class="found-note">Тайный рецепт найден · ${FOUND.size} из ${SECRETS.length}</p>` : ""}
+        ${freshTry === d.id && freshFind !== d.id ? `<p class="found-note">Новая печать в книге рецептов · ${triedCount()} из ${COCKTAILS.length}</p>` : ""}
         <h2 class="title" id="card-title">${escH(d.name)}</h2>
         <p class="tagline">${d.tagline}</p>
         ${facts}
@@ -167,6 +189,7 @@
   function openCard(d, opt) {
     dlg.innerHTML = cardHTML(d, opt);
     if (freshFind === d.id) freshFind = null;
+    if (freshTry === d.id) { freshTry = null; if (dlg.querySelector(".st-card")) setTimeout(() => { if (dlg.open) uiSound("stamp"); }, reduceMotion.matches ? 0 : 1480); }
     dlg.showModal();
     dlg.scrollTop = 0;
     dlg.querySelectorAll(".card-inner > *").forEach((el, i) => { el.style.animationDelay = (0.2 + i * 0.07) + "s"; });
@@ -690,17 +713,20 @@
         if (!list.length) return "";
         return `<p class="toc-h">${title}</p><ul class="toc">${list.map(c => {
           const k = COCKTAILS.indexOf(c), pg = first + k * 2;
-          return `<li><button type="button" data-go="${pg}">${escH(c.name)}</button><span class="dots"></span><span>${pg + 1}</span></li>`;
+          const t = c.id in PROG.tried;
+          return `<li${t ? ' class="tried"' : ""}><button type="button" data-go="${pg}">${escH(c.name)}</button>${t ? '<span class="tk" role="img" aria-label="попробовано">✓</span>' : ""}<span class="dots"></span><span>${pg + 1}</span></li>`;
         }).join("")}</ul>`;
       }).join("");
       pages = [
         `<div class="pg pg-title">${ORN}<div class="big">${escH(VENUE.meta.name)}</div><h3>Книга рецептов</h3>${ORN}
-          <p class="tag">Классика, фирменный коктейль<br>и рецепты, которые вы нашли сами</p></div>`,
+          <p class="tag">Классика, фирменный коктейль<br>и рецепты, которые вы нашли сами</p>
+          ${triedCount() ? `<p class="tried-n">Печатей «Попробовано» — <b>${triedCount()}</b> из ${COCKTAILS.length}</p><div class="tried-bar"><i style="width:${triedCount() / COCKTAILS.length * 100}%"></i></div>`
+            : `<p class="tried-n">Каждый попробованный коктейль бармен отметит печатью на его странице</p>`}</div>`,
         `<div class="pg"><h2>Содержание</h2>${toc}</div>`
       ];
       COCKTAILS.forEach(c => {
         pages.push(`<div class="pg"><h2>${escH(c.name)}</h2><p class="tag">${c.tagline}</p>
-          <div class="pg-glass">${glassSVG(c, { pre: "bk" + (n++) + "-", still: true })}</div>
+          <div class="pg-glass">${glassSVG(c, { pre: "bk" + (n++) + "-", still: true })}<i data-st="${c.id}"></i></div>
           <dl>${c.facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>
           <h3>История</h3><p>${c.history}</p></div>`);
         pages.push(`<div class="pg"><h3>Рецепт</h3><ul>${c.recipe.map(([a, b]) => `<li><b>${a}</b> ${b}</li>`).join("")}</ul>
@@ -710,12 +736,26 @@
       // последняя страница: пометка карандашом — начало квеста через три зала
       if (VENUE.quest && FEAT.quests) pages.push(`<div class="pg pg-note" data-quest-note><h3>Последняя страница</h3><p class="pencil">${VENUE.quest.note}</p></div>`);
     }
-    const page = k => pages[k] ? pages[k] + `<span class="pg-num">${k + 1}</span>` : "";
+    const stampAt = id => !(id in PROG.tried) ? ""
+      : stampSVG(id, { cls: "st-book" + (!PROG.stamped.includes(id) && !reduceMotion.matches ? " fresh" : "") });
+    const page = k => pages[k] ? pages[k].replace(/<i data-st="([^"]+)"><\/i>/g, (m, id) => stampAt(id)) + `<span class="pg-num">${k + 1}</span>` : "";
+    // свежая печать ставится, когда страница легла: штамп опускается на бумагу, глухой стук
+    function pressStamps() {
+      const fresh = [...L.querySelectorAll(".stamp.fresh"), ...R.querySelectorAll(".stamp.fresh")];
+      fresh.forEach((st, j) => {
+        st.style.animationDelay = (.45 + j * .2) + "s";
+        st.classList.add("press");
+        setTimeout(() => { if (bookDlg.open) uiSound("stamp"); }, 640 + j * 200);
+        if (!PROG.stamped.includes(st.dataset.stamp)) PROG.stamped.push(st.dataset.stamp);
+      });
+      if (fresh.length) saveProgress();
+    }
     const stepSize = () => wide.matches ? 2 : 1;
     function render() {
       if (wide.matches) { i -= i % 2; L.innerHTML = page(i); R.innerHTML = page(i + 1); }
       else { L.innerHTML = ""; R.innerHTML = page(i); }
       if (stage.querySelector("[data-quest-note]") && typeof vxQuestNote === "function") vxQuestNote();
+      pressStamps();
       const st = stepSize();
       prevB.disabled = i <= 0;
       nextB.disabled = i + st >= pages.length;
@@ -771,7 +811,7 @@
     }
     function open(at) {
       if (busy) return;
-      if (!pages.length) build();
+      build();                                         // печати и счётчик каждый раз свежие
       if (at != null) i = at;
       render();
       bookDlg.showModal();
@@ -2305,6 +2345,7 @@
     hintEl.textContent = HINT;
     busy = false;
     LAST_DRINK = c;
+    if (!(c.id in PROG.tried) && COCKTAILS.includes(c)) freshTry = c.id;
     track("drink", c.id);
     openCard(c, { served: true });
   }

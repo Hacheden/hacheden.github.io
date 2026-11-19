@@ -54,6 +54,7 @@
     if (kind === "tick") tone(2100, 0, .045, .035, "triangle");
     else if (kind === "soft") tone(1300, 0, .07, .03);
     else if (kind === "open") { tone(660, 0, .16, .03); tone(990, .05, .2, .022); }
+    else if (kind === "stamp") { tone(150, 0, .16, .09); tone(96, .005, .22, .07); tone(2400, 0, .018, .012, "triangle"); }
     else if (kind === "chime") { tone(1318.5, 0, .9, .045); tone(1760, .11, 1.1, .04); tone(2637, .22, .9, .015); }
   }
   document.addEventListener("pointerdown", e => {
@@ -83,7 +84,7 @@
   }
 
   /* прогресс гостя: где был, что пил, что нашёл */
-  const PROG = Object.assign({ rooms: [], secrets: {}, ach: {}, drinks: {}, tracks: [], favTracks: [], stories: [], visits: 0, first: 0, counters: {} },
+  const PROG = Object.assign({ rooms: [], secrets: {}, ach: {}, drinks: {}, tried: {}, stamped: [], tracks: [], favTracks: [], stories: [], visits: 0, first: 0, counters: {} },
     (() => { try { return JSON.parse(localStorage.getItem("hacheden-progress")) || {}; } catch (e) { return {}; } })());
   function saveProgress() { try { localStorage.setItem("hacheden-progress", JSON.stringify(PROG)); } catch (e) {} }
   const PROG_LISTEN = [];
@@ -92,7 +93,7 @@
     let changed = false;
     const addTo = (arr, x) => { if (!arr.includes(x)) { arr.push(x); changed = true; } };
     if (ev === "room") addTo(PROG.rooms, v);
-    else if (ev === "drink") { PROG.drinks[v] = (PROG.drinks[v] || 0) + 1; changed = true; }
+    else if (ev === "drink") { PROG.drinks[v] = (PROG.drinks[v] || 0) + 1; if (!(v in PROG.tried)) PROG.tried[v] = Date.now(); changed = true; }
     else if (ev === "track") addTo(PROG.tracks, v);
     else if (ev === "story") addTo(PROG.stories, v);
     else if (ev === "count") { PROG.counters[v] = (PROG.counters[v] || 0) + 1; changed = true; }
@@ -109,5 +110,7 @@
   }
   const onProgress = f => PROG_LISTEN.push(f);
   if (!PROG.first) PROG.first = Date.now();
+  // печати книги рецептов: у старых заказов даты первой пробы нет — печать без даты, уже «поставлена»
+  for (const id in PROG.drinks) if (!(id in PROG.tried)) { PROG.tried[id] = 0; if (!PROG.stamped.includes(id)) PROG.stamped.push(id); }
   PROG.visits++;
   saveProgress();
