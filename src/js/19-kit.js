@@ -191,6 +191,51 @@ function spiralMesh(s = 1, parent = world) {
   parent.add(gr);
   return gr;
 }
+/* ---------- «Кловер клаб»: три свежие малины на латунной шпажке поперёк блюдца ----------
+   Начало координат — центр шпажки над осью бокала, шпажка идёт вдоль x. Ягода — тёмная сердцевина и ~110 костянок по поверхности
+   (одна геометрия на все три ягоды — один вызов отрисовки); у плодоножки ямка без костянок, через неё проходит шпажка. */
+const RASP = { mat: {
+  drupe: std({ color: 0xa3163a, roughness: .42, emissive: 0x2a020c, emissiveIntensity: .5 }),
+  core: std({ color: 0x4a0614, roughness: .7 }),
+  pick: std({ color: 0xc9944a, metalness: 1, roughness: .26, envMapIntensity: 1.4 })
+}, geo: {} };
+Object.values(RASP.mat).forEach(m => KEEP.add(m));
+RASP.X = [-.0175, 0, .0175];
+function raspGeo(s = 1) {
+  const key = s.toFixed(3);
+  if (RASP.geo[key]) return RASP.geo[key];
+  const a = .0086 * s, b = .0076 * s, dr = .00155 * s, N = 120, drupes = [], cores = [];
+  const rnd = (i => () => (i = (i * 16807) % 2147483647) / 2147483647)(7);
+  RASP.X.forEach((x0, k) => {
+    const tilt = [.25, -.15, .3][k], c = Math.cos(tilt), sn = Math.sin(tilt);
+    const core = new THREE.SphereGeometry(1, 14, 10); core.scale(a * .93, b * .93, b * .93);
+    core.rotateX(tilt); core.translate(x0 * s, 0, 0); cores.push(core);
+    for (let i = 0; i < N; i++) {
+      // точки Фибоначчи на эллипсоиде; ось ягоды вдоль x, у плодоножки (-x) — ямка
+      const u = 1 - 2 * (i + .5) / N, ph = i * 2.39996 + k;
+      if (u < -.82) continue;
+      const rr = Math.sqrt(1 - u * u), y0 = rr * Math.cos(ph), z0 = rr * Math.sin(ph);
+      const taper = 1 - .14 * (u + 1) / 2;   // к кончику ягода чуть сужается
+      const px = u * a, py = y0 * b * taper, pz = z0 * b * taper;
+      const g = new THREE.SphereGeometry(dr * (.85 + .3 * rnd()), 6, 4);
+      g.translate(x0 * s + px, py * c - pz * sn, py * sn + pz * c);
+      drupes.push(g);
+    }
+  });
+  const m = l => { const g = mergeGeometries(l.map(x => x.toNonIndexed()), false); l.forEach(x => x.dispose()); KEEP.add(g); return g; };
+  const len = .124 * s, pick = new THREE.CylinderGeometry(.00065 * s, .00065 * s, len, 6); pick.rotateZ(Math.PI / 2);
+  const ball = new THREE.SphereGeometry(.0019 * s, 10, 8); ball.translate(len / 2 + .0012 * s, 0, 0);
+  const tip = new THREE.ConeGeometry(.00065 * s, .003 * s, 6); tip.rotateZ(Math.PI / 2); tip.translate(-len / 2 - .0015 * s, 0, 0);
+  return RASP.geo[key] = { drupe: m(drupes), core: m(cores), pick: m([pick, ball, tip]) };
+}
+function raspMesh(s = 1, parent = world) {
+  const gr = new THREE.Group(), G = raspGeo(s);
+  mesh(G.core, RASP.mat.core, 0, 0, 0, gr);
+  mesh(G.drupe, RASP.mat.drupe, 0, 0, 0, gr);
+  mesh(G.pick, RASP.mat.pick, 0, 0, 0, gr);
+  parent.add(gr);
+  return gr;
+}
 const glassMat = std({ color: 0xeef4ff, transparent: true, opacity: .2, roughness: .02, envMapIntensity: 2.5, side: THREE.DoubleSide, depthWrite: false });
 KEEP.add(glassMat); Object.values(M).forEach(m => KEEP.add(m)); Object.values(BGEO).forEach(g => KEEP.add(g));
 function makeGlass(cup, color, { garnish = null, ice = false, op = .85 } = {}) {
@@ -209,10 +254,11 @@ function makeGlass(cup, color, { garnish = null, ice = false, op = .85 } = {}) {
     cube.renderOrder = garnish === "spiral" ? 3 : 5;
   }
   if (garnish) {
-    const col = { twist: 0xe9821c, spiral: 0xf2cf3a, flame: 0xf08a22, wheel: 0x9fc23a, wedge: 0x9fc23a, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0x9a0f1e, pineapple: 0xf2c84a, olive: 0x7a8a2a }[garnish] || 0x9fc23a;
+    const col = { twist: 0xe9821c, spiral: 0xf2cf3a, raspberry: 0xc01d42, flame: 0xf08a22, wheel: 0x9fc23a, wedge: 0x9fc23a, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0x9a0f1e, pineapple: 0xf2c84a, olive: 0x7a8a2a }[garnish] || 0x9fc23a;
     const topR = c.p[c.p.length - 1][0] / 100, topY = c.p[c.p.length - 1][1] / 100;
     if (garnish === "twist") twistMesh(1, gr).position.set(topR, topY, 0);
     else if (garnish === "spiral") spiralMesh(1, gr).position.set(topR, topY, 0);
+    else if (garnish === "raspberry") { const r = raspMesh(1, gr); r.position.set(0, topY + .0008, 0); r.rotation.y = .35; }
     else if (garnish === "cherry" || garnish === "olive") mesh(new THREE.SphereGeometry(.012, 12, 8), std({ color: col, roughness: .3 }), 0, y1 - .004, 0, gr);
     else if (garnish === "mint") for (let i = 0; i < 3; i++) { const l = mesh(new THREE.SphereGeometry(.016, 8, 6), std({ color: col }), R(-.01, .01), topY + .01, R(-.01, .01), gr); l.scale.set(1, .35, .6); l.rotation.set(R(0, 1), R(0, 3), 0); }
     else { const w = mesh(new THREE.CylinderGeometry(.024, .024, .005, 18), std({ color: col, roughness: .5 }), topR - .01, topY - .012, 0, gr); w.rotation.z = Math.PI / 2.4; }

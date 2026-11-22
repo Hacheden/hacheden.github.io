@@ -97,12 +97,28 @@
       + st("M85 34C86 24 85 16 80.5 15C78 15 78.5 20 78.5 24", "#f2cf3a", 3.4, 1)
       + st(front.join(" "), "#f2cf3a", 3.4, 1) + st(front.join(" "), "#fff6c8", .9, .7);
   }
+  /* три малины на латунной шпажке поперёк блюдца: ягоды из мелких костянок, блик сверху */
+  function raspSVG() {
+    const y = x => 28 + (x - 16) * .04;
+    let out = `<path d="M16 ${y(16)}L103 ${y(103)}" stroke="#8a6430" stroke-width="1.9" stroke-linecap="round"/><path d="M16 ${y(16) - .4}L103 ${y(103) - .4}" stroke="#e6bd72" stroke-width=".7" stroke-linecap="round"/><circle cx="103.5" cy="${y(103.5)}" r="2.3" fill="#c9944a"/><circle cx="102.8" cy="${y(103.5) - .8}" r=".8" fill="#f6dca0"/>`;
+    [44, 59, 74].forEach((x, k) => {
+      const cy = y(x) + 1.5, rot = [-8, 4, 10][k];
+      let b = `<ellipse rx="6.6" ry="6" fill="#8e0f2c"/>`;
+      for (let j = -2; j <= 2; j++) for (let i = -2; i <= 2; i++) {
+        const px = i * 2.5 + (j % 2 ? 1.25 : 0), py = j * 2.2;
+        if (px * px / 36 + py * py / 30 > 1) continue;
+        b += `<circle cx="${px.toFixed(2)}" cy="${py.toFixed(2)}" r="1.45" fill="#c42548"/><circle cx="${(px - .45).toFixed(2)}" cy="${(py - .5).toFixed(2)}" r=".45" fill="#f08aa0" opacity=".8"/>`;
+      }
+      out += `<g transform="translate(${x} ${cy.toFixed(2)}) rotate(${rot})">${b}</g>`;
+    });
+    return out;
+  }
   function glassSVG(d, opt = {}) {
     const g = GLASSES[d.cup], id = (opt.pre || "pour-") + d.id;
     const pour = opt.still ? "" : ' class="pour"', late = opt.still ? "" : ' class="late"';
     const grad = d.grad ? `<linearGradient id="${id}-g" x1="0" y1="0" x2="0" y2="1"><stop offset=".3" stop-color="${d.grad[0]}"/><stop offset="1" stop-color="${d.grad[1]}"/></linearGradient>` : "";
     const fill = d.grad ? `url(#${id}-g)` : d.pour;
-    const garnish = d.garnish === "spiral" ? spiralSVG(g) : d.garnish
+    const garnish = d.garnish === "spiral" ? spiralSVG(g) : d.garnish === "raspberry" ? raspSVG() : d.garnish
       ? `<g transform="translate(${d.garnish === "olive" && g.ox ? g.ox + " " + g.oy : g.gx + " " + g.gy})">${GARNISH[d.garnish]}</g>` : "";
     return `<svg viewBox="0 0 120 170" role="img" aria-label="${d.glassLabel}">
       <defs><clipPath id="${id}"><path d="${g.body}"/></clipPath>${grad}
@@ -113,7 +129,7 @@
       <g clip-path="url(#${id})"><rect${pour} x="0" y="${d.pourLevel}" width="120" height="170" fill="${fill}" fill-opacity="${d.pourOp || .9}"/>
         <rect${pour} x="0" y="${d.pourLevel}" width="120" height="170" fill="url(#${id}-dp)"/><rect x="0" y="0" width="120" height="170" fill="url(#${id}-sd)"/></g>
       <g${late}>${d.ice ? ICE : ""}</g>
-      ${d.foam ? `<g clip-path="url(#${id})"><g${late}><rect x="0" y="${d.pourLevel - 2}" width="120" height="13" fill="#f7efdf"/><rect x="0" y="${d.pourLevel + 9}" width="120" height="2" fill="#e8d8b8" opacity=".7"/>${[50, 60, 70].map(x => `<ellipse cx="${x}" cy="${d.pourLevel + 2.5}" rx="2.6" ry="1.3" fill="#6a1c10"/>`).join("")}</g></g>` : ""}
+      ${d.foam ? `<g clip-path="url(#${id})"><g${late}><rect x="0" y="${d.pourLevel - 2}" width="120" height="13" fill="${d.foamTint ? "#f6e0e0" : "#f7efdf"}"/><rect x="0" y="${d.pourLevel + 9}" width="120" height="2" fill="${d.foamTint ? "#e6c2c4" : "#e8d8b8"}" opacity=".7"/>${(d.foamDrops === false ? [] : [50, 60, 70]).map(x => `<ellipse cx="${x}" cy="${d.pourLevel + 2.5}" rx="2.6" ry="1.3" fill="#6a1c10"/>`).join("")}</g></g>` : ""}
       <path d="${g.body}" fill="none" stroke="rgba(255,235,200,.6)" stroke-width="1.5"/>
       <path d="${g.shine}" stroke="rgba(255,255,255,.35)" stroke-width="2" fill="none" stroke-linecap="round"/>
       <path d="${g.shine}" stroke="rgba(255,255,255,.85)" stroke-width=".7" fill="none" stroke-linecap="round" transform="translate(1.6 0)"/>
@@ -1184,6 +1200,7 @@
       lemon: { kind: "squeeze", glass: "#ffffff", op: .25, liq: "#f2e48a", label: "#e8c832", ink: "#2a2208", name: "ЛИМОН" },
       syrup: { kind: "squeeze", glass: "#ffffff", op: .3, liq: "#f6efd8", label: "#e8dcc0", ink: "#4a3a22", name: "СИРОП" },
       grenadine: { kind: "squeeze", glass: "#b3122a", op: .85, liq: "#b3122a", label: "#f2e8cf", ink: "#8a0c22", name: "ГРЕНАДИН" },
+      rasp: { kind: "squat", glass: "#8a1030", op: .82, liq: "#c2183e", label: "#f2e8cf", ink: "#8a1030", name: "МАЛИНА" },
       coffee: { kind: "carafe", glass: "#ffffff", op: .18, liq: "#2a1206", name: "" },
       tea: { kind: "carafe", glass: "#ffffff", op: .18, liq: "#b5651d", name: "" },
       cream: { kind: "squeeze", glass: "#f4eee2", op: .95, liq: "#f6efe0", label: "#3a2a1a", ink: "#f6efe0", name: "СЛИВКИ" }
@@ -1538,6 +1555,7 @@
       "c-oldfashioned": [["jig", "syrup", 10, "glass"], ["dash", "bitters", 2, "glass"], ["ice", "glass"], ["jig", "whisky", 45, "glass"], ["stirIn"], ["garnish"]],
       "c-manhattan": [["ice", "mixer"], ["jig", "whisky", 50], ["jig", "vermouthR", 20], ["dash", "bitters", 1], ["stir"], ["strain"], ["garnish"]],
       "c-sour": [["jig", "whisky", 45], ["jig", "lemon", 25], ["jig", "syrup", 20], ["egg", 20], ["shake", "dry"], ["ice", "tin"], ["shake"], ["ice", "glass"], ["strain"], ["drops", 3], ["garnish"]],
+      "c-clover": [["jig", "gin", 45], ["jig", "lemon", 15], ["jig", "rasp", 15], ["egg", 15], ["shake", "dry"], ["ice", "tin"], ["shake"], ["strain"], ["garnish"]],
       "c-pisco": [["jig", "pisco", 60], ["jig", "lemon", 30], ["jig", "syrup", 20], ["egg", 30], ["shake", "dry"], ["ice", "tin"], ["shake"], ["strain"], ["drops", 3], ["hearts"]],
       "c-sidecar": [["ice", "tin"], ["jig", "cognac", 50], ["jig", "triple", 20], ["jig", "lemon", 20], ["shake"], ["strain"], ["garnish"]],
       "c-sangria": [["ice", "glass"], ["pour", "wine", 150], ["pour", "oj", 50], ["top", "soda"], ["stirIn"], ["garnish"]],
@@ -1547,10 +1565,10 @@
     const GEN = { rum: "рома", tequila: "текилы", gin: "джина", whisky: "виски", cognac: "коньяка", pisco: "писко", wine: "вина", triple: "апельсинового ликёра", cherry: "вишнёвого ликёра",
       campari: "кампари", vermouthR: "красного вермута", vermouthD: "сухого вермута", bitters: "ангостуры", tonic: "тоника", soda: "содовой",
       cola: "колы", ginger: "имбирного эля", oj: "апельсинового сока", pineapple: "ананасового сока", coconut: "кокосовых сливок", lime: "сока лайма",
-      lemon: "лимонного сока", syrup: "сахарного сиропа", grenadine: "гренадина", coffee: "кофе", tea: "чая", cream: "сливок" };
+      lemon: "лимонного сока", syrup: "сахарного сиропа", grenadine: "гренадина", rasp: "малинового сиропа", coffee: "кофе", tea: "чая", cream: "сливок" };
     const TOPACC = { soda: "содовую", tonic: "тоник", cola: "колу", ginger: "имбирный эль", coffee: "кофе", tea: "чай" };
     const GNAME = { wheel: "кружок лайма", wedge: "долька лайма", orange: "кружок апельсина", lemon: "лимонная цедра", mint: "веточка мяты",
-      cherry: "коктейльная вишня", pineapple: "долька ананаса", olive: "оливка на шпажке", twist: "спираль апельсиновой цедры", spiral: "длинная спираль лимонной цедры", flame: "обожжённая апельсиновая цедра" };
+      cherry: "коктейльная вишня", pineapple: "долька ананаса", olive: "оливка на шпажке", twist: "спираль апельсиновой цедры", spiral: "длинная спираль лимонной цедры", raspberry: "свежая малина на шпажке", flame: "обожжённая апельсиновая цедра" };
     function stepText(st) {
       switch (st[0]) {
         case "ice": return st[2] ? "Засыпаем колотый лёд" : st[1] === "tin" ? "Кладём лёд в шейкер" : st[1] === "mixer" ? "Наполняем стакан для смешивания льдом" : "Наполняем бокал льдом";
@@ -1762,7 +1780,7 @@
     ["Крепкое", [["wine", "Вино"], ["cognac", "Коньяк"], ["pisco", "Писко"], ["rum", "Ром"], ["whisky", "Виски"], ["gin", "Джин"], ["tequila", "Текила"]]],
     ["Ликёры и вермуты", [["triple", "Апельсиновый ликёр"], ["cherry", "Вишнёвый ликёр"], ["campari", "Кампари"], ["vermouthR", "Красный вермут"], ["vermouthD", "Сухой вермут"], ["bitters", "Ангостура"]]],
     ["Соки и газировка", [["tonic", "Тоник"], ["soda", "Содовая"], ["cola", "Кола"], ["ginger", "Имбирный эль"], ["oj", "Апельсиновый сок"], ["pineapple", "Ананасовый сок"], ["coconut", "Кокосовые сливки"]]],
-    ["Свежее и сиропы", [["lime", "Лайм"], ["lemon", "Лимон"], ["mint", "Мята"], ["syrup", "Сахарный сироп"], ["grenadine", "Гренадин"]]],
+    ["Свежее и сиропы", [["lime", "Лайм"], ["lemon", "Лимон"], ["mint", "Мята"], ["syrup", "Сахарный сироп"], ["grenadine", "Гренадин"], ["rasp", "Малиновый сироп"]]],
     ["Кофе и чай", [["coffee", "Горячий кофе"], ["tea", "Горячий чай"], ["cream", "Сливки"]]]
   ];
   const ING_NAME = Object.fromEntries(ING.flatMap(([, items]) => items));
@@ -1846,7 +1864,7 @@
   const ROLE = { rum: "spirit", tequila: "spirit", gin: "spirit", whisky: "spirit", cognac: "spirit", pisco: "spirit", wine: "wine",
     triple: "liq", cherry: "liq", campari: "bitter", vermouthR: "verm", vermouthD: "verm", bitters: "dash",
     tonic: "top", soda: "top", cola: "top", ginger: "top", oj: "juice", pineapple: "juice", coconut: "cream",
-    lime: "sour", lemon: "sour", mint: "mint", syrup: "sweet", grenadine: "sweet", coffee: "top", tea: "top", cream: "cream" };
+    lime: "sour", lemon: "sour", mint: "mint", syrup: "sweet", grenadine: "sweet", rasp: "sweet", coffee: "top", tea: "top", cream: "cream" };
   // сначала недорогое, крепкое в самом конце: если ошибёшься, выльешь меньше
   const ROLE_ORDER = ["sour", "sweet", "juice", "cream", "liq", "bitter", "verm", "wine", "spirit"];
   const ICE_NAME = { none: "без льда", cubes: "лёд кубиками", crushed: "колотый лёд" };
@@ -1970,7 +1988,7 @@
 
     // вкус: кислое, сладкое, горькое
     const sour = by("sour").reduce((s, i) => s + A[i], 0);
-    const sweet = (A.syrup || 0) + (A.grenadine || 0) + by("liq").reduce((s, i) => s + A[i] * .5, 0) + by("juice").reduce((s, i) => s + A[i] * .25, 0)
+    const sweet = (A.syrup || 0) + (A.grenadine || 0) + (A.rasp || 0) + by("liq").reduce((s, i) => s + A[i] * .5, 0) + by("juice").reduce((s, i) => s + A[i] * .25, 0)
       + (A.coconut || 0) * .4 + (h("cola") ? 20 : 0) + (h("ginger") ? 16 : 0) + (h("tonic") ? 8 : 0) + (A.vermouthR || 0) * .3;
     const bitter = (A.campari || 0) + (dash ? 15 : 0) + (h("tonic") ? 10 : 0);
     const taste = [];

@@ -24,7 +24,8 @@ FOAM.proto.visible = false;
 const eggy = c => !!c && (PROGS()[c.id] || []).some(s => s[0] === "egg");
 const foamy = c => !!c && (eggy(c) || c.need && c.need.includes("pineapple") && (PROGS()[c.id] || []).some(s => s[0] === "shake"));
 // белковая пена почти белая и толще ананасовой
-function foamColor(c) { return eggy(c) ? new THREE.Color(0xfbf6ea) : new THREE.Color(c.pour).lerp(new THREE.Color(0xfff6e6), .72); }
+// у «Кловер клаба» пена чуть розовая от малины (foamTint)
+function foamColor(c) { return eggy(c) ? new THREE.Color(0xfbf6ea).lerp(new THREE.Color(c.pour), c.foamTint || 0) : new THREE.Color(c.pour).lerp(new THREE.Color(0xfff6e6), .72); }
 const foamT = c => eggy(c) ? .0125 : FOAM.T;
 function addFoam(V, c) {
   if (V.foam) return V.foam;

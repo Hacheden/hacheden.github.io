@@ -234,7 +234,8 @@ async function stepDrops(st) {
 /* если шоу пропустили: капли на пене, вишня поверх пены */
 function eggFinish(glass, foam, topY, r, c) {
   const hearts = !!c && (PROGS()[c.id] || []).some(st => st[0] === "hearts");
-  DROP_X.forEach(x => { const d = addDrop(foam, x, 1.35); if (hearts) toHeart(d, 0); });
+  const drops = !!c && (PROGS()[c.id] || []).some(st => st[0] === "drops");   // у «Кловер клаба» пена без капель
+  if (drops) DROP_X.forEach(x => { const d = addDrop(foam, x, 1.35); if (hearts) toHeart(d, 0); });
   const ch = glass.children.find(o => o.geometry && o.geometry.type === "SphereGeometry" && Math.abs((o.geometry.parameters.radius || 0) - .012) < 1e-6);
   if (ch) ch.position.set(0, topY + .012 * .45, -.56 * r);
 }

@@ -1404,6 +1404,12 @@
         history: "Известен с 1870-х годов. Название связывают с розыгрышем 1874 года в Нью-Йорке: людям говорили, что некий Том Коллинз распускает о них слухи в соседнем баре, и они шли его искать.",
         recipe: [["45 мл", "джина"], ["30 мл", "лимонного сока"], ["15 мл", "сахарного сиропа"], ["60 мл", "содовой"]],
         steps: "Смешай джин, лимонный сок и сироп в высоком стакане со льдом, долей содовую и легко перемешай. Укрась цедрой лимона." },
+      { id: "c-clover", name: "Кловер клаб", base: "gin", origin: "США", method: "shake", need: ["gin", "lemon", "rasp"],
+        cup: "coupe", pour: "#d2465e", pourOp: .86, pourLevel: 42, garnish: "raspberry", foam: true, foamDrops: false, foamTint: .34,
+        tagline: "Джин, лимон и малиновый сироп под розовой бархатной пеной",
+        history: "Коктейль назван в честь «Клуба клевера» — филадельфийского клуба журналистов, писателей и юристов, основанного в 1882 году. Клуб собирался в отеле «Бельвю-Стратфорд», и напиток был там в чести ещё до сухого закона. После него «Кловер клаб» надолго забыли, а вернула его бармен Джули Райнер: в 2008 году она назвала в его честь свой бар в Бруклине. Сегодня он входит в список классики Международной ассоциации барменов (IBA).",
+        recipe: [["45 мл", "джина"], ["15 мл", "лимонного сока"], ["15 мл", "малинового сиропа"], ["15 мл", "яичного белка"], ["3", "свежие малины на шпажке"]],
+        steps: "Встряхни всё без льда — сухой шейк взбивает белок в пену. Добавь лёд, встряхни ещё раз и процеди в охлаждённое блюдце. Положи поперёк бокала шпажку со свежей малиной." },
       { id: "c-oldfashioned", name: "Олд фэшн", base: "whisky", origin: "США", method: "stir", need: ["whisky", "syrup", "bitters"],
         cup: "rocks", ice: true, pour: "#b8641a", pourOp: .9, pourLevel: 62, garnish: "orange",
         tagline: "Виски, сахар и биттер: коктейль «по-старому»",
@@ -1814,12 +1820,28 @@
       + st("M85 34C86 24 85 16 80.5 15C78 15 78.5 20 78.5 24", "#f2cf3a", 3.4, 1)
       + st(front.join(" "), "#f2cf3a", 3.4, 1) + st(front.join(" "), "#fff6c8", .9, .7);
   }
+  /* три малины на латунной шпажке поперёк блюдца: ягоды из мелких костянок, блик сверху */
+  function raspSVG() {
+    const y = x => 28 + (x - 16) * .04;
+    let out = `<path d="M16 ${y(16)}L103 ${y(103)}" stroke="#8a6430" stroke-width="1.9" stroke-linecap="round"/><path d="M16 ${y(16) - .4}L103 ${y(103) - .4}" stroke="#e6bd72" stroke-width=".7" stroke-linecap="round"/><circle cx="103.5" cy="${y(103.5)}" r="2.3" fill="#c9944a"/><circle cx="102.8" cy="${y(103.5) - .8}" r=".8" fill="#f6dca0"/>`;
+    [44, 59, 74].forEach((x, k) => {
+      const cy = y(x) + 1.5, rot = [-8, 4, 10][k];
+      let b = `<ellipse rx="6.6" ry="6" fill="#8e0f2c"/>`;
+      for (let j = -2; j <= 2; j++) for (let i = -2; i <= 2; i++) {
+        const px = i * 2.5 + (j % 2 ? 1.25 : 0), py = j * 2.2;
+        if (px * px / 36 + py * py / 30 > 1) continue;
+        b += `<circle cx="${px.toFixed(2)}" cy="${py.toFixed(2)}" r="1.45" fill="#c42548"/><circle cx="${(px - .45).toFixed(2)}" cy="${(py - .5).toFixed(2)}" r=".45" fill="#f08aa0" opacity=".8"/>`;
+      }
+      out += `<g transform="translate(${x} ${cy.toFixed(2)}) rotate(${rot})">${b}</g>`;
+    });
+    return out;
+  }
   function glassSVG(d, opt = {}) {
     const g = GLASSES[d.cup], id = (opt.pre || "pour-") + d.id;
     const pour = opt.still ? "" : ' class="pour"', late = opt.still ? "" : ' class="late"';
     const grad = d.grad ? `<linearGradient id="${id}-g" x1="0" y1="0" x2="0" y2="1"><stop offset=".3" stop-color="${d.grad[0]}"/><stop offset="1" stop-color="${d.grad[1]}"/></linearGradient>` : "";
     const fill = d.grad ? `url(#${id}-g)` : d.pour;
-    const garnish = d.garnish === "spiral" ? spiralSVG(g) : d.garnish
+    const garnish = d.garnish === "spiral" ? spiralSVG(g) : d.garnish === "raspberry" ? raspSVG() : d.garnish
       ? `<g transform="translate(${d.garnish === "olive" && g.ox ? g.ox + " " + g.oy : g.gx + " " + g.gy})">${GARNISH[d.garnish]}</g>` : "";
     return `<svg viewBox="0 0 120 170" role="img" aria-label="${d.glassLabel}">
       <defs><clipPath id="${id}"><path d="${g.body}"/></clipPath>${grad}
@@ -1830,7 +1852,7 @@
       <g clip-path="url(#${id})"><rect${pour} x="0" y="${d.pourLevel}" width="120" height="170" fill="${fill}" fill-opacity="${d.pourOp || .9}"/>
         <rect${pour} x="0" y="${d.pourLevel}" width="120" height="170" fill="url(#${id}-dp)"/><rect x="0" y="0" width="120" height="170" fill="url(#${id}-sd)"/></g>
       <g${late}>${d.ice ? ICE : ""}</g>
-      ${d.foam ? `<g clip-path="url(#${id})"><g${late}><rect x="0" y="${d.pourLevel - 2}" width="120" height="13" fill="#f7efdf"/><rect x="0" y="${d.pourLevel + 9}" width="120" height="2" fill="#e8d8b8" opacity=".7"/>${[50, 60, 70].map(x => `<ellipse cx="${x}" cy="${d.pourLevel + 2.5}" rx="2.6" ry="1.3" fill="#6a1c10"/>`).join("")}</g></g>` : ""}
+      ${d.foam ? `<g clip-path="url(#${id})"><g${late}><rect x="0" y="${d.pourLevel - 2}" width="120" height="13" fill="${d.foamTint ? "#f6e0e0" : "#f7efdf"}"/><rect x="0" y="${d.pourLevel + 9}" width="120" height="2" fill="${d.foamTint ? "#e6c2c4" : "#e8d8b8"}" opacity=".7"/>${(d.foamDrops === false ? [] : [50, 60, 70]).map(x => `<ellipse cx="${x}" cy="${d.pourLevel + 2.5}" rx="2.6" ry="1.3" fill="#6a1c10"/>`).join("")}</g></g>` : ""}
       <path d="${g.body}" fill="none" stroke="rgba(255,235,200,.6)" stroke-width="1.5"/>
       <path d="${g.shine}" stroke="rgba(255,255,255,.35)" stroke-width="2" fill="none" stroke-linecap="round"/>
       <path d="${g.shine}" stroke="rgba(255,255,255,.85)" stroke-width=".7" fill="none" stroke-linecap="round" transform="translate(1.6 0)"/>
@@ -2901,6 +2923,7 @@
       lemon: { kind: "squeeze", glass: "#ffffff", op: .25, liq: "#f2e48a", label: "#e8c832", ink: "#2a2208", name: "ЛИМОН" },
       syrup: { kind: "squeeze", glass: "#ffffff", op: .3, liq: "#f6efd8", label: "#e8dcc0", ink: "#4a3a22", name: "СИРОП" },
       grenadine: { kind: "squeeze", glass: "#b3122a", op: .85, liq: "#b3122a", label: "#f2e8cf", ink: "#8a0c22", name: "ГРЕНАДИН" },
+      rasp: { kind: "squat", glass: "#8a1030", op: .82, liq: "#c2183e", label: "#f2e8cf", ink: "#8a1030", name: "МАЛИНА" },
       coffee: { kind: "carafe", glass: "#ffffff", op: .18, liq: "#2a1206", name: "" },
       tea: { kind: "carafe", glass: "#ffffff", op: .18, liq: "#b5651d", name: "" },
       cream: { kind: "squeeze", glass: "#f4eee2", op: .95, liq: "#f6efe0", label: "#3a2a1a", ink: "#f6efe0", name: "СЛИВКИ" }
@@ -3255,6 +3278,7 @@
       "c-oldfashioned": [["jig", "syrup", 10, "glass"], ["dash", "bitters", 2, "glass"], ["ice", "glass"], ["jig", "whisky", 45, "glass"], ["stirIn"], ["garnish"]],
       "c-manhattan": [["ice", "mixer"], ["jig", "whisky", 50], ["jig", "vermouthR", 20], ["dash", "bitters", 1], ["stir"], ["strain"], ["garnish"]],
       "c-sour": [["jig", "whisky", 45], ["jig", "lemon", 25], ["jig", "syrup", 20], ["egg", 20], ["shake", "dry"], ["ice", "tin"], ["shake"], ["ice", "glass"], ["strain"], ["drops", 3], ["garnish"]],
+      "c-clover": [["jig", "gin", 45], ["jig", "lemon", 15], ["jig", "rasp", 15], ["egg", 15], ["shake", "dry"], ["ice", "tin"], ["shake"], ["strain"], ["garnish"]],
       "c-pisco": [["jig", "pisco", 60], ["jig", "lemon", 30], ["jig", "syrup", 20], ["egg", 30], ["shake", "dry"], ["ice", "tin"], ["shake"], ["strain"], ["drops", 3], ["hearts"]],
       "c-sidecar": [["ice", "tin"], ["jig", "cognac", 50], ["jig", "triple", 20], ["jig", "lemon", 20], ["shake"], ["strain"], ["garnish"]],
       "c-sangria": [["ice", "glass"], ["pour", "wine", 150], ["pour", "oj", 50], ["top", "soda"], ["stirIn"], ["garnish"]],
@@ -3264,10 +3288,10 @@
     const GEN = { rum: "рома", tequila: "текилы", gin: "джина", whisky: "виски", cognac: "коньяка", pisco: "писко", wine: "вина", triple: "апельсинового ликёра", cherry: "вишнёвого ликёра",
       campari: "кампари", vermouthR: "красного вермута", vermouthD: "сухого вермута", bitters: "ангостуры", tonic: "тоника", soda: "содовой",
       cola: "колы", ginger: "имбирного эля", oj: "апельсинового сока", pineapple: "ананасового сока", coconut: "кокосовых сливок", lime: "сока лайма",
-      lemon: "лимонного сока", syrup: "сахарного сиропа", grenadine: "гренадина", coffee: "кофе", tea: "чая", cream: "сливок" };
+      lemon: "лимонного сока", syrup: "сахарного сиропа", grenadine: "гренадина", rasp: "малинового сиропа", coffee: "кофе", tea: "чая", cream: "сливок" };
     const TOPACC = { soda: "содовую", tonic: "тоник", cola: "колу", ginger: "имбирный эль", coffee: "кофе", tea: "чай" };
     const GNAME = { wheel: "кружок лайма", wedge: "долька лайма", orange: "кружок апельсина", lemon: "лимонная цедра", mint: "веточка мяты",
-      cherry: "коктейльная вишня", pineapple: "долька ананаса", olive: "оливка на шпажке", twist: "спираль апельсиновой цедры", spiral: "длинная спираль лимонной цедры", flame: "обожжённая апельсиновая цедра" };
+      cherry: "коктейльная вишня", pineapple: "долька ананаса", olive: "оливка на шпажке", twist: "спираль апельсиновой цедры", spiral: "длинная спираль лимонной цедры", raspberry: "свежая малина на шпажке", flame: "обожжённая апельсиновая цедра" };
     function stepText(st) {
       switch (st[0]) {
         case "ice": return st[2] ? "Засыпаем колотый лёд" : st[1] === "tin" ? "Кладём лёд в шейкер" : st[1] === "mixer" ? "Наполняем стакан для смешивания льдом" : "Наполняем бокал льдом";
@@ -3479,7 +3503,7 @@
     ["Крепкое", [["wine", "Вино"], ["cognac", "Коньяк"], ["pisco", "Писко"], ["rum", "Ром"], ["whisky", "Виски"], ["gin", "Джин"], ["tequila", "Текила"]]],
     ["Ликёры и вермуты", [["triple", "Апельсиновый ликёр"], ["cherry", "Вишнёвый ликёр"], ["campari", "Кампари"], ["vermouthR", "Красный вермут"], ["vermouthD", "Сухой вермут"], ["bitters", "Ангостура"]]],
     ["Соки и газировка", [["tonic", "Тоник"], ["soda", "Содовая"], ["cola", "Кола"], ["ginger", "Имбирный эль"], ["oj", "Апельсиновый сок"], ["pineapple", "Ананасовый сок"], ["coconut", "Кокосовые сливки"]]],
-    ["Свежее и сиропы", [["lime", "Лайм"], ["lemon", "Лимон"], ["mint", "Мята"], ["syrup", "Сахарный сироп"], ["grenadine", "Гренадин"]]],
+    ["Свежее и сиропы", [["lime", "Лайм"], ["lemon", "Лимон"], ["mint", "Мята"], ["syrup", "Сахарный сироп"], ["grenadine", "Гренадин"], ["rasp", "Малиновый сироп"]]],
     ["Кофе и чай", [["coffee", "Горячий кофе"], ["tea", "Горячий чай"], ["cream", "Сливки"]]]
   ];
   const ING_NAME = Object.fromEntries(ING.flatMap(([, items]) => items));
@@ -3563,7 +3587,7 @@
   const ROLE = { rum: "spirit", tequila: "spirit", gin: "spirit", whisky: "spirit", cognac: "spirit", pisco: "spirit", wine: "wine",
     triple: "liq", cherry: "liq", campari: "bitter", vermouthR: "verm", vermouthD: "verm", bitters: "dash",
     tonic: "top", soda: "top", cola: "top", ginger: "top", oj: "juice", pineapple: "juice", coconut: "cream",
-    lime: "sour", lemon: "sour", mint: "mint", syrup: "sweet", grenadine: "sweet", coffee: "top", tea: "top", cream: "cream" };
+    lime: "sour", lemon: "sour", mint: "mint", syrup: "sweet", grenadine: "sweet", rasp: "sweet", coffee: "top", tea: "top", cream: "cream" };
   // сначала недорогое, крепкое в самом конце: если ошибёшься, выльешь меньше
   const ROLE_ORDER = ["sour", "sweet", "juice", "cream", "liq", "bitter", "verm", "wine", "spirit"];
   const ICE_NAME = { none: "без льда", cubes: "лёд кубиками", crushed: "колотый лёд" };
@@ -3687,7 +3711,7 @@
 
     // вкус: кислое, сладкое, горькое
     const sour = by("sour").reduce((s, i) => s + A[i], 0);
-    const sweet = (A.syrup || 0) + (A.grenadine || 0) + by("liq").reduce((s, i) => s + A[i] * .5, 0) + by("juice").reduce((s, i) => s + A[i] * .25, 0)
+    const sweet = (A.syrup || 0) + (A.grenadine || 0) + (A.rasp || 0) + by("liq").reduce((s, i) => s + A[i] * .5, 0) + by("juice").reduce((s, i) => s + A[i] * .25, 0)
       + (A.coconut || 0) * .4 + (h("cola") ? 20 : 0) + (h("ginger") ? 16 : 0) + (h("tonic") ? 8 : 0) + (A.vermouthR || 0) * .3;
     const bitter = (A.campari || 0) + (dash ? 15 : 0) + (h("tonic") ? 10 : 0);
     const taste = [];
@@ -6356,6 +6380,51 @@ function spiralMesh(s = 1, parent = world) {
   parent.add(gr);
   return gr;
 }
+/* ---------- «Кловер клаб»: три свежие малины на латунной шпажке поперёк блюдца ----------
+   Начало координат — центр шпажки над осью бокала, шпажка идёт вдоль x. Ягода — тёмная сердцевина и ~110 костянок по поверхности
+   (одна геометрия на все три ягоды — один вызов отрисовки); у плодоножки ямка без костянок, через неё проходит шпажка. */
+const RASP = { mat: {
+  drupe: std({ color: 0xa3163a, roughness: .42, emissive: 0x2a020c, emissiveIntensity: .5 }),
+  core: std({ color: 0x4a0614, roughness: .7 }),
+  pick: std({ color: 0xc9944a, metalness: 1, roughness: .26, envMapIntensity: 1.4 })
+}, geo: {} };
+Object.values(RASP.mat).forEach(m => KEEP.add(m));
+RASP.X = [-.0175, 0, .0175];
+function raspGeo(s = 1) {
+  const key = s.toFixed(3);
+  if (RASP.geo[key]) return RASP.geo[key];
+  const a = .0086 * s, b = .0076 * s, dr = .00155 * s, N = 120, drupes = [], cores = [];
+  const rnd = (i => () => (i = (i * 16807) % 2147483647) / 2147483647)(7);
+  RASP.X.forEach((x0, k) => {
+    const tilt = [.25, -.15, .3][k], c = Math.cos(tilt), sn = Math.sin(tilt);
+    const core = new THREE.SphereGeometry(1, 14, 10); core.scale(a * .93, b * .93, b * .93);
+    core.rotateX(tilt); core.translate(x0 * s, 0, 0); cores.push(core);
+    for (let i = 0; i < N; i++) {
+      // точки Фибоначчи на эллипсоиде; ось ягоды вдоль x, у плодоножки (-x) — ямка
+      const u = 1 - 2 * (i + .5) / N, ph = i * 2.39996 + k;
+      if (u < -.82) continue;
+      const rr = Math.sqrt(1 - u * u), y0 = rr * Math.cos(ph), z0 = rr * Math.sin(ph);
+      const taper = 1 - .14 * (u + 1) / 2;   // к кончику ягода чуть сужается
+      const px = u * a, py = y0 * b * taper, pz = z0 * b * taper;
+      const g = new THREE.SphereGeometry(dr * (.85 + .3 * rnd()), 6, 4);
+      g.translate(x0 * s + px, py * c - pz * sn, py * sn + pz * c);
+      drupes.push(g);
+    }
+  });
+  const m = l => { const g = mergeGeometries(l.map(x => x.toNonIndexed()), false); l.forEach(x => x.dispose()); KEEP.add(g); return g; };
+  const len = .124 * s, pick = new THREE.CylinderGeometry(.00065 * s, .00065 * s, len, 6); pick.rotateZ(Math.PI / 2);
+  const ball = new THREE.SphereGeometry(.0019 * s, 10, 8); ball.translate(len / 2 + .0012 * s, 0, 0);
+  const tip = new THREE.ConeGeometry(.00065 * s, .003 * s, 6); tip.rotateZ(Math.PI / 2); tip.translate(-len / 2 - .0015 * s, 0, 0);
+  return RASP.geo[key] = { drupe: m(drupes), core: m(cores), pick: m([pick, ball, tip]) };
+}
+function raspMesh(s = 1, parent = world) {
+  const gr = new THREE.Group(), G = raspGeo(s);
+  mesh(G.core, RASP.mat.core, 0, 0, 0, gr);
+  mesh(G.drupe, RASP.mat.drupe, 0, 0, 0, gr);
+  mesh(G.pick, RASP.mat.pick, 0, 0, 0, gr);
+  parent.add(gr);
+  return gr;
+}
 const glassMat = std({ color: 0xeef4ff, transparent: true, opacity: .2, roughness: .02, envMapIntensity: 2.5, side: THREE.DoubleSide, depthWrite: false });
 KEEP.add(glassMat); Object.values(M).forEach(m => KEEP.add(m)); Object.values(BGEO).forEach(g => KEEP.add(g));
 function makeGlass(cup, color, { garnish = null, ice = false, op = .85 } = {}) {
@@ -6374,10 +6443,11 @@ function makeGlass(cup, color, { garnish = null, ice = false, op = .85 } = {}) {
     cube.renderOrder = garnish === "spiral" ? 3 : 5;
   }
   if (garnish) {
-    const col = { twist: 0xe9821c, spiral: 0xf2cf3a, flame: 0xf08a22, wheel: 0x9fc23a, wedge: 0x9fc23a, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0x9a0f1e, pineapple: 0xf2c84a, olive: 0x7a8a2a }[garnish] || 0x9fc23a;
+    const col = { twist: 0xe9821c, spiral: 0xf2cf3a, raspberry: 0xc01d42, flame: 0xf08a22, wheel: 0x9fc23a, wedge: 0x9fc23a, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0x9a0f1e, pineapple: 0xf2c84a, olive: 0x7a8a2a }[garnish] || 0x9fc23a;
     const topR = c.p[c.p.length - 1][0] / 100, topY = c.p[c.p.length - 1][1] / 100;
     if (garnish === "twist") twistMesh(1, gr).position.set(topR, topY, 0);
     else if (garnish === "spiral") spiralMesh(1, gr).position.set(topR, topY, 0);
+    else if (garnish === "raspberry") { const r = raspMesh(1, gr); r.position.set(0, topY + .0008, 0); r.rotation.y = .35; }
     else if (garnish === "cherry" || garnish === "olive") mesh(new THREE.SphereGeometry(.012, 12, 8), std({ color: col, roughness: .3 }), 0, y1 - .004, 0, gr);
     else if (garnish === "mint") for (let i = 0; i < 3; i++) { const l = mesh(new THREE.SphereGeometry(.016, 8, 6), std({ color: col }), R(-.01, .01), topY + .01, R(-.01, .01), gr); l.scale.set(1, .35, .6); l.rotation.set(R(0, 1), R(0, 3), 0); }
     else { const w = mesh(new THREE.CylinderGeometry(.024, .024, .005, 18), std({ color: col, roughness: .5 }), topR - .01, topY - .012, 0, gr); w.rotation.z = Math.PI / 2.4; }
@@ -8446,7 +8516,7 @@ const PROGS = () => Closeup.PROGRAMS;
 const NOM = { rum: "Ром", tequila: "Текила", gin: "Джин", whisky: "Виски", cognac: "Коньяк", pisco: "Писко", wine: "Красное вино", triple: "Апельсиновый ликёр", cherry: "Вишнёвый ликёр",
   campari: "Кампари", vermouthR: "Красный вермут", vermouthD: "Сухой вермут", bitters: "Ангостура", tonic: "Тоник", soda: "Содовая",
   cola: "Кола", ginger: "Имбирный эль", oj: "Апельсиновый сок", pineapple: "Ананасовый сок", coconut: "Кокосовые сливки", lime: "Сок лайма",
-  lemon: "Лимонный сок", syrup: "Сахарный сироп", grenadine: "Гренадин", coffee: "Кофе", tea: "Чай", cream: "Сливки" };
+  lemon: "Лимонный сок", syrup: "Сахарный сироп", grenadine: "Гренадин", rasp: "Малиновый сироп", coffee: "Кофе", tea: "Чай", cream: "Сливки" };
 const liqOf = ing => new THREE.Color((Closeup.LOOK[ing] || {}).liq || "#ffffff");
 
 /* ---------- координаты: всё считается от места бармена (x — его левая рука, z — к гостю) ---------- */
@@ -8872,7 +8942,7 @@ function stepCaption(st, c) {
   }
   return "";
 }
-const GCOL = { twist: 0xe9821c, spiral: 0xf2cf3a, flame: 0xf08a22, wheel: 0xa8c83e, wedge: 0xa8c83e, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0xa8101e, pineapple: 0xf2c84a, olive: 0x8a9a30 };
+const GCOL = { twist: 0xe9821c, spiral: 0xf2cf3a, raspberry: 0xc01d42, flame: 0xf08a22, wheel: 0xa8c83e, wedge: 0xa8c83e, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0xa8101e, pineapple: 0xf2c84a, olive: 0x8a9a30 };
 /* строка карточки для шага рецепта */
 function cardRow(st, c) {
   const { GNAME } = Closeup;
@@ -9430,6 +9500,8 @@ function garnishMesh(kind) {
     twistMesh(SHOW.glassV ? SHOW.glassV.scale : 1.35, g);
   } else if (kind === "spiral") {
     spiralMesh(SHOW.glassV ? SHOW.glassV.scale : 1.35, g);
+  } else if (kind === "raspberry") {
+    raspMesh(SHOW.glassV ? SHOW.glassV.scale : 1.35, g);
   } else if (kind === "olive" || kind === "cherry") {
     mesh(new THREE.SphereGeometry(.011, 16, 12), m, 0, 0, 0, g).scale.set(1, kind === "olive" ? .8 : 1, 1);
     if (kind === "olive") { mesh(new THREE.CylinderGeometry(.0011, .0011, .11, 6), std({ color: 0xd8c08a, roughness: .5 }), 0, .035, 0, g); mesh(new THREE.SphereGeometry(.003, 8, 6), std({ color: 0xa8101e }), 0, 0, .009, g); }
@@ -9458,7 +9530,7 @@ async function stepGarnish(c) {
   bt.look = ST.tray;
   const gm = garnishMesh(kind);
   place(gm, ST.tray.clone().add(V3(.03, .02, 0)));
-  const pinch = PINCH(V3(0, kind === "olive" ? .07 : 0, 0));
+  const pinch = PINCH(kind === "raspberry" ? V3(.06 * G.scale, 0, 0) : V3(0, kind === "olive" ? .07 : 0, 0));
   if (kind !== "flame") await grip(R, gm, pinch, .42);
   if (kind === "flame") {
     await stepFlameZest(gm, G);
@@ -9501,6 +9573,21 @@ async function stepGarnish(c) {
     await move(gm, rimW, { q: gq, dur: .3, e: ease.in });
     letGo(R, "open");
     shot("low", rimW.clone().add(V3(0, -.025, 0)));
+  } else if (kind === "raspberry") {
+    // шпажка с малиной: пауза высоко над пеной, затем плавно ложится поперёк блюдца на оба края ободка
+    G.g.updateMatrixWorld(true);
+    const gq = G.g.getWorldQuaternion(new THREE.Quaternion()), q = gq.clone().multiply(Qe(0, .35, 0));
+    const seat = G.g.localToWorld(V3(0, G.mouthY + .0008, 0));
+    await move(gm, seat.clone().add(V3(0, .2, 0)), { q, dur: .6, arc: .04 });
+    bt.look = camera.position;
+    follow(seat.clone().add(V3(0, .1, 0)));
+    await ws(rr(.5, .7));
+    bt.look = m;
+    shot("macro", seat.clone().add(V3(0, .01, 0)));
+    await move(gm, seat.clone().add(V3(0, .03, 0)), { q, dur: .55, e: ease.io });
+    await move(gm, seat, { q, dur: .45, e: ease.out });
+    SND.tap();
+    letGo(R, "open");
   } else if (kind === "mint") {
     // хлопок: мята между ладонями отдаёт аромат
     const mid = B(-.05, 1.33, .38);
@@ -11484,7 +11571,8 @@ const ADVICE = {
     ],
     light: [
       ["c-mojito", "«Мохито»: мята, лайм, ром и колотый лёд доверху. Освежает лучше всего."],
-      ["c-gintonic", "Джин-тоник со льдом и лаймом. Холодный, сухой и звонкий."]
+      ["c-gintonic", "Джин-тоник со льдом и лаймом. Холодный, сухой и звонкий."],
+      ["c-clover", "«Кловер клаб»: джин, лимон, малиновый сироп и белок. Филадельфия, клуб журналистов 1880-х — ягодно, свежо и под розовой пеной."]
     ]
   },
   none: [
@@ -14863,7 +14951,8 @@ FOAM.proto.visible = false;
 const eggy = c => !!c && (PROGS()[c.id] || []).some(s => s[0] === "egg");
 const foamy = c => !!c && (eggy(c) || c.need && c.need.includes("pineapple") && (PROGS()[c.id] || []).some(s => s[0] === "shake"));
 // белковая пена почти белая и толще ананасовой
-function foamColor(c) { return eggy(c) ? new THREE.Color(0xfbf6ea) : new THREE.Color(c.pour).lerp(new THREE.Color(0xfff6e6), .72); }
+// у «Кловер клаба» пена чуть розовая от малины (foamTint)
+function foamColor(c) { return eggy(c) ? new THREE.Color(0xfbf6ea).lerp(new THREE.Color(c.pour), c.foamTint || 0) : new THREE.Color(c.pour).lerp(new THREE.Color(0xfff6e6), .72); }
 const foamT = c => eggy(c) ? .0125 : FOAM.T;
 function addFoam(V, c) {
   if (V.foam) return V.foam;
@@ -15213,7 +15302,8 @@ async function stepDrops(st) {
 /* если шоу пропустили: капли на пене, вишня поверх пены */
 function eggFinish(glass, foam, topY, r, c) {
   const hearts = !!c && (PROGS()[c.id] || []).some(st => st[0] === "hearts");
-  DROP_X.forEach(x => { const d = addDrop(foam, x, 1.35); if (hearts) toHeart(d, 0); });
+  const drops = !!c && (PROGS()[c.id] || []).some(st => st[0] === "drops");   // у «Кловер клаба» пена без капель
+  if (drops) DROP_X.forEach(x => { const d = addDrop(foam, x, 1.35); if (hearts) toHeart(d, 0); });
   const ch = glass.children.find(o => o.geometry && o.geometry.type === "SphereGeometry" && Math.abs((o.geometry.parameters.radius || 0) - .012) < 1e-6);
   if (ch) ch.position.set(0, topY + .012 * .45, -.56 * r);
 }

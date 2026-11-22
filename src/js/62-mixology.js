@@ -14,7 +14,7 @@ const PROGS = () => Closeup.PROGRAMS;
 const NOM = { rum: "Ром", tequila: "Текила", gin: "Джин", whisky: "Виски", cognac: "Коньяк", pisco: "Писко", wine: "Красное вино", triple: "Апельсиновый ликёр", cherry: "Вишнёвый ликёр",
   campari: "Кампари", vermouthR: "Красный вермут", vermouthD: "Сухой вермут", bitters: "Ангостура", tonic: "Тоник", soda: "Содовая",
   cola: "Кола", ginger: "Имбирный эль", oj: "Апельсиновый сок", pineapple: "Ананасовый сок", coconut: "Кокосовые сливки", lime: "Сок лайма",
-  lemon: "Лимонный сок", syrup: "Сахарный сироп", grenadine: "Гренадин", coffee: "Кофе", tea: "Чай", cream: "Сливки" };
+  lemon: "Лимонный сок", syrup: "Сахарный сироп", grenadine: "Гренадин", rasp: "Малиновый сироп", coffee: "Кофе", tea: "Чай", cream: "Сливки" };
 const liqOf = ing => new THREE.Color((Closeup.LOOK[ing] || {}).liq || "#ffffff");
 
 /* ---------- координаты: всё считается от места бармена (x — его левая рука, z — к гостю) ---------- */
@@ -440,7 +440,7 @@ function stepCaption(st, c) {
   }
   return "";
 }
-const GCOL = { twist: 0xe9821c, spiral: 0xf2cf3a, flame: 0xf08a22, wheel: 0xa8c83e, wedge: 0xa8c83e, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0xa8101e, pineapple: 0xf2c84a, olive: 0x8a9a30 };
+const GCOL = { twist: 0xe9821c, spiral: 0xf2cf3a, raspberry: 0xc01d42, flame: 0xf08a22, wheel: 0xa8c83e, wedge: 0xa8c83e, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0xa8101e, pineapple: 0xf2c84a, olive: 0x8a9a30 };
 /* строка карточки для шага рецепта */
 function cardRow(st, c) {
   const { GNAME } = Closeup;
@@ -998,6 +998,8 @@ function garnishMesh(kind) {
     twistMesh(SHOW.glassV ? SHOW.glassV.scale : 1.35, g);
   } else if (kind === "spiral") {
     spiralMesh(SHOW.glassV ? SHOW.glassV.scale : 1.35, g);
+  } else if (kind === "raspberry") {
+    raspMesh(SHOW.glassV ? SHOW.glassV.scale : 1.35, g);
   } else if (kind === "olive" || kind === "cherry") {
     mesh(new THREE.SphereGeometry(.011, 16, 12), m, 0, 0, 0, g).scale.set(1, kind === "olive" ? .8 : 1, 1);
     if (kind === "olive") { mesh(new THREE.CylinderGeometry(.0011, .0011, .11, 6), std({ color: 0xd8c08a, roughness: .5 }), 0, .035, 0, g); mesh(new THREE.SphereGeometry(.003, 8, 6), std({ color: 0xa8101e }), 0, 0, .009, g); }
@@ -1026,7 +1028,7 @@ async function stepGarnish(c) {
   bt.look = ST.tray;
   const gm = garnishMesh(kind);
   place(gm, ST.tray.clone().add(V3(.03, .02, 0)));
-  const pinch = PINCH(V3(0, kind === "olive" ? .07 : 0, 0));
+  const pinch = PINCH(kind === "raspberry" ? V3(.06 * G.scale, 0, 0) : V3(0, kind === "olive" ? .07 : 0, 0));
   if (kind !== "flame") await grip(R, gm, pinch, .42);
   if (kind === "flame") {
     await stepFlameZest(gm, G);
@@ -1069,6 +1071,21 @@ async function stepGarnish(c) {
     await move(gm, rimW, { q: gq, dur: .3, e: ease.in });
     letGo(R, "open");
     shot("low", rimW.clone().add(V3(0, -.025, 0)));
+  } else if (kind === "raspberry") {
+    // шпажка с малиной: пауза высоко над пеной, затем плавно ложится поперёк блюдца на оба края ободка
+    G.g.updateMatrixWorld(true);
+    const gq = G.g.getWorldQuaternion(new THREE.Quaternion()), q = gq.clone().multiply(Qe(0, .35, 0));
+    const seat = G.g.localToWorld(V3(0, G.mouthY + .0008, 0));
+    await move(gm, seat.clone().add(V3(0, .2, 0)), { q, dur: .6, arc: .04 });
+    bt.look = camera.position;
+    follow(seat.clone().add(V3(0, .1, 0)));
+    await ws(rr(.5, .7));
+    bt.look = m;
+    shot("macro", seat.clone().add(V3(0, .01, 0)));
+    await move(gm, seat.clone().add(V3(0, .03, 0)), { q, dur: .55, e: ease.io });
+    await move(gm, seat, { q, dur: .45, e: ease.out });
+    SND.tap();
+    letGo(R, "open");
   } else if (kind === "mint") {
     // хлопок: мята между ладонями отдаёт аромат
     const mid = B(-.05, 1.33, .38);

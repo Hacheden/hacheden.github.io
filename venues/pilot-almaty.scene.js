@@ -833,6 +833,51 @@ function spiralMesh(s = 1, parent = world) {
   parent.add(gr);
   return gr;
 }
+/* ---------- «Кловер клаб»: три свежие малины на латунной шпажке поперёк блюдца ----------
+   Начало координат — центр шпажки над осью бокала, шпажка идёт вдоль x. Ягода — тёмная сердцевина и ~110 костянок по поверхности
+   (одна геометрия на все три ягоды — один вызов отрисовки); у плодоножки ямка без костянок, через неё проходит шпажка. */
+const RASP = { mat: {
+  drupe: std({ color: 0xa3163a, roughness: .42, emissive: 0x2a020c, emissiveIntensity: .5 }),
+  core: std({ color: 0x4a0614, roughness: .7 }),
+  pick: std({ color: 0xc9944a, metalness: 1, roughness: .26, envMapIntensity: 1.4 })
+}, geo: {} };
+Object.values(RASP.mat).forEach(m => KEEP.add(m));
+RASP.X = [-.0175, 0, .0175];
+function raspGeo(s = 1) {
+  const key = s.toFixed(3);
+  if (RASP.geo[key]) return RASP.geo[key];
+  const a = .0086 * s, b = .0076 * s, dr = .00155 * s, N = 120, drupes = [], cores = [];
+  const rnd = (i => () => (i = (i * 16807) % 2147483647) / 2147483647)(7);
+  RASP.X.forEach((x0, k) => {
+    const tilt = [.25, -.15, .3][k], c = Math.cos(tilt), sn = Math.sin(tilt);
+    const core = new THREE.SphereGeometry(1, 14, 10); core.scale(a * .93, b * .93, b * .93);
+    core.rotateX(tilt); core.translate(x0 * s, 0, 0); cores.push(core);
+    for (let i = 0; i < N; i++) {
+      // точки Фибоначчи на эллипсоиде; ось ягоды вдоль x, у плодоножки (-x) — ямка
+      const u = 1 - 2 * (i + .5) / N, ph = i * 2.39996 + k;
+      if (u < -.82) continue;
+      const rr = Math.sqrt(1 - u * u), y0 = rr * Math.cos(ph), z0 = rr * Math.sin(ph);
+      const taper = 1 - .14 * (u + 1) / 2;   // к кончику ягода чуть сужается
+      const px = u * a, py = y0 * b * taper, pz = z0 * b * taper;
+      const g = new THREE.SphereGeometry(dr * (.85 + .3 * rnd()), 6, 4);
+      g.translate(x0 * s + px, py * c - pz * sn, py * sn + pz * c);
+      drupes.push(g);
+    }
+  });
+  const m = l => { const g = mergeGeometries(l.map(x => x.toNonIndexed()), false); l.forEach(x => x.dispose()); KEEP.add(g); return g; };
+  const len = .124 * s, pick = new THREE.CylinderGeometry(.00065 * s, .00065 * s, len, 6); pick.rotateZ(Math.PI / 2);
+  const ball = new THREE.SphereGeometry(.0019 * s, 10, 8); ball.translate(len / 2 + .0012 * s, 0, 0);
+  const tip = new THREE.ConeGeometry(.00065 * s, .003 * s, 6); tip.rotateZ(Math.PI / 2); tip.translate(-len / 2 - .0015 * s, 0, 0);
+  return RASP.geo[key] = { drupe: m(drupes), core: m(cores), pick: m([pick, ball, tip]) };
+}
+function raspMesh(s = 1, parent = world) {
+  const gr = new THREE.Group(), G = raspGeo(s);
+  mesh(G.core, RASP.mat.core, 0, 0, 0, gr);
+  mesh(G.drupe, RASP.mat.drupe, 0, 0, 0, gr);
+  mesh(G.pick, RASP.mat.pick, 0, 0, 0, gr);
+  parent.add(gr);
+  return gr;
+}
 const glassMat = std({ color: 0xeef4ff, transparent: true, opacity: .2, roughness: .02, envMapIntensity: 2.5, side: THREE.DoubleSide, depthWrite: false });
 KEEP.add(glassMat); Object.values(M).forEach(m => KEEP.add(m)); Object.values(BGEO).forEach(g => KEEP.add(g));
 function makeGlass(cup, color, { garnish = null, ice = false, op = .85 } = {}) {
@@ -851,10 +896,11 @@ function makeGlass(cup, color, { garnish = null, ice = false, op = .85 } = {}) {
     cube.renderOrder = garnish === "spiral" ? 3 : 5;
   }
   if (garnish) {
-    const col = { twist: 0xe9821c, spiral: 0xf2cf3a, flame: 0xf08a22, wheel: 0x9fc23a, wedge: 0x9fc23a, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0x9a0f1e, pineapple: 0xf2c84a, olive: 0x7a8a2a }[garnish] || 0x9fc23a;
+    const col = { twist: 0xe9821c, spiral: 0xf2cf3a, raspberry: 0xc01d42, flame: 0xf08a22, wheel: 0x9fc23a, wedge: 0x9fc23a, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0x9a0f1e, pineapple: 0xf2c84a, olive: 0x7a8a2a }[garnish] || 0x9fc23a;
     const topR = c.p[c.p.length - 1][0] / 100, topY = c.p[c.p.length - 1][1] / 100;
     if (garnish === "twist") twistMesh(1, gr).position.set(topR, topY, 0);
     else if (garnish === "spiral") spiralMesh(1, gr).position.set(topR, topY, 0);
+    else if (garnish === "raspberry") { const r = raspMesh(1, gr); r.position.set(0, topY + .0008, 0); r.rotation.y = .35; }
     else if (garnish === "cherry" || garnish === "olive") mesh(new THREE.SphereGeometry(.012, 12, 8), std({ color: col, roughness: .3 }), 0, y1 - .004, 0, gr);
     else if (garnish === "mint") for (let i = 0; i < 3; i++) { const l = mesh(new THREE.SphereGeometry(.016, 8, 6), std({ color: col }), R(-.01, .01), topY + .01, R(-.01, .01), gr); l.scale.set(1, .35, .6); l.rotation.set(R(0, 1), R(0, 3), 0); }
     else { const w = mesh(new THREE.CylinderGeometry(.024, .024, .005, 18), std({ color: col, roughness: .5 }), topR - .01, topY - .012, 0, gr); w.rotation.z = Math.PI / 2.4; }
@@ -2239,7 +2285,7 @@ const PROGS = () => Closeup.PROGRAMS;
 const NOM = { rum: "Ром", tequila: "Текила", gin: "Джин", whisky: "Виски", cognac: "Коньяк", pisco: "Писко", wine: "Красное вино", triple: "Апельсиновый ликёр", cherry: "Вишнёвый ликёр",
   campari: "Кампари", vermouthR: "Красный вермут", vermouthD: "Сухой вермут", bitters: "Ангостура", tonic: "Тоник", soda: "Содовая",
   cola: "Кола", ginger: "Имбирный эль", oj: "Апельсиновый сок", pineapple: "Ананасовый сок", coconut: "Кокосовые сливки", lime: "Сок лайма",
-  lemon: "Лимонный сок", syrup: "Сахарный сироп", grenadine: "Гренадин", coffee: "Кофе", tea: "Чай", cream: "Сливки" };
+  lemon: "Лимонный сок", syrup: "Сахарный сироп", grenadine: "Гренадин", rasp: "Малиновый сироп", coffee: "Кофе", tea: "Чай", cream: "Сливки" };
 const liqOf = ing => new THREE.Color((Closeup.LOOK[ing] || {}).liq || "#ffffff");
 
 /* ---------- координаты: всё считается от места бармена (x — его левая рука, z — к гостю) ---------- */
@@ -2665,7 +2711,7 @@ function stepCaption(st, c) {
   }
   return "";
 }
-const GCOL = { twist: 0xe9821c, spiral: 0xf2cf3a, flame: 0xf08a22, wheel: 0xa8c83e, wedge: 0xa8c83e, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0xa8101e, pineapple: 0xf2c84a, olive: 0x8a9a30 };
+const GCOL = { twist: 0xe9821c, spiral: 0xf2cf3a, raspberry: 0xc01d42, flame: 0xf08a22, wheel: 0xa8c83e, wedge: 0xa8c83e, lemon: 0xf2d24a, orange: 0xf08a22, mint: 0x3f8f3a, cherry: 0xa8101e, pineapple: 0xf2c84a, olive: 0x8a9a30 };
 /* строка карточки для шага рецепта */
 function cardRow(st, c) {
   const { GNAME } = Closeup;
@@ -3223,6 +3269,8 @@ function garnishMesh(kind) {
     twistMesh(SHOW.glassV ? SHOW.glassV.scale : 1.35, g);
   } else if (kind === "spiral") {
     spiralMesh(SHOW.glassV ? SHOW.glassV.scale : 1.35, g);
+  } else if (kind === "raspberry") {
+    raspMesh(SHOW.glassV ? SHOW.glassV.scale : 1.35, g);
   } else if (kind === "olive" || kind === "cherry") {
     mesh(new THREE.SphereGeometry(.011, 16, 12), m, 0, 0, 0, g).scale.set(1, kind === "olive" ? .8 : 1, 1);
     if (kind === "olive") { mesh(new THREE.CylinderGeometry(.0011, .0011, .11, 6), std({ color: 0xd8c08a, roughness: .5 }), 0, .035, 0, g); mesh(new THREE.SphereGeometry(.003, 8, 6), std({ color: 0xa8101e }), 0, 0, .009, g); }
@@ -3251,7 +3299,7 @@ async function stepGarnish(c) {
   bt.look = ST.tray;
   const gm = garnishMesh(kind);
   place(gm, ST.tray.clone().add(V3(.03, .02, 0)));
-  const pinch = PINCH(V3(0, kind === "olive" ? .07 : 0, 0));
+  const pinch = PINCH(kind === "raspberry" ? V3(.06 * G.scale, 0, 0) : V3(0, kind === "olive" ? .07 : 0, 0));
   if (kind !== "flame") await grip(R, gm, pinch, .42);
   if (kind === "flame") {
     await stepFlameZest(gm, G);
@@ -3294,6 +3342,21 @@ async function stepGarnish(c) {
     await move(gm, rimW, { q: gq, dur: .3, e: ease.in });
     letGo(R, "open");
     shot("low", rimW.clone().add(V3(0, -.025, 0)));
+  } else if (kind === "raspberry") {
+    // шпажка с малиной: пауза высоко над пеной, затем плавно ложится поперёк блюдца на оба края ободка
+    G.g.updateMatrixWorld(true);
+    const gq = G.g.getWorldQuaternion(new THREE.Quaternion()), q = gq.clone().multiply(Qe(0, .35, 0));
+    const seat = G.g.localToWorld(V3(0, G.mouthY + .0008, 0));
+    await move(gm, seat.clone().add(V3(0, .2, 0)), { q, dur: .6, arc: .04 });
+    bt.look = camera.position;
+    follow(seat.clone().add(V3(0, .1, 0)));
+    await ws(rr(.5, .7));
+    bt.look = m;
+    shot("macro", seat.clone().add(V3(0, .01, 0)));
+    await move(gm, seat.clone().add(V3(0, .03, 0)), { q, dur: .55, e: ease.io });
+    await move(gm, seat, { q, dur: .45, e: ease.out });
+    SND.tap();
+    letGo(R, "open");
   } else if (kind === "mint") {
     // хлопок: мята между ладонями отдаёт аромат
     const mid = B(-.05, 1.33, .38);
@@ -4368,7 +4431,8 @@ const ADVICE = {
     ],
     light: [
       ["c-mojito", "«Мохито»: мята, лайм, ром и колотый лёд доверху. Освежает лучше всего."],
-      ["c-gintonic", "Джин-тоник со льдом и лаймом. Холодный, сухой и звонкий."]
+      ["c-gintonic", "Джин-тоник со льдом и лаймом. Холодный, сухой и звонкий."],
+      ["c-clover", "«Кловер клаб»: джин, лимон, малиновый сироп и белок. Филадельфия, клуб журналистов 1880-х — ягодно, свежо и под розовой пеной."]
     ]
   },
   none: [
@@ -7376,7 +7440,8 @@ FOAM.proto.visible = false;
 const eggy = c => !!c && (PROGS()[c.id] || []).some(s => s[0] === "egg");
 const foamy = c => !!c && (eggy(c) || c.need && c.need.includes("pineapple") && (PROGS()[c.id] || []).some(s => s[0] === "shake"));
 // белковая пена почти белая и толще ананасовой
-function foamColor(c) { return eggy(c) ? new THREE.Color(0xfbf6ea) : new THREE.Color(c.pour).lerp(new THREE.Color(0xfff6e6), .72); }
+// у «Кловер клаба» пена чуть розовая от малины (foamTint)
+function foamColor(c) { return eggy(c) ? new THREE.Color(0xfbf6ea).lerp(new THREE.Color(c.pour), c.foamTint || 0) : new THREE.Color(c.pour).lerp(new THREE.Color(0xfff6e6), .72); }
 const foamT = c => eggy(c) ? .0125 : FOAM.T;
 function addFoam(V, c) {
   if (V.foam) return V.foam;
@@ -7726,7 +7791,8 @@ async function stepDrops(st) {
 /* если шоу пропустили: капли на пене, вишня поверх пены */
 function eggFinish(glass, foam, topY, r, c) {
   const hearts = !!c && (PROGS()[c.id] || []).some(st => st[0] === "hearts");
-  DROP_X.forEach(x => { const d = addDrop(foam, x, 1.35); if (hearts) toHeart(d, 0); });
+  const drops = !!c && (PROGS()[c.id] || []).some(st => st[0] === "drops");   // у «Кловер клаба» пена без капель
+  if (drops) DROP_X.forEach(x => { const d = addDrop(foam, x, 1.35); if (hearts) toHeart(d, 0); });
   const ch = glass.children.find(o => o.geometry && o.geometry.type === "SphereGeometry" && Math.abs((o.geometry.parameters.radius || 0) - .012) < 1e-6);
   if (ch) ch.position.set(0, topY + .012 * .45, -.56 * r);
 }
